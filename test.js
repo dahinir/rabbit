@@ -25,14 +25,15 @@
 	var API_KEY = '874e9de3408580e57cfe564d242731b4',
 		SECRET_KEY = '9c4fec35a9352461159247878200a975';
 
-function handler(req, res){}
+var Bithumb = require('./bithumb_modified.js');
 
 function tic(){
-	var xcoinAPI = new XCoinAPI(API_KEY, SECRET_KEY);
+	var xcoinAPI = new Bithumb(API_KEY, SECRET_KEY);
 	var rgParams = {
 		order_currency:'BTC',
 		payment_currency:'KRW'
 	};
+
 
 	xcoinAPI.xcoinApiCall('/info/account', rgParams, function(result){
 		console.log(result);
