@@ -20,26 +20,33 @@ var CoinBaseClient = require('coinbase').Client;
 var coinBaseClient = new CoinBaseClient({apiKey: KEYS.BITHUMB.API_KEY, apiSecret: KEYS.BITHUMB.SECRET_KEY});
 
 function getBtc_usd(resolve, reject){
-	coinBaseClient.getBuyPrice({'currencyPair': 'BTC-USD'}, function(err, price) {
-		var btc_usd = price.data.amount*1;
+	coinBaseClient.getBuyPrice({'currencyPair': 'BTC-USD'}, function(err, result) {
+    if( !result || !result.data || !result.data.amount)
+      reject(".getBtc_usd() failed");
+
+		var btc_usd = result.data.amount*1;
 		// console.log("bit_usd:", btc_usd);
 		if( _.isNumber(btc_usd) && btc_usd<2500 && btc_usd>500)
 			resolve(btc_usd);
 	});
 }
 function getUsd_krw(resolve, reject){
-	coinBaseClient.getExchangeRates({'currency': 'USD'}, function(err, rates) {
+	coinBaseClient.getExchangeRates({'currency': 'USD'}, function(err, result) {
+    if( !result || !result.data || !result.data.rates)
+      reject(".getUsd_krw() failed");
+
 		// var usd_krw = rates.data.rates.KRW*1.014903;	// buy cash
-		var usd_krw = rates.data.rates.KRW*1.0075;	// send money
-		// console.log("usd_krw:", usd_krw);
+		var usd_krw = result.data.rates.KRW*1.0075;	// send money
 		if( _.isNumber(usd_krw) && usd_krw<20000 && usd_krw>500)
 			resolve(usd_krw);
 	});
 }
 function getBtc_krw(resolve, reject){
 	xcoinAPI.xcoinApiCall('/public/orderbook', {}, function(result){
+    if( !result || !result.data || !result.data.asks[0].price)
+      reject(".getBtc_krw() failed");
+
 		var btc_krw = result.data.asks[0].price*1;
-		// console.log("btc_krw:", btc_krw);
 		if( _.isNumber(btc_krw) && btc_krw<2000000 && btc_krw>800000)
 			resolve(btc_krw);
 	});
