@@ -267,7 +267,7 @@ var machines = new Machines([
 												{	propensity: "STATIC",
 													craving_krw: 20000,
 													cravingRatio: 0.5,
-													capacity: 1.0,	// btc
+													capacity: 0.01,	// btc
 													negativeHope: -5000,
 													positiveHope: -3000,
 													neverHope: -10000,
@@ -276,7 +276,7 @@ var machines = new Machines([
 												{	propensity: "STATIC",
 													craving_krw: 30000,
 													cravingRatio: 0.5,
-													capacity: 1.0,	// btc
+													capacity: 0.01,	// btc
 													negativeHope: -5000,
 													positiveHope: -3000,
 													neverHope: -10000,
@@ -377,7 +377,7 @@ function tic(error, response, rgResult){
 		}
 		// now `btParams` is completed..
 		if(participants.length > 0){
-			console.log("participants.length", participants.length);
+			console.log("participants.length:", participants.length);
 			var newOrder = new Order({machines: participants,
 										btParams: btParams,
 										internalTradedUnits: internalTradedUnits});
@@ -406,29 +406,12 @@ function tic(error, response, rgResult){
 			}
 		}
 
-		function refreshOrdersFromBithumb(){
-			// for pending orders..
-			orders.each(function(o){
-				// console.log(o.attributes);
-				if( o.get("isDone") || !o.get("order_id"))
-					return;
-				var params = {
-					order_id: o.get("order_id").toString(), //"1485052731599",	// "1485011389177",
-					type: o.get("btParams").type
-				};
-				xcoinAPI.xcoinApiCall("/info/order_detail", params, function(result){
-					o.set(result);
-					o.adjust();
-				});
-			});
-		}
-
 		function refreshOrdersChainAt(index){
 			index = index || 0;
 			if(orders.length <= index){
 				return;
 			}
-			o = orders.at(index);
+			var o = orders.at(index);
 			if( o.get("isDone") || !o.get("order_id"))
 				return;
 			var params = {
