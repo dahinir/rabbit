@@ -10,51 +10,12 @@ const _ = require('underscore'),
 const Bithumb = require('./bithumb_modified.js');
 const KEYS = require('./credentials/keys.json');
 
-var ticNumber = 0;
+const fetcher = require('./fetcher.js');
 
-// const API_KEY = require("./credential/keys"),
-// 	SECRET_KEY = "d";
-var xcoinAPI = new Bithumb(KEYS.BITHUMB.API_KEY, KEYS.BITHUMB.SECRET_KEY);
+const xcoinAPI = new Bithumb(KEYS.BITHUMB.API_KEY, KEYS.BITHUMB.SECRET_KEY);
 
-var CoinBaseClient = require('coinbase').Client;
-var coinBaseClient = new CoinBaseClient({apiKey: KEYS.BITHUMB.API_KEY, apiSecret: KEYS.BITHUMB.SECRET_KEY});
 
-function getBtc_usd(resolve, reject){
-	coinBaseClient.getBuyPrice({'currencyPair': 'BTC-USD'}, function(err, result) {
-    if( !result || !result.data || !result.data.amount)
-      reject(".getBtc_usd() failed");
 
-		var btc_usd = result.data.amount*1;
-		// console.log("bit_usd:", btc_usd);
-		if( _.isNumber(btc_usd) && btc_usd<2500 && btc_usd>500)
-			resolve(btc_usd);
-	});
-}
-function getUsd_krw(resolve, reject){
-	coinBaseClient.getExchangeRates({'currency': 'USD'}, function(err, result) {
-    if( !result || !result.data || !result.data.rates)
-      reject(".getUsd_krw() failed");
-
-		// var usd_krw = rates.data.rates.KRW*1.014903;	// buy cash
-		var usd_krw = result.data.rates.KRW*1.0075;	// send money
-		if( _.isNumber(usd_krw) && usd_krw<20000 && usd_krw>500)
-			resolve(usd_krw);
-	});
-}
-function getBtc_krw(resolve, reject){
-	xcoinAPI.xcoinApiCall('/public/orderbook', {}, function(result){
-    if( !result || !result.data || !result.data.asks[0].price)
-      reject(".getBtc_krw() failed");
-
-		var btc_krw = result.data.asks[0].price*1;
-		if( _.isNumber(btc_krw) && btc_krw<2000000 && btc_krw>800000)
-			resolve(btc_krw);
-	});
-}
-
-// tic()
-var minHope = [Infinity, 0], maxHope = [-Infinity, 0],
-		minBtc_krw = [0, Infinity],	maxBtc_krw = [0, -Infinity];
 // ONLY CASE: KRW WITH SEED MONEY!
 var Machine = Backbone.Model.extend({
 	defaults: {
@@ -214,6 +175,12 @@ var Orders = Backbone.Collection.extend({
   model: Order,
 });
 
+
+
+// tic()
+var ticNumber = 0;
+var minHope = [Infinity, 0], maxHope = [-Infinity, 0],
+		minBtc_krw = [0, Infinity],	maxBtc_krw = [0, -Infinity];
 // propensity: "STATIC",	// means static capacity. "GREEDY"
 // craving_krw: 2000,	// 2,000 won!
 // cravingRatio: 0.5,	// means 50%
@@ -228,58 +195,19 @@ var machines = new Machines([
 													craving_krw: 2000,
 													cravingRatio: 0.5,
 													capacity: 0.001,	// btc
-													negativeHope: -2000,
+													negativeHope: -10000,
 													positiveHope: 0,
-													neverHope: -2000,
-													maxHope: 0,
-													status: "krw"},
-
-												{	propensity: "STATIC",
-													craving_krw: 2000,
-													cravingRatio: 0.5,
-													capacity: 0.001,	// btc
-													negativeHope: -3000,
-													positiveHope: -1000,
-													neverHope: -3000,
-													maxHope: -1000,
-													status: "krw"},
-
-												{	propensity: "STATIC",
-													craving_krw: 2000,
-													cravingRatio: 0.5,
-													capacity: 0.001,	// btc
-													negativeHope: -4000,
-													positiveHope: -2000,
-													neverHope: -4000,
-													maxHope: -2000,
-													status: "krw"},
-
-												{	propensity: "STATIC",
-													craving_krw: 2000,
-													cravingRatio: 0.5,
-													capacity: 0.001,	// btc
-													negativeHope: -5000,
-													positiveHope: -3000,
-													neverHope: -5000,
-													maxHope: -3000,
-													status: "krw"},
-
-												{	propensity: "STATIC",
-													craving_krw: 20000,
-													cravingRatio: 0.5,
-													capacity: 0.01,	// btc
-													negativeHope: -5000,
-													positiveHope: -3000,
 													neverHope: -10000,
 													maxHope: 0,
 													status: "krw"},
+
 												{	propensity: "STATIC",
-													craving_krw: 30000,
+													craving_krw: 2000,
 													cravingRatio: 0.5,
-													capacity: 0.01,	// btc
-													negativeHope: -5000,
-													positiveHope: -3000,
-													neverHope: -10000,
+													capacity: 0.001,	// btc
+													negativeHope: -8000,
+													positiveHope: 0,
+													neverHope: -8000,
 													maxHope: 0,
 													status: "krw"}
 												]);
@@ -290,9 +218,9 @@ function tic(error, response, rgResult){
 	var nowTime = new Date();
 	console.log("\n=====", ++ticNumber, "== (", ((nowTime-startTime)/1000/60/60).toFixed(2), "hr", startTime.toLocaleString(), ") ====", new Date(), "==");
 
-	Promise.all([new Promise(getBtc_usd),
-			new Promise(getUsd_krw),
-			new Promise(getBtc_krw)]).then(function (values) {
+	Promise.all([new Promise(fetcher.getBtc_usd),
+			new Promise(fetcher.getUsd_krw),
+			new Promise(fetcher.getBtc_krw)]).then(function (values) {
 		// console.log("all clear", values);
 		var btc_usd = values[0],
 			usd_krw = values[1],
