@@ -288,7 +288,7 @@ var fee_krw, fee_btc = 0;
 var startTime = new Date();
 function tic(error, response, rgResult){
 	var nowTime = new Date();
-	console.log("=====", ++ticNumber, "== (", ((nowTime-startTime)/1000/60/60).toFixed(2), "hr", startTime.toLocaleString(), ") ====", new Date(), "==");
+	console.log("\n=====", ++ticNumber, "== (", ((nowTime-startTime)/1000/60/60).toFixed(2), "hr", startTime.toLocaleString(), ") ====", new Date(), "==");
 
 	Promise.all([new Promise(getBtc_usd),
 			new Promise(getUsd_krw),
