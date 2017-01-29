@@ -7,12 +7,9 @@
 const _ = require('underscore'),
 		Backbone = require('backbone');
 
-const Bithumb = require('./bithumb_modified.js');
-const KEYS = require('./credentials/keys.json');
-
+const xcoinAPI = require('./bithumb_modified.js');
 const fetcher = require('./fetcher.js');
 
-const xcoinAPI = new Bithumb(KEYS.BITHUMB.API_KEY, KEYS.BITHUMB.SECRET_KEY);
 
 
 

@@ -3,9 +3,8 @@
 const _ = require('underscore');
 
 const KEYS = require('./credentials/keys.json');
-const Bithumb = require('./bithumb_modified.js');
 
-const xcoinAPI = new Bithumb(KEYS.BITHUMB.API_KEY, KEYS.BITHUMB.SECRET_KEY);
+const xcoinAPI = require('./bithumb_modified.js');
 const CoinBaseClient = require('coinbase').Client;
 const coinBaseClient = new CoinBaseClient({apiKey: KEYS.COINBASE.API_KEY, apiSecret: KEYS.COINBASE.SECRET_KEY});
 

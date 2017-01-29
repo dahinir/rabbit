@@ -1,5 +1,9 @@
 "use strict"
-module.exports = XCoinAPI;
+
+const KEYS = require('./credentials/keys.json');
+module.exports = new XCoinAPI(KEYS.BITHUMB.API_KEY, KEYS.BITHUMB.SECRET_KEY);
+
+
 /*
  * XCoin API-call related functions
  *
