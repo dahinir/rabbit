@@ -1,7 +1,8 @@
 "use strict"
 
 const	Backbone = require('backbone'),
-      _ = require('underscore');
+      _ = require('underscore'),
+			backsync = require('backsync');
 
 /*
 { status: '0000', order_id: '1485052731599', data: [] }
@@ -16,7 +17,9 @@ or
 			 fee: '0.00000150' } ] }
 */
 exports.Order = Backbone.Model.extend({
-	idAttribute: "order_id",
+  urlRoot: "mongodb://localhost:27017/rabbit/orders",
+	sync: backsync.mongodb(),
+	idAttribute: "_id",
 	defaults: {
 		isDone: false,
 		internalTradedUnits: 0,
@@ -32,7 +35,7 @@ exports.Order = Backbone.Model.extend({
 	adjust: function(){
 		if(this.get("isDone"))
 			return;
-      
+
 		var machines = this.get("machines"),
 				adjustedUnits = this.get("adjustedUnits"),
 				internalTradedUnits = this.get("internalTradedUnits"),
@@ -64,10 +67,13 @@ exports.Order = Backbone.Model.extend({
 		if(pendingMachines.length==0){
 			this.set({isDone: true});
 			// order is done. destroy this
+      this.destroy();
 		}
 	}	// adjust
 });	// Order
 
 exports.Orders = Backbone.Collection.extend({
+  url: "mongodb://localhost:27017/rabbit/orders",
+	sync: backsync.mongodb(),
   model: exports.Order,
 });

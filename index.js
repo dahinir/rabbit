@@ -16,14 +16,46 @@ const Orders = require('./order.js').Orders;
 
 
 // tic()
-var ticNumber = 0;
-var minHope = [Infinity, 0], maxHope = [-Infinity, 0],
-		minBtc_krw = [0, Infinity],	maxBtc_krw = [0, -Infinity];
-var machines = new Machines(require('./machines.json'));
+var ticNumber = 0,
+		minHope = [Infinity, 0],
+		maxHope = [-Infinity, 0],
+		minBtc_krw = [0, Infinity],
+		maxBtc_krw = [0, -Infinity],
+		fee_krw = 0,
+		fee_btc = 0,
+		startTime = new Date();;
+
+var machines = new Machines();
+// fetch from db
+machines.fetch({data: {
+												//  $skip: 10,
+												//  $limit: 10
+											},
+							success: function(){
+								console.log("yes,", machines.length,"machines are loaded from DB");
+							},
+						  error: function(){
+								console.log("fetch from db error");
+							}});
+// add new machines by newMachines.json
+var newMachines = new Machines(require('./newMachines.json'));
+newMachines.each(function(m){
+	// m.save();
+});
+
 var orders = new Orders();
-var fee_krw, fee_btc = 0;
-var startTime = new Date();
+orders.fetch({
+	success: function(){
+		console.log("and", orders.length, "orders are loaded.")
+	}
+});
+
 function tic(error, response, rgResult){
+	if( ticNumber != 0){
+		console.log(machines.presentation());
+		console.log(machines.at(0).attributes);
+	}
+
 	var nowTime = new Date();
 	console.log("\n=====", ++ticNumber, "== (", ((nowTime-startTime)/1000/60/60).toFixed(2), "hr", startTime.toLocaleString(), ") ====", new Date(), "==");
 
@@ -86,6 +118,7 @@ function tic(error, response, rgResult){
 			var newOrder = new Order({machines: participants,
 										btParams: btParams,
 										internalTradedUnits: internalTradedUnits});
+			newOrder.save();
 			orders.push(newOrder);
 			// console.log(btParams, totalBid, totalAsk, btc_krw);
 			if( btParams.type=="ask" || btParams.type=="bid"){
