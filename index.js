@@ -1,6 +1,5 @@
 "use strict"
 
-
 // var fs = require('fs'),
 // 		request = require('request');
 
@@ -10,204 +9,17 @@ const _ = require('underscore'),
 const xcoinAPI = require('./bithumb_modified.js');
 const fetcher = require('./fetcher.js');
 
-
-
-
-// ONLY CASE: KRW WITH SEED MONEY!
-var Machine = Backbone.Model.extend({
-	defaults: {
-		propensity: "STATIC",	// means static capacity. "GREEDY"
-		craving_krw: 2000,	// 2,000 won!
-		cravingRatio: 0.5,	// means 50%
-		capacity: 0.001,	// min btc 0.001
-		negativeHope: -5000,
-		positiveHope: -3000,
-		neverHope: -10000,
-		maxHope: 0,
-		status: "krw",	// "krw" or "btc"
-
-		// balance_btc: 0,
-		// balance_krw: 0,
-
-		// profit_btc: 0,
-		profit_krw: 0,
-		traded_count: 0,
-		traded_btc_krw: 0
-	},
-	initialize: function(){
-		// this.set({status: this.get("balance_krw")>0?"krw":"btc"});
-		// this.set({
-		// 	balance_btc: this.get("seed_btc"),
-		// 	balance_krw: this.get("seed_krw"),
-		// 	status: this.get("seed_krw")
-		// });
-		// if(this.get("seed_btc") == 0)
-		// 	this.set({seed_btc: this.get("seed_krw")/1000000});
-	},
-	mind: function(attr){
-		var hope = attr.hope*1,
-				btc_krw = attr.btc_krw*1;
-		var negativeHope = this.get('negativeHope'),
-				positiveHope = this.get('positiveHope');
-
-		var mind = { type: "none",
-								btc_krw: btc_krw,
-								units: this.get("capacity").toString()};
-
-		if( this.get("traded_count") > 0 ){
-			if( this.get("status")=="krw" ){
-				if( hope < negativeHope){
-					if( btc_krw < this.get("traded_btc_krw")-this.get("craving_krw")*this.get("cravingRatio")){
-						mind.type =  "bid";
-					}
-				}
-			}else if( this.get("status")=="btc"){
-				if( hope > positiveHope){
-					if( btc_krw > this.get("traded_btc_krw")+this.get("craving_krw") ){
-						mind.type = "ask";
-					}
-				}
-			}
-		}else	if( this.get("traded_count") == 0 ){
-			if( hope < this.get("neverHope") && this.get("status")=="krw")
-				mind.type =  "bid";
-			if( hope > this.get("maxHope") && this.get("status")=="btc")
-				mind.type = "ask";
-		}
-
-		this.set({mind: mind});
-		return mind;
-	},
-	trade: function(){	// machine always trade with its mind..
-		var mind = this.get("mind");
-
-		var changed = {
-			//  balance_btc: this.get("balance_btc")+units,
-			//  balance_krw: this.get("balance_krw")-units*btc_krw,
-			 traded_count: this.get("traded_count")+1,
-			 traded_btc_krw: mind.btc_krw,
-			 status: "btc"
-		}
-		if(mind.type == "ask"){
-			changed.status = "krw";
-			changed.profit_krw =
-				this.get("profit_krw") + (mind.btc_krw - this.get("traded_btc_krw"))* mind.units;
-		}
-		this.set(changed);
-	}
-});
-var Machines = Backbone.Collection.extend({
-  model: Machine
-});
-// var m = new Machine({capacity:0.01});
-// m.trade();
-// console.log(m.attributes);
-// return;
-
-
-/*
-{ status: '0000', order_id: '1485052731599', data: [] }
-or
-{ status: '0000',
-	order_id: '1485011389177',
-	data:
-	 [ { cont_id: '1445825',
-			 units: '0.001',
-			 price: '1096000',
-			 total: 1096,
-			 fee: '0.00000150' } ] }
-*/
-var Order = Backbone.Model.extend({
-	idAttribute: "order_id",
-	defaults: {
-		isDone: false,
-		internalTradedUnits: 0,
-		// dealedUnits: 0,	// dealed with bithumb. not store. calculate everytime
-		adjustedUnits: 0	// adjusted with machines
-	},
-	initialize: function(attributes, options){
-		this.done = false;	// if done this order
-	},
-	// var newOrder = new Order({machines: participants,
-	// 							btParams: btParams,
-	// 							internalTradedUnits: internalTradedUnits});
-	adjust: function(){
-		if(this.get("isDone"))
-			return;
-		var machines = this.get("machines"),
-				adjustedUnits = this.get("adjustedUnits"),
-				internalTradedUnits = this.get("internalTradedUnits"),
-				data = this.get("data"),	// bithumb results
-				type = this.get("btParams").type;
-
-		var totalDuty = internalTradedUnits*2 + this.get("btParams").units;
-
-		var dealedUnits = 0;	// dealed with bithumb
-		_.each(this.get("data"), function(cont){
-			dealedUnits = dealedUnits + (cont.units || cont.units_traded)*1;
-		});
-
-		var pendingMachines = new Machines();
-		while(machines.length > 0){
-			var m = machines.pop();
-			if((internalTradedUnits*2+dealedUnits-adjustedUnits)
-																							>= m.get("capacity")){
-					m.trade();
-					this.set({
-						adjustedUnits: adjustedUnits+m.get("capacity")});
-			}else{
-				// penging machines..
-				m.set("status", "pending");
-				pendingMachines.push(m);
-			}
-		}
-		this.set({machines: pendingMachines});
-		if(pendingMachines.length==0){
-			this.set({isDone: true});
-			// order is done. destroy this
-		}
-	}	// adjust
-});	// Order
-var Orders = Backbone.Collection.extend({
-  model: Order,
-});
-
+const Machine = require('./machine.js').Machine;
+const Machines = require('./machine.js').Machines;
+const Order = require('./order.js').Order;
+const Orders = require('./order.js').Orders;
 
 
 // tic()
 var ticNumber = 0;
 var minHope = [Infinity, 0], maxHope = [-Infinity, 0],
 		minBtc_krw = [0, Infinity],	maxBtc_krw = [0, -Infinity];
-// propensity: "STATIC",	// means static capacity. "GREEDY"
-// craving_krw: 2000,	// 2,000 won!
-// cravingRatio: 0.5,	// means 50%
-// capacity: 0.001,	// min btc 0.001
-// negativeHope: -5000,
-// positiveHope: -3000,
-// neverHope: -10000,
-// maxHope: 0,
-// status: "krw"
-var machines = new Machines([
-												{	propensity: "STATIC",
-													craving_krw: 2000,
-													cravingRatio: 0.5,
-													capacity: 0.001,	// btc
-													negativeHope: -10000,
-													positiveHope: 0,
-													neverHope: -10000,
-													maxHope: 0,
-													status: "krw"},
-
-												{	propensity: "STATIC",
-													craving_krw: 2000,
-													cravingRatio: 0.5,
-													capacity: 0.001,	// btc
-													negativeHope: -8000,
-													positiveHope: 0,
-													neverHope: -8000,
-													maxHope: 0,
-													status: "krw"}
-												]);
+var machines = new Machines(require('./machines.json'));
 var orders = new Orders();
 var fee_krw, fee_btc = 0;
 var startTime = new Date();
@@ -218,7 +30,7 @@ function tic(error, response, rgResult){
 	Promise.all([new Promise(fetcher.getBtc_usd),
 			new Promise(fetcher.getUsd_krw),
 			new Promise(fetcher.getBtc_krw)]).then(function (values) {
-		// console.log("all clear", values);
+
 		var btc_usd = values[0],
 			usd_krw = values[1],
 			btc_krw = values[2];
@@ -233,42 +45,10 @@ function tic(error, response, rgResult){
 			minBtc_krw = [hope.toFixed(2), btc_krw];
 		if (maxBtc_krw[1] < btc_krw)
 			maxBtc_krw = [hope.toFixed(2), btc_krw];
-		// console.log("btc_usd*usd_krw:", btc_usd*usd_krw);
 		console.log("hope\t\tmin:", minHope, "\tmax:", maxHope);
 		console.log("btc_krw\t\tmin:", minBtc_krw, "\tmax:", maxBtc_krw);
 		console.log("now\t\t", [hope, btc_krw]);
 
-		/*
-					var params = {
-						order_id: "1485052731599",	// "1485011389177",
-						type: "bid"
-					};
-					xcoinAPI.xcoinApiCall("/info/order_detail", params, function(result){
-						console.log(result);
-						{ status: '5600', message: '거래 체결내역이 존재하지 않습니다.' }
-						or
-						{ status: '0000',
-						  data:
-						   [ { cont_no: '1445825',
-						       transaction_date: '1485011389000',
-						       type: 'bid',
-						       order_currency: 'BTC',
-						       payment_currency: 'KRW',
-						       units_traded: '0.001',
-						       price: '1096000',
-						       fee: '0.0000015',
-						       total: '1096' } ] }
-					});
-					return;
-		*/
-
-
-		// var params = {
-		// 	units: "0.001",
-		// 	type: "bid",
-		// 	price: btc_krw.toString()
-		// };
-		// var params = machine.mind({hope:hope, btc_krw:btc_krw});
 		var totalBid =0, totalAsk = 0;
 		var participants = new Machines();
 		machines.each(function(m){
@@ -343,12 +123,35 @@ function tic(error, response, rgResult){
 				order_id: o.get("order_id").toString(), //"1485052731599",	// "1485011389177",
 				type: o.get("btParams").type
 			};
+			/*
+						var params = {
+							order_id: "1485052731599",	// "1485011389177",
+							type: "bid"
+						};
+						xcoinAPI.xcoinApiCall("/info/order_detail", params, function(result){
+							console.log(result);
+							{ status: '5600', message: '거래 체결내역이 존재하지 않습니다.' }
+							or
+							{ status: '0000',
+								data:
+								 [ { cont_no: '1445825',
+										 transaction_date: '1485011389000',
+										 type: 'bid',
+										 order_currency: 'BTC',
+										 payment_currency: 'KRW',
+										 units_traded: '0.001',
+										 price: '1096000',
+										 fee: '0.0000015',
+										 total: '1096' } ] }
+						});
+						return;
+			*/
 			xcoinAPI.xcoinApiCall("/info/order_detail", params, function(result){
 				o.set(result);
 				o.adjust();
 				refreshOrdersChainAt(index+1);
 			});
-		}
+		}	// refreshOrdersChainAt()
 
 
 		// time to break

@@ -1,0 +1,21 @@
+[
+	{	"propensity": "STATIC",
+		"craving_krw": 2000,
+		"cravingRatio": 0.5,
+		"capacity": 0.001,
+		"negativeHope": -10000,
+		"positiveHope": 0,
+		"neverHope": -10000,
+		"maxHope": 0,
+		"status": "krw"},
+
+	{	"propensity": "STATIC",
+		"craving_krw": 2000,
+		"cravingRatio": 0.5,
+		"capacity": 0.001,
+		"negativeHope": -8000,
+		"positiveHope": 0,
+		"neverHope": -8000,
+		"maxHope": 0,
+		"status": "krw"}
+]
