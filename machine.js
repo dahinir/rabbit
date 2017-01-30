@@ -1,9 +1,13 @@
 "use strict"
 
-const	Backbone = require('backbone');
+const	Backbone = require('backbone'),
+			backsync = require('backsync');
 
 // ONLY CASE: KRW WITH SEED MONEY!
 exports.Machine = Backbone.Model.extend({
+	urlRoot: "mongodb://localhost:27017/rabbit/machines",
+	sync: backsync.mongodb(),
+	idAttribute: "_id",
 	defaults: {
 		propensity: "STATIC",	// means static capacity. "GREEDY"
 		craving_krw: 2000,	// 2,000 won!
@@ -87,5 +91,7 @@ exports.Machine = Backbone.Model.extend({
 });
 
 exports.Machines = Backbone.Collection.extend({
+	url: "mongodb://localhost:27017/rabbit/machines",
+	sync: backsync.mongodb(),
   model: exports.Machine
 });

@@ -19,7 +19,24 @@ const Orders = require('./order.js').Orders;
 var ticNumber = 0;
 var minHope = [Infinity, 0], maxHope = [-Infinity, 0],
 		minBtc_krw = [0, Infinity],	maxBtc_krw = [0, -Infinity];
-var machines = new Machines(require('./machines.json'));
+
+var machines = new Machines();
+// fetch from db
+machines.fetch({data: {
+												//  $skip: 10,
+												//  $limit: 10
+											},
+							success: function(){
+								console.log(machines.at(0));
+							},
+						  error: function(){
+								console.log("fetch from db error");
+							}});
+var newMachines = new Machines(require('./newMachines.json'));
+// add new machines by newMachines.json
+newMachines.each(function(m){
+	// m.save();
+});
 var orders = new Orders();
 var fee_krw, fee_btc = 0;
 var startTime = new Date();

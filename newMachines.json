@@ -1,5 +1,6 @@
 [
-	{	"propensity": "STATIC",
+	{	
+		"propensity": "STATIC",
 		"craving_krw": 2000,
 		"cravingRatio": 0.5,
 		"capacity": 0.001,
