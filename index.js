@@ -71,7 +71,7 @@ function tic(error, response, rgResult) {
             maxBtc_krw = [hope.toFixed(2), btc_krw];
         console.log("hope\t\tmin:", minHope, "\tmax:", maxHope);
         console.log("btc_krw\t\tmin:", minBtc_krw, "\tmax:", maxBtc_krw);
-        console.log("now hope:\t", [hope, btc_krw]);
+        console.log("now\t hope:", hope.toFixed(2), "\tbtc_krw:", btc_krw, "\tusd_krw:", usd_krw, "\tbtc_usd:", btc_usd);
 
 
         machines.mind({

@@ -167,12 +167,12 @@ exports.Machines = Backbone.Collection.extend({
                         chunk(skip + AMOUNT);
                     } else {
                         machines.reset(loaded);
-                        console.log("[.fetchAll()]", machines.length, "machines are loaded");
+                        console.log("[machines.fetchAll()]", machines.length, "machines are loaded");
                         success && success();
                     }
                 },
                 error: function(c, r, o) {
-                    console.log("[.fetchAll()] from db error");
+                    console.log("[machines.fetchAll()] from db error");
                     console.log(r);
                 }
             });
