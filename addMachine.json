@@ -1,6 +1,6 @@
 [
-	{	
-		"propensity": "STATIC",
+	{
+		"propensity": "hot",
 		"craving_krw": 2000,
 		"cravingRatio": 0.5,
 		"capacity": 0.001,
@@ -10,7 +10,7 @@
 		"maxHope": 0,
 		"status": "krw"},
 
-	{	"propensity": "STATIC",
+	{	"propensity": "cold",
 		"craving_krw": 2000,
 		"cravingRatio": 0.5,
 		"capacity": 0.001,

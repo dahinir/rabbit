@@ -9,7 +9,7 @@ Thumbs.db
 tmp
 .map
 .settings
-test.js
+dummy.js
 
 # Dependency directory
 # Deployed apps should consider commenting this line out:

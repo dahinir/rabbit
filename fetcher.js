@@ -10,8 +10,10 @@ const coinBaseClient = new CoinBaseClient({apiKey: KEYS.COINBASE.API_KEY, apiSec
 
 exports.getBtc_usd = function(resolve, reject){
 	coinBaseClient.getBuyPrice({'currencyPair': 'BTC-USD'}, function(err, result) {
-    if( !result || !result.data || !result.data.amount)
-      reject(".getBtc_usd() failed");
+    if( !result || !result.data || !result.data.amount){
+			reject(".getBtc_usd() failed");
+			return;
+		}
 
 		var btc_usd = result.data.amount*1;
 		// console.log("bit_usd:", btc_usd);
@@ -21,8 +23,10 @@ exports.getBtc_usd = function(resolve, reject){
 };
 exports.getUsd_krw = function(resolve, reject){
 	coinBaseClient.getExchangeRates({'currency': 'USD'}, function(err, result) {
-    if( !result || !result.data || !result.data.rates)
+    if( !result || !result.data || !result.data.rates){
       reject(".getUsd_krw() failed");
+			return;
+		}
 
 		// var usd_krw = rates.data.rates.KRW*1.014903;	// buy cash
 		var usd_krw = result.data.rates.KRW*1.0075;	// send money
@@ -32,8 +36,10 @@ exports.getUsd_krw = function(resolve, reject){
 };
 exports.getBtc_krw = function(resolve, reject){
 	xcoinAPI.xcoinApiCall('/public/orderbook', {}, function(result){
-    if( !result || !result.data || !result.data.asks[0].price)
+    if( !result || !result.data || !result.data.asks[0].price){
       reject(".getBtc_krw() failed");
+			return;
+		}
 
 		var btc_krw = result.data.asks[0].price*1;
 		if( _.isNumber(btc_krw) && btc_krw<2000000 && btc_krw>800000)
