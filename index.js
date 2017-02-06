@@ -79,6 +79,7 @@ function tic(error, response, rgResult) {
             success: result => {
                 let totalBid = result.totalBid,
                     totalAsk = result.totalAsk;
+
                 let participants = new Machines(result.participants);
 
                 let internalTradedUnits = 0,
@@ -116,10 +117,11 @@ function tic(error, response, rgResult) {
                     // console.log(btParams, totalBid, totalAsk, btc_krw);
                     if (btParams.type == "ask" || btParams.type == "bid") {
                         xcoinAPI.xcoinApiCall('/trade/place', btParams, function(result) {
+                            console.log(result);
                             newOrder.set(result);
-                            newOrder.adjust();
-
-                            refreshOrdersChainAt(0);
+                            newOrder.adjust(function() {
+                                refreshOrdersChainAt(0);
+                            });
                             // machines.each(function(m) {
                             //     console.log("traded_count:", m.get("traded_count"),
                             //         " profit_krw:", m.get("profit_krw"),
@@ -130,13 +132,15 @@ function tic(error, response, rgResult) {
                             // });
                         });
                     } else if (btParams.type == "none" && internalTradedUnits > 0) {
-                        newOrder.adjust();
+                        newOrder.adjust(function(){
+                          refreshOrdersChainAt(0);
+                        });
                     }
                 } else {
                     refreshOrdersChainAt(0);
                 }
             }
-        });	// end of machines.mind()
+        }); // end of machines.mind()
 
     }).catch(function(err) {
         console.log("something happened in the promise", err);
@@ -160,7 +164,7 @@ function refreshOrdersChainAt(index) {
     }
 
     let o = orders.at(index);
-    if (o.get("isDone") || !o.get("order_id")){
+    if (o.get("isDone") || !o.get("order_id")) {
         refreshOrdersChainAt(index + 1);
     }
     let params = {
@@ -192,8 +196,9 @@ function refreshOrdersChainAt(index) {
     */
     xcoinAPI.xcoinApiCall("/info/order_detail", params, function(result) {
         o.set(result);
-        o.adjust();
-        refreshOrdersChainAt(index + 1);
+        o.adjust(resolve => {
+            refreshOrdersChainAt(index + 1);
+        });
     });
 } // refreshOrdersChainAt()
 

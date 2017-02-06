@@ -3,6 +3,7 @@
 const Backbone = require('backbone'),
     _ = require('underscore'),
     backsync = require('backsync');
+const Machines  = require('./machine.js').Machines;
 
 /*
 { status: '0000', order_id: '1485052731599', data: [] }
@@ -32,48 +33,63 @@ exports.Order = Backbone.Model.extend({
     // let newOrder = new Order({machines: participants,
     // 							btParams: btParams,
     // 							internalTradedUnits: internalTradedUnits});
-    adjust: function() {
-        if (this.get("isDone"))
+    adjust: function(resolve, reject) {
+      // (this.get('status') == '0000')떼 전부 pending 처리!!!
+        if (this.get("isDone") )
             return;
 
-        let machines = this.get("machines"),
-            adjustedUnits = this.get("adjustedUnits"),
+        const machines = this.get("machines"),
             internalTradedUnits = this.get("internalTradedUnits"),
-            data = this.get("data"), // bithumb results
-            type = this.get("btParams").type;
-
-        let totalDuty = internalTradedUnits * 2 + this.get("btParams").units;
+            data = this.get("data"); // bithumb results
+            // type = this.get("btParams").type;
+        const that = this;
+        // let totalDuty = internalTradedUnits * 2 + this.get("btParams").units;
 
         let dealedUnits = 0; // dealed with bithumb
         _.each(this.get("data"), function(cont) {
-            dealedUnits = dealedUnits + (cont.units || cont.units_traded) * 1;
+            dealedUnits += (cont.units || cont.units_traded) * 1;
         });
 
-        let pendingMachines = new Machines();
-        while (machines.length > 0) {
-            let m = machines.pop();
-            if ((internalTradedUnits * 2 + dealedUnits - adjustedUnits) >=
-                m.get("capacity")) {
-                m.trade();
-                this.set({
-                    adjustedUnits: adjustedUnits + m.get("capacity")
-                });
+        let pendingMachines = new Machines(); // will be new machines of this order
+        function one(index) {
+            if (machines.length > index) {
+                let m = machines.at(index);
+                if ((internalTradedUnits * 2 + dealedUnits - that.get('adjustedUnits')) >=
+                    m.get("capacity")) {
+
+                    m.trade(function() {
+                        that.set({
+                            adjustedUnits: that.get('adjustedUnits') + m.get("capacity")
+                        });
+                        one(index + 1);
+                    });
+                } else {
+                    // penging machines..
+                    pendingMachines.push(m);
+                    m.save({
+                        status: "pending"
+                    }, {
+                        success: function() {
+                            one(index + 1);
+                        }
+                    });
+                }
             } else {
-                // penging machines..
-                m.set("status", "pending");
-                pendingMachines.push(m);
+                that.save({
+                    machines: pendingMachines,
+                    isDone: (pendingMachines.length == 0)?true:false
+                }, {
+                    success: function() {
+                        if (that.get('isDone'))
+                            that.destroy();
+                        resolve && resolve();
+                        return;
+                    }
+                });
             }
         }
-        this.set({
-            machines: pendingMachines
-        });
-        if (pendingMachines.length == 0) {
-            this.set({
-                isDone: true
-            });
-            // order is done. destroy this
-            this.destroy();
-        }
+        one(0);
+
     } // adjust
 }); // Order
 

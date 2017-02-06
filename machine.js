@@ -41,6 +41,8 @@ exports.Machine = Backbone.Model.extend({
     },
     mind: function(attr, options) {
         const success = options.success;
+        if(this.get("status") == "pending")
+            success();
         let hope = attr.hope * 1,
             btc_krw = attr.btc_krw * 1;
         let negativeHope = this.get('negativeHope'),
@@ -82,7 +84,7 @@ exports.Machine = Backbone.Model.extend({
         });
         // return mind;
     },
-    trade: function() { // machine always trade with its mind..
+    trade: function(resolve, reject) { // machine always trade completly with its mind..
         let mind = this.get("mind");
 
         let changed = {
@@ -98,8 +100,13 @@ exports.Machine = Backbone.Model.extend({
                 this.get("profit_krw") + (mind.btc_krw - this.get("last_traded_btc_krw")) * mind.units;
             changed.profit_rate = changed.profit_krw / this.get('capacity');
         }
-        this.set(changed);
-        this.save();
+        console.log("[machines.js] changed:", changed);
+        // this.set(changed);
+        this.save(changed, {
+            success: function() {
+                resolve && resolve();
+            }
+        });
     }
 });
 
@@ -197,11 +204,11 @@ exports.Machines = Backbone.Collection.extend({
                         switch (m.get('mind').type) {
                             case "bid":
                                 participants.push(m);
-                                totalBid += mind.units * 1;
+                                totalBid += m.get('mind').units * 1;
                                 break;
                             case "ask":
                                 participants.push(m);
-                                totalAsk += mind.units * 1;
+                                totalAsk += m.get('mind').units * 1;
                                 break;
                             default:
                                 // does not participate this tic()

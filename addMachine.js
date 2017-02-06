@@ -6,7 +6,7 @@ const Machine = require('./machine.js').Machine,
 // add new machines by newMachines.json
 let newMachines = new Machines(require('./addMachine.json'));
 newMachines.each(function(m) {
-    // m.save();
+    m.save();
 });
 
 let setting = {
