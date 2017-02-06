@@ -3,7 +3,7 @@
 const Backbone = require('backbone'),
     _ = require('underscore'),
     backsync = require('backsync');
-const Machines  = require('./machine.js').Machines;
+const Machines = require('./machine.js').Machines;
 
 /*
 { status: '0000', order_id: '1485052731599', data: [] }
@@ -34,21 +34,24 @@ exports.Order = Backbone.Model.extend({
     // 							btParams: btParams,
     // 							internalTradedUnits: internalTradedUnits});
     adjust: function(resolve, reject) {
-      // (this.get('status') == '0000')떼 전부 pending 처리!!!
-        if (this.get("isDone") )
+        if (this.get("isDone")) {
+            resolve();
             return;
+        }
 
         const machines = this.get("machines"),
             internalTradedUnits = this.get("internalTradedUnits"),
             data = this.get("data"); // bithumb results
-            // type = this.get("btParams").type;
+        // type = this.get("btParams").type;
         const that = this;
         // let totalDuty = internalTradedUnits * 2 + this.get("btParams").units;
 
         let dealedUnits = 0; // dealed with bithumb
-        _.each(this.get("data"), function(cont) {
-            dealedUnits += (cont.units || cont.units_traded) * 1;
-        });
+        if (this.get('status') == '0000') {
+            _.each(this.get("data"), function(cont) {
+                dealedUnits += (cont.units || cont.units_traded) * 1;
+            });
+        }
 
         let pendingMachines = new Machines(); // will be new machines of this order
         function one(index) {
@@ -77,7 +80,7 @@ exports.Order = Backbone.Model.extend({
             } else {
                 that.save({
                     machines: pendingMachines,
-                    isDone: (pendingMachines.length == 0)?true:false
+                    isDone: (pendingMachines.length == 0) ? true : false
                 }, {
                     success: function() {
                         if (that.get('isDone'))

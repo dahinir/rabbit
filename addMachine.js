@@ -30,7 +30,7 @@ for (let cravingRatio = 0.2; cravingRatio <= 0.9; cravingRatio += 0.1) {
     setting.cravingRatio = cravingRatio.toFixed(1) * 1;
 
     // positiveHope - negativeHope is gap
-    for (let gap = 2000; gap <= 40000; gap += 1000) {
+    for (let gap = 1000; gap <= 40000; gap += 1000) {
         // console.log("\n");
         setting.craving_krw = gap; // it's just easy way..
 

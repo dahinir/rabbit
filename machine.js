@@ -41,8 +41,11 @@ exports.Machine = Backbone.Model.extend({
     },
     mind: function(attr, options) {
         const success = options.success;
-        if(this.get("status") == "pending")
+        if (this.get("status") == "pending") {
             success();
+            return;
+        }
+
         let hope = attr.hope * 1,
             btc_krw = attr.btc_krw * 1;
         let negativeHope = this.get('negativeHope'),
@@ -56,14 +59,14 @@ exports.Machine = Backbone.Model.extend({
 
         if (this.get("traded_count") > 0) {
             if (this.get("status") == "krw") {
-                if (hope < negativeHope) {
+                if (hope < negativeHope || this.get("propensity") == "hot") {
                     if (btc_krw < this.get("last_traded_btc_krw") - this.get("craving_krw") * this.get("cravingRatio")) {
                         mind.type = "bid";
                     }
                 }
             } else if (this.get("status") == "btc") {
                 if (hope > positiveHope || this.get("propensity") == "hot") {
-                    if (btc_krw > this.get("last_traded_btc_krw") + this.get("craving_krw")) {
+                    if (btc_krw >= this.get("last_traded_btc_krw") + this.get("craving_krw")) {
                         mind.type = "ask";
                     }
                 }
@@ -186,7 +189,7 @@ exports.Machines = Backbone.Collection.extend({
     mind: function(options) {
         let hope = options.hope,
             btc_krw = options.btc_krw,
-						success = options.success;
+            success = options.success;
         let index = 0,
             totalBid = 0,
             totalAsk = 0;
@@ -201,28 +204,31 @@ exports.Machines = Backbone.Collection.extend({
                     btc_krw: btc_krw
                 }, {
                     success: () => {
-                        switch (m.get('mind').type) {
-                            case "bid":
-                                participants.push(m);
-                                totalBid += m.get('mind').units * 1;
-                                break;
-                            case "ask":
-                                participants.push(m);
-                                totalAsk += m.get('mind').units * 1;
-                                break;
-                            default:
-                                // does not participate this tic()
+                        // maybe machine's status is `pending`
+                        if (_.contains(['btc', 'krw'], m.get('status'))) {
+                            switch (m.get('mind').type) {
+                                case "bid":
+                                    participants.push(m);
+                                    totalBid += m.get('mind').units * 1;
+                                    break;
+                                case "ask":
+                                    participants.push(m);
+                                    totalAsk += m.get('mind').units * 1;
+                                    break;
+                                default:
+                                    // does not participate this tic()
+                            }
                         }
                         one(index + 1);
                     }
                 });
             } else {
                 success({
-									total: that.length || 0,
-									totalBid: totalBid,
-									totalAsk: totalAsk,
-									participants: participants
-								});
+                    total: that.length || 0,
+                    totalBid: totalBid,
+                    totalAsk: totalAsk,
+                    participants: participants  // just Array, not Machines
+                });
                 return;
             }
         }

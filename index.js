@@ -37,7 +37,7 @@ orders.fetch({
         // $limit: 10
     },
     success: function() {
-        console.log(" ", orders.length, "orders are loaded.")
+        console.log("[index.js] ", orders.length, "orders are loaded.")
     }
 });
 
@@ -106,7 +106,7 @@ function tic(error, response, rgResult) {
                 if (participants.length > 0) {
                     // now `btParams` is completed..
                     btParams.price = btc_krw.toString();
-                    console.log("participants.length:", participants.length);
+                    console.log("[index.js] participants.length:", participants.length);
                     let newOrder = new Order({
                         machines: participants,
                         btParams: btParams,

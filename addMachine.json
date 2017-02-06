@@ -1,22 +1,22 @@
 [
 	{
 		"propensity": "hot",
-		"craving_krw": 2000,
+		"craving_krw": 1000,
 		"cravingRatio": 0.5,
 		"capacity": 0.001,
-		"negativeHope": 52000,
-		"positiveHope": 54000,
-		"neverHope": 52000,
-		"maxHope": 54000,
+		"negativeHope": 40000,
+		"positiveHope": 50000,
+		"neverHope": 40000,
+		"maxHope": 50000,
 		"status": "krw"},
 
 	{	"propensity": "hot",
-		"craving_krw": 2000,
+		"craving_krw": 1000,
 		"cravingRatio": 0.5,
 		"capacity": 0.001,
-		"negativeHope": -50000,
-		"positiveHope": 53000,
-		"neverHope": -50000,
-		"maxHope": 53000,
+		"negativeHope": 45000,
+		"positiveHope": 50000,
+		"neverHope": 45000,
+		"maxHope": 50000,
 		"status": "krw"}
 ]
