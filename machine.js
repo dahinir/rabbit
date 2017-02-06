@@ -8,7 +8,7 @@ const Backbone = require('backbone'),
 exports.Machine = Backbone.Model.extend({
     urlRoot: "mongodb://localhost:27017/rabbit/machines",
     sync: backsync.mongodb(),
-    idAttribute: "_id",
+    idAttribute: "id",
     defaults: {
         propensity: "hot", // sell immediately when craving_krw
         craving_krw: 2000, // 2,000 won!
@@ -73,9 +73,6 @@ exports.Machine = Backbone.Model.extend({
                 mind.type = "ask";
         }
 
-        // this.set({
-        //     mind: mind
-        // });
         this.save({
             mind: mind
         }, {
@@ -179,7 +176,7 @@ exports.Machines = Backbone.Collection.extend({
         }
         chunk(0);
     },
-    mind: options => {
+    mind: function(options) {
         let hope = options.hope,
             btc_krw = options.btc_krw,
 						success = options.success;

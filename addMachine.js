@@ -1,13 +1,13 @@
 "use strict";
 const Machine = require('./machine.js').Machine,
+    Machines = require('./machine.js').Machines,
     _ = require('underscore');
-// const Machines = require('./machine.js').Machines;
 
 // add new machines by newMachines.json
-// let newMachines = new Machines(require('./addMachine.json'));
-// newMachines.each(function(m){
-// 	m.save();
-// });
+let newMachines = new Machines(require('./addMachine.json'));
+newMachines.each(function(m) {
+    // m.save();
+});
 
 let setting = {
     "propensity": "hot",
@@ -23,18 +23,18 @@ let setting = {
 let settings = [];
 // setting.propensity = "cold";
 let machine_count = 0;
-let MIN_HOPE = -50000,
+const MIN_HOPE = -50000,
     MAX_HOPE = 50000;
 
-for (let cravingRatio = 0.5; cravingRatio <= 0.9; cravingRatio += 0.1) {
-    setting.cravingRatio = cravingRatio.toFixed(1)*1;
+for (let cravingRatio = 0.2; cravingRatio <= 0.9; cravingRatio += 0.1) {
+    setting.cravingRatio = cravingRatio.toFixed(1) * 1;
 
     // positiveHope - negativeHope is gap
     for (let gap = 2000; gap <= 40000; gap += 1000) {
         // console.log("\n");
         setting.craving_krw = gap; // it's just easy way..
 
-        for (let step = 0; ; step += 1000) {
+        for (let step = 0;; step += 1000) {
             setting.negativeHope = setting.neverHope = MIN_HOPE + step;
             setting.positiveHope = setting.maxHope = setting.negativeHope + gap;
             settings.push(_.extend({}, setting));
@@ -55,7 +55,7 @@ function save(i) {
             }
         });
 }
-save(0);
+// save(0);
 
 console.log("\nadded machines:", machine_count, settings.length);
 console.log("Rabbit needs", machine_count * 1000, "won");

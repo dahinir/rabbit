@@ -71,8 +71,7 @@ function tic(error, response, rgResult) {
             maxBtc_krw = [hope.toFixed(2), btc_krw];
         console.log("hope\t\tmin:", minHope, "\tmax:", maxHope);
         console.log("btc_krw\t\tmin:", minBtc_krw, "\tmax:", maxBtc_krw);
-        console.log("now\t hope:", hope.toFixed(2), "\tbtc_krw:", btc_krw, "\tusd_krw:", usd_krw, "\tbtc_usd:", btc_usd);
-
+        console.log("now\t hope:", hope.toFixed(2), "\tbtc_krw:", btc_krw, "\tbtc_usd:", btc_usd, "\tusd_krw:", usd_krw);
 
         machines.mind({
             hope: hope,
@@ -129,58 +128,15 @@ function tic(error, response, rgResult) {
                             //         " negativeHope:", m.get("negativeHope"),
                             //         " positiveHope:", m.get("positiveHope"));
                             // });
-                            callTicLater(); // end of this tic.
                         });
                     } else if (btParams.type == "none" && internalTradedUnits > 0) {
                         newOrder.adjust();
                     }
                 } else {
-                    callTicLater(); // end of this tic.
+                    refreshOrdersChainAt(0);
                 }
             }
         });	// end of machines.mind()
-
-        function refreshOrdersChainAt(index) {
-            index = index || 0;
-            if (orders.length <= index) {
-                return;
-            }
-            let o = orders.at(index);
-            if (o.get("isDone") || !o.get("order_id"))
-                return;
-            let params = {
-                order_id: o.get("order_id").toString(), //"1485052731599",	// "1485011389177",
-                type: o.get("btParams").type
-            };
-            /*
-            			let params = {
-            				order_id: "1485052731599",	// "1485011389177",
-            				type: "bid"
-            			};
-            			xcoinAPI.xcoinApiCall("/info/order_detail", params, function(result){
-            				console.log(result);
-            				{ status: '5600', message: '거래 체결내역이 존재하지 않습니다.' }
-            				or
-            				{ status: '0000',
-            					data:
-            					 [ { cont_no: '1445825',
-            							 transaction_date: '1485011389000',
-            							 type: 'bid',
-            							 order_currency: 'BTC',
-            							 payment_currency: 'KRW',
-            							 units_traded: '0.001',
-            							 price: '1096000',
-            							 fee: '0.0000015',
-            							 total: '1096' } ] }
-            			});
-            			return;
-            */
-            xcoinAPI.xcoinApiCall("/info/order_detail", params, function(result) {
-                o.set(result);
-                o.adjust();
-                refreshOrdersChainAt(index + 1);
-            });
-        } // refreshOrdersChainAt()
 
     }).catch(function(err) {
         console.log("something happened in the promise", err);
@@ -195,6 +151,51 @@ function callTicLater() {
     // time to break
     setTimeout(tic, ms);
 }
+
+function refreshOrdersChainAt(index) {
+    index = index || 0;
+    if (orders.length <= index) {
+        callTicLater(); // end of this tic.
+        return;
+    }
+
+    let o = orders.at(index);
+    if (o.get("isDone") || !o.get("order_id")){
+        refreshOrdersChainAt(index + 1);
+    }
+    let params = {
+        order_id: o.get("order_id").toString(), //"1485052731599",	// "1485011389177",
+        type: o.get("btParams").type
+    };
+    /*
+          let params = {
+            order_id: "1485052731599",	// "1485011389177",
+            type: "bid"
+          };
+          xcoinAPI.xcoinApiCall("/info/order_detail", params, function(result){
+            console.log(result);
+            { status: '5600', message: '거래 체결내역이 존재하지 않습니다.' }
+            or
+            { status: '0000',
+              data:
+               [ { cont_no: '1445825',
+                   transaction_date: '1485011389000',
+                   type: 'bid',
+                   order_currency: 'BTC',
+                   payment_currency: 'KRW',
+                   units_traded: '0.001',
+                   price: '1096000',
+                   fee: '0.0000015',
+                   total: '1096' } ] }
+          });
+          return;
+    */
+    xcoinAPI.xcoinApiCall("/info/order_detail", params, function(result) {
+        o.set(result);
+        o.adjust();
+        refreshOrdersChainAt(index + 1);
+    });
+} // refreshOrdersChainAt()
 
 // if (require.main === module) {
 //     console.log("tic.", new Date());

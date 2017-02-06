@@ -19,7 +19,7 @@ or
 exports.Order = Backbone.Model.extend({
     urlRoot: "mongodb://localhost:27017/rabbit/orders",
     sync: backsync.mongodb(),
-    idAttribute: "_id",
+    idAttribute: "id",
     defaults: {
         isDone: false,
         internalTradedUnits: 0,
