@@ -23,6 +23,7 @@ exports.Order = Backbone.Model.extend({
     idAttribute: "id",
     defaults: {
         isDone: false,
+        machineIds: [],
         internalTradedUnits: 0,
         // dealedUnits: 0,	// dealed with bithumb. not store. calculate everytime
         adjustedUnits: 0 // adjusted with machines
@@ -79,7 +80,8 @@ exports.Order = Backbone.Model.extend({
                 }
             } else {
                 that.save({
-                    machines: pendingMachines,
+                    machineIds: pendingMachines.pluck('id'),  // Array of machine's IDs
+                    machines: pendingMachines,  // Backbone collections for runtime
                     isDone: (pendingMachines.length == 0) ? true : false
                 }, {
                     success: function() {

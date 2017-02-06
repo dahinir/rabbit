@@ -37,7 +37,16 @@ orders.fetch({
         // $limit: 10
     },
     success: function() {
-        console.log("[index.js] ", orders.length, "orders are loaded.")
+        console.log("[index.js] ", orders.length, "orders are loaded.");
+        orders.each(function(o) {
+            console.log("[index.js] ", o.id, "order will load their", o.get('machineIds'), " machines");
+            o.set({
+                machines: new Machine()
+            });
+            _.each(o.get('machineIds'), function(machineId) {
+                o.get('machines').push(machines.get(machineId));
+            });
+        });
     }
 });
 
@@ -109,9 +118,11 @@ function tic(error, response, rgResult) {
                     console.log("[index.js] participants.length:", participants.length);
                     let newOrder = new Order({
                         machines: participants,
+                        machineIds: participants.pluck('id'),
                         btParams: btParams,
                         internalTradedUnits: internalTradedUnits
                     });
+                    console.log("[index.js] new order: ", newOrder.attributes);
                     newOrder.save();
                     orders.push(newOrder);
                     // console.log(btParams, totalBid, totalAsk, btc_krw);
@@ -132,8 +143,8 @@ function tic(error, response, rgResult) {
                             // });
                         });
                     } else if (btParams.type == "none" && internalTradedUnits > 0) {
-                        newOrder.adjust(function(){
-                          refreshOrdersChainAt(0);
+                        newOrder.adjust(function() {
+                            refreshOrdersChainAt(0);
                         });
                     }
                 } else {

@@ -1,22 +1,28 @@
-[
-	{
-		"propensity": "hot",
-		"craving_krw": 1000,
-		"cravingRatio": 0.5,
-		"capacity": 0.001,
-		"negativeHope": 40000,
-		"positiveHope": 50000,
-		"neverHope": 40000,
-		"maxHope": 50000,
-		"status": "krw"},
+[{
+        "propensity": "hot",
+        "craving_krw": 1000,
+        "cravingRatio": 0.5,
+        "capacity": 0.001,
+        "negativeHope": 40000,
+        "positiveHope": 50000,
+        "neverHope": 40000,
+        "maxHope": 50000,
+        "status": "krw"
+    },
 
-	{	"propensity": "hot",
-		"craving_krw": 1000,
-		"cravingRatio": 0.5,
-		"capacity": 0.001,
-		"negativeHope": 45000,
-		"positiveHope": 50000,
-		"neverHope": 45000,
-		"maxHope": 50000,
-		"status": "krw"}
+    {
+        "propensity": "hot",
+        "craving_krw": 1000,
+        "cravingRatio": 0.5,
+        "capacity": 0.001,
+        "negativeHope": 45000,
+        "positiveHope": 50000,
+        "neverHope": 45000,
+        "maxHope": 50000,
+        "status": "btc",
+        "profit_krw": 0,
+        "profit_rate": 0,
+        "traded_count": 1,
+        "last_traded_btc_krw": 1231000
+    }
 ]
