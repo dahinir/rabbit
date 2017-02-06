@@ -66,7 +66,8 @@ function tic(error, response, rgResult) {
 
         let btc_usd = values[0],
             usd_krw = values[1],
-            btc_krw = values[2];
+            btc_krw = values[2].btc_krw,
+            btc_krw_b = values[2].btc_krw_b;
         let hope = btc_krw - btc_usd * usd_krw;
         if (minHope[0] > hope) {
             minHope = [hope.toFixed(2), btc_krw];
@@ -80,11 +81,12 @@ function tic(error, response, rgResult) {
             maxBtc_krw = [hope.toFixed(2), btc_krw];
         console.log("hope\t\tmin:", minHope, "\tmax:", maxHope);
         console.log("btc_krw\t\tmin:", minBtc_krw, "\tmax:", maxBtc_krw);
-        console.log("now\t hope:", hope.toFixed(2), "\tbtc_krw:", btc_krw, "\tbtc_usd:", btc_usd, "\tusd_krw:", usd_krw);
+        console.log("now\t hope:", hope.toFixed(2), "\tbtc_krw:", btc_krw, btc_krw_b, "\tbtc_usd:", btc_usd, "\tusd_krw:", usd_krw.toFixed(2)*1);
 
         machines.mind({
             hope: hope,
             btc_krw: btc_krw,
+            btc_krw_b: btc_krw_b,
             success: result => {
                 let totalBid = result.totalBid,
                     totalAsk = result.totalAsk;

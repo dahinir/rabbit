@@ -47,7 +47,8 @@ exports.Machine = Backbone.Model.extend({
         }
 
         let hope = attr.hope * 1,
-            btc_krw = attr.btc_krw * 1;
+            btc_krw = attr.btc_krw * 1,
+            btc_krw_b = attr.btc_krw_b * 1;
         let negativeHope = this.get('negativeHope'),
             positiveHope = this.get('positiveHope');
 
@@ -66,16 +67,19 @@ exports.Machine = Backbone.Model.extend({
                 }
             } else if (this.get("status") == "btc") {
                 if (hope > positiveHope || this.get("propensity") == "hot") {
-                    if (btc_krw >= this.get("last_traded_btc_krw") + this.get("craving_krw")) {
+                    if (btc_krw_b >= this.get("last_traded_btc_krw") + this.get("craving_krw")) {
                         mind.type = "ask";
+                        mind.btc_krw = btc_krw_b;
                     }
                 }
             }
         } else if (this.get("traded_count") == 0) {
-            if (hope < this.get("neverHope") && this.get("status") == "krw")
+            if (hope < this.get("neverHope") && this.get("status") == "krw"){
                 mind.type = "bid";
-            if (hope > this.get("maxHope") && this.get("status") == "btc")
+            }else if (hope > this.get("maxHope") && this.get("status") == "btc"){
                 mind.type = "ask";
+                mind.btc_krw = btc_krw_b;
+            }
         }
 
         this.save({
@@ -189,6 +193,7 @@ exports.Machines = Backbone.Collection.extend({
     mind: function(options) {
         let hope = options.hope,
             btc_krw = options.btc_krw,
+            btc_krw_b = options.btc_krw_b,
             success = options.success;
         let index = 0,
             totalBid = 0,
@@ -201,7 +206,8 @@ exports.Machines = Backbone.Collection.extend({
                 let m = that.at(index);
                 m.mind({
                     hope: hope,
-                    btc_krw: btc_krw
+                    btc_krw: btc_krw,
+                    btc_krw_b: btc_krw_b
                 }, {
                     success: () => {
                         // maybe machine's status is `pending`
