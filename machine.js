@@ -60,8 +60,8 @@ exports.Machine = Backbone.Model.extend({
 
         let mind = {
             type: "none",
-            btc_krw: btc_krw,
-            units: this.get("capacity").toFixed(3)
+            btc_krw: btc_krw
+            // units: this.get("capacity").toFixed(3)
         };
 
         if (this.get("traded_count") > 0) {
@@ -88,14 +88,18 @@ exports.Machine = Backbone.Model.extend({
             }
         }
 
-        this.save({
-            mind: mind
-        }, {
-            success: function() {
-                success();
-            }
-        });
-        // return mind;
+        this.set({mind: mind});
+        // To avoid RangeError: Maximum call stack size exceeded
+        process.nextTick(success);
+
+        // must save to db this time?
+        // this.save({
+        //     mind: mind
+        // }, {
+        //     success: function() {
+        //         success();
+        //     }
+        // });
     },
     trade: function(resolve, reject) { // machine always trade completly with its mind..
         let mind = this.get("mind");
@@ -110,7 +114,7 @@ exports.Machine = Backbone.Model.extend({
         if (mind.type == "ask") {
             changed.status = "krw";
             changed.profit_krw =
-                this.get("profit_krw") + (mind.btc_krw - this.get("last_traded_btc_krw")) * mind.units;
+                this.get("profit_krw") + (mind.btc_krw - this.get("last_traded_btc_krw")) * this.get('capacity');
             changed.profit_rate = changed.profit_krw / this.get('capacity');
         }
         // console.log("[machines.js] changed:", changed);
@@ -147,15 +151,14 @@ exports.Machines = Backbone.Collection.extend({
             }
         });
         return {
-            machines: this.length,
+            so: this.length + " machines work",
             total_traded: total_traded,
             profit_krw_sum: profit_krw_sum,
-            average_profit_krw: profit_krw_sum / this.length,
-            average_profit_rate: profit_rate_sum / this.length,
-            wanna_buy_btc: parseFloat(wanna_buy_btc).toPrecision(8),
-            wanna_sell_btc: parseFloat(wanna_sell_btc).toPrecision(8),
-            pending_btc: pending_btc,
-            so: "how about dat?"
+            // average_profit_krw: profit_krw_sum / this.length,
+            // average_profit_rate: profit_rate_sum / this.length,
+            wanna_buy_btc: wanna_buy_btc,
+            wanna_sell_btc: wanna_sell_btc,
+            pending_btc: pending_btc
         };
     },
     fetchAll: function(options) {
@@ -197,7 +200,7 @@ exports.Machines = Backbone.Collection.extend({
         chunk(0);
     },
     mind: function(options) {
-        console.log("[machine.js] mind.. don\'t interrupt me");
+        // console.log("[machine.js] mind.. don\'t interrupt me");
         let startTime = new Date();
 
         let hope = options.hope,
@@ -238,7 +241,7 @@ exports.Machines = Backbone.Collection.extend({
                     }
                 });
             } else {
-                console.log("[machine.js] mind takes", ((new Date() - startTime) / 1000).toFixed(2), "sec" );
+                console.log("[machine.js] machines.mind() takes", ((new Date() - startTime) / 1000).toFixed(2), "sec" );
                 success({
                     total: that.length || 0,
                     totalBid: totalBid.toFixed(3)*1,

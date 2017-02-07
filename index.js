@@ -51,8 +51,6 @@ orders.fetch({
 
 function tic(error, response, rgResult) {
     if (ticNumber != 0) {
-        console.log(machines.presentation());
-        // console.log(machines.at(0) && machines.at(0).attributes);
     }
 
     let nowTime = new Date();
@@ -67,7 +65,7 @@ function tic(error, response, rgResult) {
             usd_krw = values[1],
             btc_krw = values[2].btc_krw,
             btc_krw_b = values[2].btc_krw_b;
-        let hope = btc_krw - btc_usd * usd_krw;
+        let hope = Math.round( btc_krw - btc_usd * usd_krw);
         if (minHope[0] > hope) {
             minHope = [hope.toFixed(2), btc_krw];
         }
@@ -125,10 +123,13 @@ function tic(error, response, rgResult) {
                         btParams: btParams,
                         internalTradedUnits: internalTradedUnits
                     });
+
                     newOrder.machines = participants; // not attributes!
+
                     console.log("[index.js] new order got", newOrder.get('machineIds').length, "machines");
-console.log("[index.js] trade with Bithumb ", btParams);
+                    console.log("[index.js] trade with Bithumb ", btParams);
                     // console.log(btParams, totalBid, totalAsk, btc_krw);
+
                     if (btParams.type == "ask" || btParams.type == "bid") {
                         // console.log("[index.js] trade with Bithumb ", btParams);
                         xcoinAPI.xcoinApiCall('/trade/place', btParams, function(result) {
@@ -164,7 +165,8 @@ console.log("[index.js] trade with Bithumb ", btParams);
 } // end of tic()
 
 function callTicLater() {
-    const ms = (new Date() % 28000 + 2000); // maxium 30 sec
+    console.log(machines.presentation());
+    const ms = (new Date() % 58000 + 2000); // maxium 60 sec
     console.log("wait for", ms / 1000, "sec..");
     // time to break
     setTimeout(tic, ms);
