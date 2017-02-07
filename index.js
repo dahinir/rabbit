@@ -210,6 +210,7 @@ function refreshOrdersChainAt(index) {
           return;
     */
     xcoinAPI.xcoinApiCall("/info/order_detail", params, function(result) {
+        console.log("[index.js] Bithumb order_detail result:", result);
         o.set(result);
         o.adjust(resolve => {
             refreshOrdersChainAt(index + 1);

@@ -85,14 +85,14 @@ exports.Order = Backbone.Model.extend({
                     });
                 }
             } else {
-                console.log("[order.js] end with", pendingMachines.length, "pendingMachines");
+                // console.log("[order.js] end with", pendingMachines.length, "pendingMachines");
                 that.machines = pendingMachines; // Backbone collections for runtime
                 that.save({
                     machineIds: pendingMachines.pluck('id'), // Array of machine's IDs
                     isDone: (pendingMachines.length == 0) ? true : false
                 }, {
                     success: function() {
-                        console.log("[order.js] save with", that.get('machineIds').length, "machines");
+                        console.log("[order.js] save with", that.get('machineIds').length, "pending machines");
                         resolve && resolve();
                         if (that.get('isDone'))
                             that.destroy();

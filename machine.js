@@ -219,8 +219,8 @@ exports.Machines = Backbone.Collection.extend({
                     btc_krw_b: btc_krw_b
                 }, {
                     success: () => {
-                        // maybe machine's status is `pending`
-                        // if (_.contains(['btc', 'krw'], m.get('status'))) {
+                        // maybe machine's status is `pending` or something else
+                        if (_.contains(['btc', 'krw'], m.get('status'))) {
                             switch (m.get('mind').type) {
                                 case "bid":
                                     participants.push(m);
@@ -233,7 +233,7 @@ exports.Machines = Backbone.Collection.extend({
                                 default:
                                     // does not participate this tic()
                             }
-                        // }
+                        }
                         one(index + 1);
                     }
                 });
