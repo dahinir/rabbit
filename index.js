@@ -39,13 +39,12 @@ orders.fetch({
     success: function() {
         console.log("[index.js] ", orders.length, "orders are loaded.");
         orders.each(function(o) {
-            console.log("[index.js] ", o.id, "order will load their", o.get('machineIds'), " machines");
+            console.log("[index.js] ", o.id, "order will load their", o.get('machineIds').length, " machines");
             // deserialize participant machines
             o.machines = new Machines();
             _.each(o.get('machineIds'), function(machineId) {
                 o.machines.push(machines.get(machineId));
             });
-            console.log("[index.js] this order has", o.machines.length, "machines");
         });
     }
 });
@@ -100,15 +99,19 @@ function tic(error, response, rgResult) {
                     internalTradedUnits = totalAsk;
                     btParams = {
                         type: "bid",
-                        price: btc_krw.toFixed(0),
+                        // price: btc_krw.toFixed(0),
+                        price: Math.round(btc_krw) + "",
                         units: (totalBid - totalAsk).toFixed(8)
+                        // units: parseFloat(totalBid - totalAsk).toPrecision(8)
                     }
                 } else if (totalBid < totalAsk) {
                     internalTradedUnits = totalBid;
                     btParams = {
                         type: "ask",
-                        price: btc_krw_b.toFixed(0),
+                        // price: btc_krw_b.toFixed(0),
+                        price: Math.round(btc_krw_b) + "",
                         units: (totalAsk - totalBid).toFixed(8)
+                        // units: parseFloat(totalAsk - totalBid).toPrecision(8)
                     }
                 } else if (totalBid == totalAsk) {
                     internalTradedUnits = totalBid;
@@ -117,8 +120,6 @@ function tic(error, response, rgResult) {
                     };
                 }
                 if (participants.length > 0) {
-                    // now `btParams` is completed..
-                    console.log("[index.js] participants.length:", participants.length);
                     let newOrder = new Order({
                         machineIds: participants.pluck('id'),
                         btParams: btParams,
@@ -126,9 +127,10 @@ function tic(error, response, rgResult) {
                     });
                     newOrder.machines = participants; // not attributes!
                     console.log("[index.js] new order got", newOrder.get('machineIds').length, "machines");
-
+console.log("[index.js] trade with Bithumb ", btParams);
                     // console.log(btParams, totalBid, totalAsk, btc_krw);
                     if (btParams.type == "ask" || btParams.type == "bid") {
+                        // console.log("[index.js] trade with Bithumb ", btParams);
                         xcoinAPI.xcoinApiCall('/trade/place', btParams, function(result) {
                             console.log("[index.js] bithumb trade result:", result);
                             if(result.status == '0000'){
@@ -137,17 +139,12 @@ function tic(error, response, rgResult) {
                                 newOrder.adjust(function() {
                                     refreshOrdersChainAt(0);
                                 });
+                            }else{
+                                refreshOrdersChainAt(0);
                             }
-                            // machines.each(function(m) {
-                            //     console.log("traded_count:", m.get("traded_count"),
-                            //         " profit_krw:", m.get("profit_krw"),
-                            //         " capacity:", m.get("capacity"),
-                            //         " craving_krw:", m.get("craving_krw"),
-                            //         " negativeHope:", m.get("negativeHope"),
-                            //         " positiveHope:", m.get("positiveHope"));
-                            // });
                         });
-                    } else if (btParams.type == "none" && internalTradedUnits > 0) {
+                    } else {
+                        // There is internal trade..maybe
                         newOrder.adjust(function() {
                             refreshOrdersChainAt(0);
                         });

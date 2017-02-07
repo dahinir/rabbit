@@ -27,7 +27,9 @@ const MIN_HOPE = -50000,
     MAX_HOPE = 50000;
 
 for (let cravingRatio = 0.2; cravingRatio <= 0.9; cravingRatio += 0.1) {
-    setting.cravingRatio = cravingRatio.toFixed(1) * 1;
+    // setting.cravingRatio = cravingRatio.toFixed(1) * 1;
+    cravingRatio = parseFloat(cravingRatio).toPrecision(1) * 1;
+    setting.cravingRatio = cravingRatio;
 
     // positiveHope - negativeHope is gap
     for (let gap = 1000; gap <= 40000; gap += 1000) {

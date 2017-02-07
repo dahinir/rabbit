@@ -61,7 +61,7 @@ exports.Machine = Backbone.Model.extend({
         let mind = {
             type: "none",
             btc_krw: btc_krw,
-            units: this.get("capacity").toString()
+            units: this.get("capacity").toFixed(3)
         };
 
         if (this.get("traded_count") > 0) {
@@ -113,7 +113,7 @@ exports.Machine = Backbone.Model.extend({
                 this.get("profit_krw") + (mind.btc_krw - this.get("last_traded_btc_krw")) * mind.units;
             changed.profit_rate = changed.profit_krw / this.get('capacity');
         }
-        console.log("[machines.js] changed:", changed);
+        // console.log("[machines.js] changed:", changed);
         // this.set(changed);
         this.save(changed, {
             success: function() {
@@ -152,8 +152,8 @@ exports.Machines = Backbone.Collection.extend({
             profit_krw_sum: profit_krw_sum,
             average_profit_krw: profit_krw_sum / this.length,
             average_profit_rate: profit_rate_sum / this.length,
-            wanna_buy_btc: wanna_buy_btc,
-            wanna_sell_btc: wanna_sell_btc,
+            wanna_buy_btc: parseFloat(wanna_buy_btc).toPrecision(8),
+            wanna_sell_btc: parseFloat(wanna_sell_btc).toPrecision(8),
             pending_btc: pending_btc,
             so: "how about dat?"
         };
@@ -197,6 +197,9 @@ exports.Machines = Backbone.Collection.extend({
         chunk(0);
     },
     mind: function(options) {
+        console.log("[machine.js] mind.. don\'t interrupt me");
+        let startTime = new Date();
+
         let hope = options.hope,
             btc_krw = options.btc_krw,
             btc_krw_b = options.btc_krw_b,
@@ -217,28 +220,29 @@ exports.Machines = Backbone.Collection.extend({
                 }, {
                     success: () => {
                         // maybe machine's status is `pending`
-                        if (_.contains(['btc', 'krw'], m.get('status'))) {
+                        // if (_.contains(['btc', 'krw'], m.get('status'))) {
                             switch (m.get('mind').type) {
                                 case "bid":
                                     participants.push(m);
-                                    totalBid += m.get('mind').units * 1;
+                                    totalBid += m.get('capacity') * 1;
                                     break;
                                 case "ask":
                                     participants.push(m);
-                                    totalAsk += m.get('mind').units * 1;
+                                    totalAsk += m.get('capacity') * 1;
                                     break;
                                 default:
                                     // does not participate this tic()
                             }
-                        }
+                        // }
                         one(index + 1);
                     }
                 });
             } else {
+                console.log("[machine.js] mind takes", ((new Date() - startTime) / 1000).toFixed(2), "sec" );
                 success({
                     total: that.length || 0,
-                    totalBid: totalBid,
-                    totalAsk: totalAsk,
+                    totalBid: totalBid.toFixed(3)*1,
+                    totalAsk: totalAsk.toFixed(3)*1,
                     participants: participants  // just Array, not Machines
                 });
                 return;

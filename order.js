@@ -64,12 +64,12 @@ exports.Order = Backbone.Model.extend({
                 let m = machines.at(index);
 
                 // successfully trade machines
-                if ((internalTradedUnits * 2 + dealedUnits - that.get('adjustedUnits')) >=
-                    (m.get("capacity") - 0.00001)) {  // 0.00001 is for mistake of javascript
+                // if ((internalTradedUnits * 2 + dealedUnits - that.get('adjustedUnits')) >= (m.get("capacity") - 0.00001)) {  // 0.00001 is for mistake of javascript
+                if ( (internalTradedUnits * 2 + dealedUnits - that.get('adjustedUnits') - m.get('capacity') ).toFixed(3) * 1 >= 0) { // 0.00001 is for mistake of javascript
 
                     m.trade(function() {
                         that.set({
-                            adjustedUnits: that.get('adjustedUnits') + m.get("capacity")
+                            adjustedUnits: (that.get('adjustedUnits') + m.get("capacity")).toFixed(3) * 1
                         });
                         one(index + 1);
                     });
