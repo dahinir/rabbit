@@ -40,12 +40,12 @@ orders.fetch({
         console.log("[index.js] ", orders.length, "orders are loaded.");
         orders.each(function(o) {
             console.log("[index.js] ", o.id, "order will load their", o.get('machineIds'), " machines");
-            o.set({
-                machines: new Machine()
-            });
+            // deserialize participant machines
+            o.machines = new Machines();
             _.each(o.get('machineIds'), function(machineId) {
-                o.get('machines').push(machines.get(machineId));
+                o.machines.push(machines.get(machineId));
             });
+            console.log("[index.js] this order has", o.machines.length, "machines");
         });
     }
 });
@@ -95,18 +95,20 @@ function tic(error, response, rgResult) {
 
                 let internalTradedUnits = 0,
                     btParams = {};
-
+                // internal trade! machine calculates with their own mind. It's kind of modest.
                 if (totalBid > totalAsk) {
                     internalTradedUnits = totalAsk;
                     btParams = {
                         type: "bid",
-                        units: (totalBid - totalAsk).toString()
+                        price: btc_krw.toFixed(0),
+                        units: (totalBid - totalAsk).toFixed(8)
                     }
                 } else if (totalBid < totalAsk) {
                     internalTradedUnits = totalBid;
                     btParams = {
                         type: "ask",
-                        units: (totalAsk - totalBid).toString()
+                        price: btc_krw_b.toFixed(0),
+                        units: (totalAsk - totalBid).toFixed(8)
                     }
                 } else if (totalBid == totalAsk) {
                     internalTradedUnits = totalBid;
@@ -116,25 +118,26 @@ function tic(error, response, rgResult) {
                 }
                 if (participants.length > 0) {
                     // now `btParams` is completed..
-                    btParams.price = btc_krw.toString();
                     console.log("[index.js] participants.length:", participants.length);
                     let newOrder = new Order({
-                        machines: participants,
                         machineIds: participants.pluck('id'),
                         btParams: btParams,
                         internalTradedUnits: internalTradedUnits
                     });
-                    console.log("[index.js] new order: ", newOrder.attributes);
-                    newOrder.save();
-                    orders.push(newOrder);
+                    newOrder.machines = participants; // not attributes!
+                    console.log("[index.js] new order got", newOrder.get('machineIds').length, "machines");
+
                     // console.log(btParams, totalBid, totalAsk, btc_krw);
                     if (btParams.type == "ask" || btParams.type == "bid") {
                         xcoinAPI.xcoinApiCall('/trade/place', btParams, function(result) {
-                            console.log(result);
-                            newOrder.set(result);
-                            newOrder.adjust(function() {
-                                refreshOrdersChainAt(0);
-                            });
+                            console.log("[index.js] bithumb trade result:", result);
+                            if(result.status == '0000'){
+                                orders.push(newOrder);
+                                newOrder.set(result);
+                                newOrder.adjust(function() {
+                                    refreshOrdersChainAt(0);
+                                });
+                            }
                             // machines.each(function(m) {
                             //     console.log("traded_count:", m.get("traded_count"),
                             //         " profit_krw:", m.get("profit_krw"),
@@ -150,6 +153,7 @@ function tic(error, response, rgResult) {
                         });
                     }
                 } else {
+                    // If there is no participants
                     refreshOrdersChainAt(0);
                 }
             }
@@ -179,6 +183,7 @@ function refreshOrdersChainAt(index) {
     let o = orders.at(index);
     if (o.get("isDone") || !o.get("order_id")) {
         refreshOrdersChainAt(index + 1);
+        return;
     }
     let params = {
         order_id: o.get("order_id").toString(), //"1485052731599",	// "1485011389177",

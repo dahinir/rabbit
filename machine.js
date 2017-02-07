@@ -8,7 +8,7 @@ const Backbone = require('backbone'),
 exports.Machine = Backbone.Model.extend({
     urlRoot: "mongodb://localhost:27017/rabbit/machines",
     sync: backsync.mongodb(),
-    idAttribute: "id",
+    idAttribute: "id",  // cuz of Backsync
     defaults: {
         propensity: "hot", // sell immediately when craving_krw
         craving_krw: 2000, // 2,000 won!
@@ -30,6 +30,11 @@ exports.Machine = Backbone.Model.extend({
         last_traded_btc_krw: 0
     },
     initialize: function() {
+        if(!this.id){
+          this.set({
+            id: require('mongodb').ObjectID()
+          });
+        }
         // this.set({status: this.get("balance_krw")>0?"krw":"btc"});
         // this.set({
         // 	balance_btc: this.get("seed_btc"),
@@ -49,6 +54,7 @@ exports.Machine = Backbone.Model.extend({
         let hope = attr.hope * 1,
             btc_krw = attr.btc_krw * 1,
             btc_krw_b = attr.btc_krw_b * 1;
+
         let negativeHope = this.get('negativeHope'),
             positiveHope = this.get('positiveHope');
 

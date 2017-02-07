@@ -29,7 +29,11 @@ exports.Order = Backbone.Model.extend({
         adjustedUnits: 0 // adjusted with machines
     },
     initialize: function(attributes, options) {
-        this.done = false; // if done this order
+        if (!this.id) {
+            this.set({
+                id: require('mongodb').ObjectID()
+            });
+        }
     },
     // let newOrder = new Order({machines: participants,
     // 							btParams: btParams,
@@ -40,17 +44,17 @@ exports.Order = Backbone.Model.extend({
             return;
         }
 
-        const machines = this.get("machines"),
+        const machines = this.machines,
             internalTradedUnits = this.get("internalTradedUnits"),
-            data = this.get("data"); // bithumb results
+            data = this.get("data") || []; // bithumb results
         // type = this.get("btParams").type;
         const that = this;
         // let totalDuty = internalTradedUnits * 2 + this.get("btParams").units;
 
         let dealedUnits = 0; // dealed with bithumb
         if (this.get('status') == '0000') {
-            _.each(this.get("data"), function(cont) {
-                dealedUnits += (cont.units || cont.units_traded) * 1;
+            _.each(this.get("data"), function(c) {
+                dealedUnits += (c.units || c.units_traded) * 1;
             });
         }
 
@@ -58,8 +62,10 @@ exports.Order = Backbone.Model.extend({
         function one(index) {
             if (machines.length > index) {
                 let m = machines.at(index);
+
+                // successfully trade machines
                 if ((internalTradedUnits * 2 + dealedUnits - that.get('adjustedUnits')) >=
-                    m.get("capacity")) {
+                    (m.get("capacity") - 0.00001)) {  // 0.00001 is for mistake of javascript
 
                     m.trade(function() {
                         that.set({
@@ -67,8 +73,8 @@ exports.Order = Backbone.Model.extend({
                         });
                         one(index + 1);
                     });
-                } else {
                     // penging machines..
+                } else {
                     pendingMachines.push(m);
                     m.save({
                         status: "pending"
@@ -79,24 +85,29 @@ exports.Order = Backbone.Model.extend({
                     });
                 }
             } else {
+                console.log("[order.js] end with", pendingMachines.length, "pendingMachines");
+                that.machines = pendingMachines; // Backbone collections for runtime
                 that.save({
-                    machineIds: pendingMachines.pluck('id'),  // Array of machine's IDs
-                    machines: pendingMachines,  // Backbone collections for runtime
+                    machineIds: pendingMachines.pluck('id'), // Array of machine's IDs
                     isDone: (pendingMachines.length == 0) ? true : false
                 }, {
                     success: function() {
+                        console.log("[order.js] save with", that.get('machineIds').length, "machines");
+                        resolve && resolve();
                         if (that.get('isDone'))
                             that.destroy();
-                        resolve && resolve();
                         return;
+                    },
+                    error: function(e) {
+                        console.log("[order.js] error when save to db", e);
                     }
                 });
             }
         }
         one(0);
-
     } // adjust
 }); // Order
+
 
 exports.Orders = Backbone.Collection.extend({
     url: "mongodb://localhost:27017/rabbit/orders",
