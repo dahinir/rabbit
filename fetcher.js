@@ -16,14 +16,17 @@ exports.getBtc_usd = function(resolve, reject) {
         'currencyPair': 'BTC-USD'
     }, function(err, result) {
         if (!result || !result.data || !result.data.amount) {
-            reject(".getBtc_usd() failed");
+            reject("[fetch.js] .getBtc_usd() failed");
             return;
         }
 
         let btc_usd = result.data.amount * 1;
         // console.log("bit_usd:", btc_usd);
-        if (_.isNumber(btc_usd) && btc_usd < 2500 && btc_usd > 500)
+        if (_.isNumber(btc_usd) && btc_usd < 2500 && btc_usd > 500) {
             resolve(btc_usd);
+        } else {
+            reject("[fetch.js] btc_usd value is weird");
+        }
     });
 };
 
@@ -32,29 +35,35 @@ exports.getUsd_krw = function(resolve, reject) {
         'currency': 'USD'
     }, function(err, result) {
         if (!result || !result.data || !result.data.rates) {
-            reject(".getUsd_krw() failed");
+            reject("[fetch.js] .getUsd_krw() failed");
             return;
         }
 
         // let usd_krw = rates.data.rates.KRW*1.014903;	// buy cash
         let usd_krw = result.data.rates.KRW * 1.0075; // send money
-        if (_.isNumber(usd_krw) && usd_krw < 20000 && usd_krw > 500)
+        if (_.isNumber(usd_krw) && usd_krw < 3500 && usd_krw > 500) {
             resolve(usd_krw);
+        } else {
+            reject("[fetch.js] usd_krw value is weird");
+        }
     });
 };
 
 exports.getBtc_krw = function(resolve, reject) {
     xcoinAPI.xcoinApiCall('/public/orderbook', {}, function(result) {
         if (!result || !result.data || !result.data.asks[0].price) {
-            reject(".getBtc_krw() failed");
+            reject("[fetch.js] .getBtc_krw() failed");
             return;
         }
         let btc_krw = result.data.asks[0].price * 1,
             btc_krw_b = result.data.bids[0].price * 1;
-        if (_.isNumber(btc_krw) && btc_krw < 2000000 && btc_krw > 700000)
+        if (_.isNumber(btc_krw) && btc_krw < 2800000 && btc_krw > 710000) {
             resolve({
                 btc_krw: btc_krw,
                 btc_krw_b: btc_krw_b
             });
+        } else {
+            reject("[fetch.js] btc_krw value is weird");
+        }
     });
 };

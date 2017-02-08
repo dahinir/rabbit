@@ -63,7 +63,8 @@ exports.Machine = Backbone.Model.extend({
             btc_krw: btc_krw
             // units: this.get("capacity").toFixed(3)
         };
-
+        
+        // `hot` propensity means craving for money. doesn't care about hope but first time
         if (this.get("traded_count") > 0) {
             if (this.get("status") == "krw") {
                 if (hope < negativeHope || this.get("propensity") == "hot") {
@@ -114,7 +115,7 @@ exports.Machine = Backbone.Model.extend({
         if (mind.type == "ask") {
             changed.status = "krw";
             changed.profit_krw =
-                this.get("profit_krw") + (mind.btc_krw - this.get("last_traded_btc_krw")) * this.get('capacity');
+                this.get("profit_krw") + (mind.btc_krw - this.get("last_traded_btc_krw")) * this.get('capacity');  // there is no float in this line
             changed.profit_rate = changed.profit_krw / this.get('capacity');
         }
         // console.log("[machines.js] changed:", changed);
