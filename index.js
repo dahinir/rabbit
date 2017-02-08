@@ -23,35 +23,35 @@ let ticNumber = 0,
     startTime = new Date();;
 
 let machines = new Machines();
+let orders = new Orders();
 // fetch from db
 machines.fetchAll({
     success: function() {
-        tic();
-    }
-});
-let orders = new Orders();
-orders.fetch({
-    data: {
-        isDone: false
-        // $skip: 10,
-        // $limit: 10
-    },
-    success: function() {
-        console.log("[index.js] ", orders.length, "orders are loaded.");
-        orders.each(function(o) {
-            console.log("[index.js] ", o.id, "order will load their", o.get('machineIds').length, " machines");
-            // deserialize participant machines
-            o.machines = new Machines();
-            _.each(o.get('machineIds'), function(machineId) {
-                o.machines.push(machines.get(machineId));
-            });
+        orders.fetch({
+            data: {
+                isDone: false
+                // $skip: 10,
+                // $limit: 10
+            },
+            success: function() {
+                console.log("[index.js] ", orders.length, "orders are loaded.");
+                orders.each(function(o) {
+                    console.log("[index.js] ", o.id, "order will load their", o.get('machineIds').length, " machines");
+                    // deserialize participant machines
+                    o.machines = new Machines();
+                    _.each(o.get('machineIds'), function(machineId) {
+                        o.machines.push(machines.get(machineId));
+                    });
+                });
+                tic();
+            }
         });
     }
 });
 
+
 function tic(error, response, rgResult) {
-    if (ticNumber != 0) {
-    }
+    if (ticNumber != 0) {}
 
     let nowTime = new Date();
     console.log("\n=====", ++ticNumber, "== (", ((nowTime - startTime) / 1000 / 60 / 60).toFixed(2), "hr", startTime.toLocaleString(), ") ====", new Date(), "==");
@@ -65,7 +65,7 @@ function tic(error, response, rgResult) {
             usd_krw = values[1],
             btc_krw = values[2].btc_krw,
             btc_krw_b = values[2].btc_krw_b;
-        let hope = Math.round( btc_krw - btc_usd * usd_krw);
+        let hope = Math.round(btc_krw - btc_usd * usd_krw);
         if (minHope[0] > hope) {
             minHope = [hope.toFixed(2), btc_krw];
         }
@@ -78,7 +78,7 @@ function tic(error, response, rgResult) {
             maxBtc_krw = [hope.toFixed(2), btc_krw];
         console.log("hope\t\tmin:", minHope, "\tmax:", maxHope);
         console.log("btc_krw\t\tmin:", minBtc_krw, "\tmax:", maxBtc_krw);
-        console.log("now\t hope:", hope.toFixed(2), "\tbtc_krw:", btc_krw, btc_krw_b, "\tbtc_usd:", btc_usd, "\tusd_krw:", usd_krw.toFixed(2)*1);
+        console.log("now\t hope:", hope.toFixed(2), "\tbtc_krw:", btc_krw, btc_krw_b, "\tbtc_usd:", btc_usd, "\tusd_krw:", usd_krw.toFixed(2) * 1);
 
         machines.mind({
             hope: hope,
@@ -99,7 +99,7 @@ function tic(error, response, rgResult) {
                         type: "bid",
                         // price: btc_krw.toFixed(0),
                         price: Math.round(btc_krw) + "",
-                        units: (totalBid - totalAsk).toFixed(8)
+                        units: (totalBid - totalAsk).toFixed(3)
                         // units: parseFloat(totalBid - totalAsk).toPrecision(8)
                     }
                 } else if (totalBid < totalAsk) {
@@ -108,7 +108,7 @@ function tic(error, response, rgResult) {
                         type: "ask",
                         // price: btc_krw_b.toFixed(0),
                         price: Math.round(btc_krw_b) + "",
-                        units: (totalAsk - totalBid).toFixed(8)
+                        units: (totalAsk - totalBid).toFixed(3)
                         // units: parseFloat(totalAsk - totalBid).toPrecision(8)
                     }
                 } else if (totalBid == totalAsk) {
@@ -134,13 +134,14 @@ function tic(error, response, rgResult) {
                         // console.log("[index.js] trade with Bithumb ", btParams);
                         xcoinAPI.xcoinApiCall('/trade/place', btParams, function(result) {
                             console.log("[index.js] bithumb trade result:", result);
-                            if(result.status == '0000'){
+                            if (result.status == '0000' && result.order_id) {
                                 orders.push(newOrder);
                                 newOrder.set(result);
                                 newOrder.adjust(function() {
                                     refreshOrdersChainAt(0);
                                 });
-                            }else{
+                            } else {
+                                console.log("[index.js] bithumb trade failed. this order will be ignored. ");
                                 refreshOrdersChainAt(0);
                             }
                         });
@@ -184,6 +185,7 @@ function refreshOrdersChainAt(index) {
         refreshOrdersChainAt(index + 1);
         return;
     }
+    
     let params = {
         order_id: o.get("order_id").toString(), //"1485052731599",	// "1485011389177",
         type: o.get("btParams").type
