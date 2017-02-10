@@ -10,7 +10,7 @@ exports.Machine = Backbone.Model.extend({
     sync: backsync.mongodb(),
     idAttribute: "id",  // cuz of Backsync
     defaults: {
-        propensity: "hot", // sell immediately when craving_krw
+        propensity: ["hot_ask"], // sell immediately when craving_krw
         craving_krw: 2000, // 2,000 won!
         cravingRatio: 0.5, // means 50%
         capacity: 0.001, // min btc 0.001
@@ -32,7 +32,8 @@ exports.Machine = Backbone.Model.extend({
     initialize: function() {
         if(!this.id){
           this.set({
-            id: require('mongodb').ObjectID()
+            id: require('mongodb').ObjectID(),
+            createdAt: new Date()
           });
         }
         // this.set({status: this.get("balance_krw")>0?"krw":"btc"});
@@ -46,37 +47,45 @@ exports.Machine = Backbone.Model.extend({
     },
     mind: function(attr, options) {
         const success = options.success;
-        if (this.get("status") == "pending") {
-            success();
-            return;
-        }
 
         let hope = attr.hope * 1,
-            btc_krw = attr.btc_krw * 1,
-            btc_krw_b = attr.btc_krw_b * 1;
+            btc_krw;
+
+        if(this.get("status") == "krw"){
+          btc_krw = attr.btc_krw * 1;
+        }else if(this.get("status") == "btc"){
+          btc_krw = attr.btc_krw_b * 1;
+        }else{
+          // `status` maybe `pending`
+          success();
+          return;
+        }
 
         let negativeHope = this.get('negativeHope'),
-            positiveHope = this.get('positiveHope');
+            positiveHope = this.get('positiveHope'),
+            propensity = this.get('propensity');  // it's an Array
 
         let mind = {
             type: "none",
             btc_krw: btc_krw
             // units: this.get("capacity").toFixed(3)
         };
-        
+
         // `hot` propensity means craving for money. doesn't care about hope but first time
         if (this.get("traded_count") > 0) {
             if (this.get("status") == "krw") {
-                if (hope < negativeHope || this.get("propensity") == "hot") {
-                    if (btc_krw < this.get("last_traded_btc_krw") - this.get("craving_krw") * this.get("cravingRatio")) {
+                if (_.contains(propensity, "BYPASS_NEGATIVEHOPE_BID") || hope < negativeHope) {
+                    if ( _.contains(propensity, "BYPASS_CRAVINGRATIO_BID")
+                      || (btc_krw < this.get("last_traded_btc_krw") - this.get("craving_krw") * this.get("cravingRatio")) ){
+
                         mind.type = "bid";
                     }
                 }
             } else if (this.get("status") == "btc") {
-                if (hope > positiveHope || this.get("propensity") == "hot") {
-                    if (btc_krw_b >= this.get("last_traded_btc_krw") + this.get("craving_krw")) {
+                if (_.contains(propensity, "BYPASS_POSITIVEHOPE_ASK") || hope > positiveHope) {
+                    if (btc_krw >= this.get("last_traded_btc_krw") + this.get("craving_krw")) {
+
                         mind.type = "ask";
-                        mind.btc_krw = btc_krw_b;
                     }
                 }
             }
@@ -85,7 +94,6 @@ exports.Machine = Backbone.Model.extend({
                 mind.type = "bid";
             }else if (hope > this.get("maxHope") && this.get("status") == "btc"){
                 mind.type = "ask";
-                mind.btc_krw = btc_krw_b;
             }
         }
 
@@ -93,21 +101,11 @@ exports.Machine = Backbone.Model.extend({
         // To avoid RangeError: Maximum call stack size exceeded
         process.nextTick(success);
 
-        // must save to db this time?
-        // this.save({
-        //     mind: mind
-        // }, {
-        //     success: function() {
-        //         success();
-        //     }
-        // });
     },
     trade: function(resolve, reject) { // machine always trade completly with its mind..
         let mind = this.get("mind");
 
         let changed = {
-            //  balance_btc: this.get("balance_btc")+units,
-            //  balance_krw: this.get("balance_krw")-units*btc_krw,
             traded_count: this.get("traded_count") + 1,
             last_traded_btc_krw: mind.btc_krw,
             status: "btc"
@@ -132,13 +130,19 @@ exports.Machines = Backbone.Collection.extend({
     url: "mongodb://localhost:27017/rabbit/machines",
     sync: backsync.mongodb(),
     model: exports.Machine,
-    presentation: function() {
+    presentation: function(attrs) {
+        attrs = attrs || {};
+        let btc_krw_b = attrs.btc_krw_b,
+            btc_krw = attrs.btc_krw;
+
         let profit_krw_sum = 0,
             profit_rate_sum = 0,
+            total_traded = 0,
+            estimated_damage = 0,
             wanna_buy_btc = 0,
             wanna_sell_btc = 0,
-            pending_btc = 0,
-            total_traded = 0;
+            pending_btc = 0;
+
         this.each(function(m) {
             profit_krw_sum += m.get("profit_krw");
             profit_rate_sum += m.get("profit_rate");
@@ -147,18 +151,22 @@ exports.Machines = Backbone.Collection.extend({
                 wanna_buy_btc += m.get("capacity");
             } else if (m.get("status") == "btc") {
                 wanna_sell_btc += m.get("capacity");
+                if(m.get('last_traded_btc_krw')*1 > 0)
+                  estimated_damage += (m.get('last_traded_btc_krw')-btc_krw_b)*m.get('capacity');
             } else {
                 pending_btc += m.get("capacity");
             }
         });
         return {
             so: this.length + " machines work",
-            total_traded: total_traded,
-            profit_krw_sum: profit_krw_sum,
+            total_traded: new Intl.NumberFormat().format(total_traded),
+            profit_krw_sum: "\u20A9 " + new Intl.NumberFormat().format(profit_krw_sum),
+            estimated_damage: "\u20A9 " + new Intl.NumberFormat().format(estimated_damage),
+            estimated_profit_krw: "\u20A9 " + new Intl.NumberFormat().format(profit_krw_sum - estimated_damage),
             // average_profit_krw: profit_krw_sum / this.length,
             // average_profit_rate: profit_rate_sum / this.length,
-            wanna_buy_btc: wanna_buy_btc,
-            wanna_sell_btc: wanna_sell_btc,
+            need_krw: "\u20A9 " + new Intl.NumberFormat().format(wanna_buy_btc * btc_krw),
+            need_btc: wanna_sell_btc.toFixed(3),
             pending_btc: pending_btc
         };
     },

@@ -22,6 +22,11 @@ let ticNumber = 0,
     fee_btc = 0,
     startTime = new Date();;
 
+// local var
+let btc_usd = 0,
+    usd_krw = 0,
+    btc_krw = 0,
+    btc_krw_b = 0;
 let machines = new Machines();
 let orders = new Orders();
 // fetch from db
@@ -61,10 +66,10 @@ function tic(error, response, rgResult) {
         new Promise(fetcher.getBtc_krw)
     ]).then(function(values) {
 
-        let btc_usd = values[0],
-            usd_krw = values[1],
-            btc_krw = values[2].btc_krw,
-            btc_krw_b = values[2].btc_krw_b;
+        btc_usd = values[0],
+        usd_krw = values[1],
+        btc_krw = values[2].btc_krw,
+        btc_krw_b = values[2].btc_krw_b;
         let hope = Math.round(btc_krw - btc_usd * usd_krw);
         if (minHope[0] > hope) {
             minHope = [hope.toFixed(2), btc_krw];
@@ -79,6 +84,7 @@ function tic(error, response, rgResult) {
         console.log("hope\t\tmin:", minHope, "\tmax:", maxHope);
         console.log("btc_krw\t\tmin:", minBtc_krw, "\tmax:", maxBtc_krw);
         console.log("now\t hope:", hope.toFixed(2), "\tbtc_krw:", btc_krw, btc_krw_b, "\tbtc_usd:", btc_usd, "\tusd_krw:", usd_krw.toFixed(2) * 1);
+        console.log("-------------------------------");
 
         machines.mind({
             hope: hope,
@@ -86,12 +92,13 @@ function tic(error, response, rgResult) {
             btc_krw_b: btc_krw_b,
             success: result => {
                 let totalBid = result.totalBid,
-                    totalAsk = result.totalAsk;
+                    totalAsk = result.totalAsk,
+                    internalTradedUnits = 0;
+
+                let btParams = {};
 
                 let participants = new Machines(result.participants);
 
-                let internalTradedUnits = 0,
-                    btParams = {};
                 // internal trade! machine calculates with their own mind. It's kind of modest.
                 if (totalBid > totalAsk) {
                     internalTradedUnits = totalAsk;
@@ -126,27 +133,33 @@ function tic(error, response, rgResult) {
 
                     newOrder.machines = participants; // not attributes!
 
-                    console.log("[index.js] new order got", newOrder.get('machineIds').length, "machines");
-                    console.log("[index.js] trade with Bithumb ", btParams);
+                    console.log("[index.js] New order got", newOrder.get('machineIds').length, "machines");
+                    console.log("[index.js] Traded internal:", internalTradedUnits, "btc");
+                    console.log("[index.js] Traded with Bithumb:", btParams);
                     // console.log(btParams, totalBid, totalAsk, btc_krw);
 
                     if (btParams.type == "ask" || btParams.type == "bid") {
                         // console.log("[index.js] trade with Bithumb ", btParams);
                         xcoinAPI.xcoinApiCall('/trade/place', btParams, function(result) {
-                            console.log("[index.js] bithumb trade result:", result);
+                            console.log("[index.js] Bithumb trade result:", result);
                             if (result.status == '0000' && result.order_id) {
                                 orders.push(newOrder);
                                 newOrder.set(result);
                                 newOrder.adjust(function() {
-                                    refreshOrdersChainAt(0);
+                                    if (result.data[0] && result.data[0].fee*1 > 0){
+                                        console.log("[index.js] Fee! Rabbit ears down.");
+                                        return; // end the Rabbit
+                                    }else{
+                                        refreshOrdersChainAt(0);
+                                    }
                                 });
                             } else {
-                                console.log("[index.js] bithumb trade failed. this order will be ignored. ");
+                                console.log("[index.js] Bithumb trade failed. This order will be ignored. ");
                                 refreshOrdersChainAt(0);
                             }
                         });
                     } else {
-                        // There is internal trade..maybe
+                        // There is internal PERPECT trade..maybe
                         newOrder.adjust(function() {
                             refreshOrdersChainAt(0);
                         });
@@ -166,8 +179,11 @@ function tic(error, response, rgResult) {
 } // end of tic()
 
 function callTicLater() {
-    console.log(machines.presentation());
-    const ms = (new Date() % 58000 + 2000); // maxium 60 sec
+    console.log(machines.presentation({
+      btc_krw: btc_krw,
+      btc_krw_b: btc_krw_b
+    }));
+    const ms = (new Date() % 57000 + 5000); // about a min
     console.log("wait for", ms / 1000, "sec..");
     // time to break
     setTimeout(tic, ms);
@@ -185,7 +201,7 @@ function refreshOrdersChainAt(index) {
         refreshOrdersChainAt(index + 1);
         return;
     }
-    
+
     let params = {
         order_id: o.get("order_id").toString(), //"1485052731599",	// "1485011389177",
         type: o.get("btParams").type

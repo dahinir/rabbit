@@ -31,7 +31,8 @@ exports.Order = Backbone.Model.extend({
     initialize: function(attributes, options) {
         if (!this.id) {
             this.set({
-                id: require('mongodb').ObjectID()
+                id: require('mongodb').ObjectID(),
+                createdAt: new Date()
             });
         }
     },
@@ -92,7 +93,7 @@ exports.Order = Backbone.Model.extend({
                     isDone: (pendingMachines.length == 0) ? true : false
                 }, {
                     success: function() {
-                        console.log("[order.js] save with", that.get('machineIds').length, "pending machines");
+                        console.log("[order.js] saved with", that.get('machineIds').length, "pending machines");
                         resolve && resolve();
                         if (that.get('isDone'))
                             that.destroy();
