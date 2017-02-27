@@ -8,20 +8,17 @@ const Backbone = require('backbone'),
 exports.Machine = Backbone.Model.extend({
     urlRoot: "mongodb://localhost:27017/rabbit/machines",
     sync: backsync.mongodb(),
-    idAttribute: "id",  // cuz of Backsync
+    idAttribute: "id", // cuz of Backsync
     defaults: {
-        propensity: ["hot_ask"], // sell immediately when craving_krw
-        craving_krw: 2000, // 2,000 won!
-        cravingRatio: 0.5, // means 50%
+        // propensity: [], // sell immediately when craving_krw
+        // craving_krw: 2000, // 2,000 won!
+        // cravingRatio: 0.5, // means 50%
         capacity: 0.001, // min btc 0.001
-        negativeHope: -5000,
-        positiveHope: -3000,
-        neverHope: -10000,
-        maxHope: 0,
+        // negativeHope: -5000,
+        // positiveHope: -3000,
+        // neverHope: -10000,
+        // maxHope: 0,
         status: "krw", // "krw" or "btc"
-
-        // balance_btc: 0,
-        // balance_krw: 0,
 
         // profit_btc: 0,
         profit_krw: 0,
@@ -30,20 +27,12 @@ exports.Machine = Backbone.Model.extend({
         last_traded_btc_krw: 0
     },
     initialize: function() {
-        if(!this.id){
-          this.set({
-            id: require('mongodb').ObjectID(),
-            createdAt: new Date()
-          });
+        if (!this.id) {
+            this.set({
+                id: require('mongodb').ObjectID(),
+                createdAt: new Date()
+            });
         }
-        // this.set({status: this.get("balance_krw")>0?"krw":"btc"});
-        // this.set({
-        // 	balance_btc: this.get("seed_btc"),
-        // 	balance_krw: this.get("seed_krw"),
-        // 	status: this.get("seed_krw")
-        // });
-        // if(this.get("seed_btc") == 0)
-        // 	this.set({seed_btc: this.get("seed_krw")/1000000});
     },
     mind: function(attr, options) {
         const success = options.success;
@@ -51,53 +40,144 @@ exports.Machine = Backbone.Model.extend({
         let hope = attr.hope * 1,
             btc_krw;
 
-        if(this.get("status") == "krw"){
-          btc_krw = attr.btc_krw * 1;
-        }else if(this.get("status") == "btc"){
-          btc_krw = attr.btc_krw_b * 1;
-        }else{
-          // `status` maybe `pending`
-          success();
-          return;
+        if (this.get("status") == "krw") {
+            btc_krw = attr.btc_krw * 1;
+        } else if (this.get("status") == "btc") {
+            btc_krw = attr.btc_krw_b * 1;
+        } else {
+            // `status` maybe `pending`
+            success();
+            return;
         }
 
         let negativeHope = this.get('negativeHope'),
             positiveHope = this.get('positiveHope'),
-            propensity = this.get('propensity');  // it's an Array
+            propensity = this.get('propensity'); // it's an Array
 
         let mind = {
             type: "none",
-            btc_krw: btc_krw
-            // units: this.get("capacity").toFixed(3)
+            btc_krw: btc_krw,
+            at: new Date()
         };
 
-        // `hot` propensity means craving for money. doesn't care about hope but first time
         if (this.get("traded_count") > 0) {
             if (this.get("status") == "krw") {
-                if (_.contains(propensity, "BYPASS_NEGATIVEHOPE_BID") || hope < negativeHope) {
-                    if ( _.contains(propensity, "BYPASS_CRAVINGRATIO_BID")
-                      || (btc_krw < this.get("last_traded_btc_krw") - this.get("craving_krw") * this.get("cravingRatio")) ){
-
+                if (_.contains(propensity, "DECRAVING_KRW_BID")) {
+                    if (btc_krw <= this.get("last_traded_btc_krw") - this.get("decraving_krw")) {
                         mind.type = "bid";
                     }
                 }
-            } else if (this.get("status") == "btc") {
-                if (_.contains(propensity, "BYPASS_POSITIVEHOPE_ASK") || hope > positiveHope) {
-                    if (btc_krw >= this.get("last_traded_btc_krw") + this.get("craving_krw")) {
+                if (_.contains(propensity, "NEGATIVE_HOPE_BID")) {
+                    if (hope <= negativeHope) {
+                        mind.type = "bid";
+                    }
+                }
+                if (_.contains(propensity, "BTC_KRW_BID")) {
+                    if (btc_krw == this.get("btc_krw_bid")) { // Exactly same only!
+                        mind.type = "bid";
+                    }
+                }
+                if (_.contains(propensity, "DYNAMIC_DECRAVING_KRW_BY_TIME_BID")) {
+                    // lastTradedAt - now
+                    let old = new Date() - this.get("lastTradedAt");
 
+                    if (old < 1000 * 60 * 5) {
+                        if (btc_krw <= this.get("last_traded_btc_krw") - 1000)
+                            mind.type = "bid";
+                    } else if (old < 1000 * 60 * 20) {
+                        if (btc_krw <= this.get("last_traded_btc_krw") - 2000)
+                            mind.type = "bid";
+                    } else if (old < 1000 * 60 * 30) {
+                        if (btc_krw <= this.get("last_traded_btc_krw") - 3000)
+                            mind.type = "bid";
+                    } else if (old < 1000 * 60 * 60 * 2) {
+                        if (btc_krw <= this.get("last_traded_btc_krw") - 10000)
+                            mind.type = "bid";
+                    } else if (old < 1000 * 60 * 60 * 24) {
+                        if (btc_krw <= this.get("last_traded_btc_krw") - 30000)
+                            mind.type = "bid";
+                    } else if (old < 1000 * 60 * 60 * 24 * 14) {
+                        if (btc_krw <= this.get("last_traded_btc_krw") - 40000)
+                            mind.type = "bid";
+                    } else {
+                        if (btc_krw <= this.get("last_traded_btc_krw") - 1000)
+                            mind.type = "bid";
+                    }
+                }
+                if (_.contains(propensity, "DYNAMIC_CRAVINGRATIO_BY_HOPE_BID")) {
+                    // if (hope <= negativeHope) {
+                    //     mind.type = "bid";
+                    // }
+                }
+            } else if (this.get("status") == "btc") {
+                if (_.contains(propensity, "CRAVING_KRW_ASK")) {
+                    if (btc_krw >= this.get("last_traded_btc_krw") + this.get("craving_krw")) {
                         mind.type = "ask";
+                    }
+                }
+                if (_.contains(propensity, "CRAVING_KRW_AND_NEGATIVE_HOPE_ASK")) {
+                    if (btc_krw >= this.get("last_traded_btc_krw") + this.get("craving_krw")) {
+                        if (hope > this.get('negativeHope')) // at least..
+                            mind.type = "ask";
+                    }
+                }
+                if (_.contains(propensity, "POSITIVE_HOPE_ASK")) {
+                    if (btc_krw >= this.get("last_traded_btc_krw") + this.get("craving_krw")) {
+                        if (hope >= this.get('positiveHope'))
+                            mind.type = "ask";
+                    }
+                }
+                if (_.contains(propensity, "DYNAMIC_CRAVING_KRW_BY_TIME_ASK")) {
+                    // lastTradedAt - now
+                    let old = new Date() - this.get("lastTradedAt");
+
+                    if (old < 1000 * 60 * 5) {
+                        // 5 mins
+                        if (btc_krw >= this.get("last_traded_btc_krw") + 1000)
+                            mind.type = "ask";
+                    } else if (old < 1000 * 60 * 60 * 2) {
+                        //  2 hours
+                        if (btc_krw >= this.get("last_traded_btc_krw") + 2000)
+                            mind.type = "ask";
+                    } else if (old < 1000 * 60 * 60 * 5) {
+                        // 5 hours
+                        if (btc_krw >= this.get("last_traded_btc_krw") + 3000)
+                            mind.type = "ask";
+                    } else if (old < 1000 * 60 * 60 * 24) {
+                        if (btc_krw >= this.get("last_traded_btc_krw") + 10000)
+                            mind.type = "ask";
+                    } else if (old < 1000 * 60 * 60 * 24 * 30) {
+                        if (btc_krw >= this.get("last_traded_btc_krw") + 30000)
+                            mind.type = "ask";
+                    } else if (old < 1000 * 60 * 60 * 24 * 30 * 6) {
+                        if (btc_krw >= this.get("last_traded_btc_krw") + 50000)
+                            mind.type = "ask";
+                    } else {
+                        if (btc_krw >= this.get("last_traded_btc_krw") + 20000)
+                            mind.type = "ask";
                     }
                 }
             }
         } else if (this.get("traded_count") == 0) {
-            if (hope < this.get("neverHope") && this.get("status") == "krw"){
-                mind.type = "bid";
-            }else if (hope > this.get("maxHope") && this.get("status") == "btc"){
-                mind.type = "ask";
+            if (this.get("status") == "krw") {
+                if (_.isNumber(this.get("neverHope"))) {
+                    if (hope < this.get("neverHope"))
+                        mind.type = "bid";
+                }
+                if (_.isNumber(this.get('maxHope')) ){
+                    if(hope > this.get('maxHope'))
+                        mind.type = "bid";
+                }
+                if (_.contains(propensity, "BTC_KRW_BID")) {
+                    if (btc_krw == this.get("btc_krw_bid"))
+                        mind.type = "bid";
+                }
             }
         }
 
-        this.set({mind: mind});
+        this.set({
+            mind: mind
+        });
         // To avoid RangeError: Maximum call stack size exceeded
         process.nextTick(success);
 
@@ -108,13 +188,16 @@ exports.Machine = Backbone.Model.extend({
         let changed = {
             traded_count: this.get("traded_count") + 1,
             last_traded_btc_krw: mind.btc_krw,
-            status: "btc"
-        }
+            lastTradedAt: new Date()
+        };
         if (mind.type == "ask") {
             changed.status = "krw";
             changed.profit_krw =
-                this.get("profit_krw") + (mind.btc_krw - this.get("last_traded_btc_krw")) * this.get('capacity');  // there is no float in this line
-            changed.profit_rate = changed.profit_krw / this.get('capacity');
+                this.get("profit_krw") + (mind.btc_krw - this.get("last_traded_btc_krw")) * this.get('capacity'); // there is no float in this line
+            // changed.profit_rate = changed.profit_krw / this.get('capacity');
+            changed.profit_rate = this.get('profit_rate') + (mind.btc_krw - this.get("last_traded_btc_krw"));
+        } else if (mind.type == "bid") {
+            changed.status = "btc";
         }
         // console.log("[machines.js] changed:", changed);
         // this.set(changed);
@@ -143,6 +226,7 @@ exports.Machines = Backbone.Collection.extend({
             wanna_sell_btc = 0,
             pending_btc = 0;
 
+
         this.each(function(m) {
             profit_krw_sum += m.get("profit_krw");
             profit_rate_sum += m.get("profit_rate");
@@ -151,8 +235,8 @@ exports.Machines = Backbone.Collection.extend({
                 wanna_buy_btc += m.get("capacity");
             } else if (m.get("status") == "btc") {
                 wanna_sell_btc += m.get("capacity");
-                if(m.get('last_traded_btc_krw')*1 > 0)
-                  estimated_damage += (m.get('last_traded_btc_krw')-btc_krw_b)*m.get('capacity');
+                if (m.get('last_traded_btc_krw') * 1 > 0)
+                    estimated_damage += (m.get('last_traded_btc_krw') - btc_krw_b) * m.get('capacity');
             } else {
                 pending_btc += m.get("capacity");
             }
@@ -250,16 +334,133 @@ exports.Machines = Backbone.Collection.extend({
                     }
                 });
             } else {
-                console.log("[machine.js] machines.mind() takes", ((new Date() - startTime) / 1000).toFixed(2), "sec" );
+                console.log("[machine.js] machines.mind() takes", ((new Date() - startTime) / 1000).toFixed(2), "sec");
                 success({
                     total: that.length || 0,
-                    totalBid: totalBid.toFixed(3)*1,
-                    totalAsk: totalAsk.toFixed(3)*1,
-                    participants: participants  // just Array, not Machines
+                    totalBid: totalBid.toFixed(3) * 1,
+                    totalAsk: totalAsk.toFixed(3) * 1,
+                    participants: participants // just Array, not Machines
                 });
                 return;
             }
         }
         one(0);
+    },
+    makeRealPlayer: function(attr) {
+        attr = attr || {};
+        let btc_krw_b = attr.btc_krw_b,
+            hope = attr.hope;
+
+        // let SEED_BTC_AMOUNT = 10; // 10 btc
+        let that = this;
+        let goodMachines = this.filter(function(m) {
+            // if (m.get('status') != "krw") {
+            // return false;
+            // } else {
+            // return (m.get('profit_rate') >= 1000) ? true : false;
+            // }
+            return (m.get('profit_rate') >= 1000) ? true : false;
+        });
+
+        // let totalCapacity = 0;
+        // _.each(goodMachines, function(m){
+        //     totalCapacity += m.get('capacity');
+        // });
+        // if( totalCapacity > 20 ){
+        //
+        // }
+
+        let rank = _.sortBy(goodMachines, function(m) {
+            let profit_rate = m.get('profit_rate');
+            if(m.get('status') == 'btc')
+                profit_rate = profit_rate - (m.get('last_traded_btc_krw') - btc_krw_b);
+            return -profit_rate;
+        });
+
+        function one(index) {
+            if (rank.length <= index) {
+                console.log("[machine.js] Capcity chaged successfully. End index:", index);
+                return;
+            }
+
+            // 37.116 btc
+            let c = 0.004;
+            if (index < 63) {
+                c = 0.256;
+            } else if (index < 210) {
+                c = 0.064;
+            } else if (index < 467) {  // 20 % of 2334 machines
+                c = 0.016;
+            }
+            // rank[index].save({
+            //     capacity: c
+            // }, {
+            //     success: function() {
+            //         one(index + 1);
+            //     }
+            // });
+            let setting = {
+              kind: "REAL"
+            };
+            if (_.contains(rank[index].get('propensity'), "DECRAVING_KRW_BID")) {
+                setting = {
+                    capacity: c,
+                    propensity: ["DECRAVING_KRW_BID", "CRAVING_KRW_ASK"],
+                    neverHope: -50000,
+                    craving_krw: rank[index].get('craving_krw'),
+                    decraving_krw: rank[index].get('decraving_krw')
+                };
+            } else if (_.contains(rank[index].get('propensity'), "NEGATIVE_HOPE_BID")) {
+                setting = {
+                    capacity: c,
+                    propensity: ["NEGATIVE_HOPE_BID", "CRAVING_KRW_ASK"],
+                    neverHope: rank[index].get('neverHope'),
+                    negativeHope: rank[index].get('negativeHope'),
+                    craving_krw: rank[index].get('craving_krw')
+                };
+            } else if (_.contains(rank[index].get('propensity'), "CRAVING_KRW_AND_NEGATIVE_HOPE_ASK")) {
+                setting = {
+                    capacity: c,
+                    propensity: ["NEGATIVE_HOPE_BID", "CRAVING_KRW_AND_NEGATIVE_HOPE_ASK"],
+                    neverHope: rank[index].get('neverHope'),
+                    negativeHope: rank[index].get('negativeHope'),
+                    craving_krw: rank[index].get('craving_krw')
+                };
+            } else if (_.contains(rank[index].get('propensity'), "DYNAMIC_DECRAVING_KRW_BY_TIME_BID")) {
+                setting = {
+                    capacity: c,
+                    propensity: ["DYNAMIC_DECRAVING_KRW_BY_TIME_BID", "DYNAMIC_CRAVING_KRW_BY_TIME_ASK"],
+                    neverHope: rank[index].get('nerverHope')
+                };
+            } else if (_.contains(rank[index].get('propensity'), "POSITIVE_HOPE_ASK")) {
+                setting = {
+                    capacity: c,
+                    propensity: ["NEGATIVE_HOPE_BID", "POSITIVE_HOPE_ASK"],
+                    neverHope: rank[index].get('neverHope'),
+                    negativeHope: rank[index].get('negativeHope'),
+                    craving_krw: rank[index].get('craving_krw'),
+                    positiveHope: rank[index].get('positiveHope')
+                };
+            // } else if(_.contains(rank[index].get('propensity'), "BTC_KRW_BID")) {
+            //     setting = {
+            //         capacity: c,
+            //         propensity: ["BTC_KRW_BID", "CRAVING_KRW_ASK"],
+            //         btc_krw_bid: ,
+            //         craving_krw: rank[index].get('craving_krw')
+            //     };
+            } else {
+                one(index + 1);
+            }
+            let newMachine = new Machine();
+            newMachine.save(setting, {
+                success: function() {
+                    that.add(newMachine);
+                    one(index + 1);
+                }
+            });
+        }
+        one(0);
+        // console.log(rank.length);
+        // console.log(rank[0].attributes);
     }
 });

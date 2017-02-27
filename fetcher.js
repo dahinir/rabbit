@@ -67,3 +67,27 @@ exports.getBtc_krw = function(resolve, reject) {
         }
     });
 };
+
+exports.getRecentTransactions = function(resolve, reject){
+  xcoinAPI.xcoinApiCall('/public/recent_transactions', {}, function(result) {
+      if (!result || !(result.status=="0000")) {
+          reject("[fetch.js] .getRecentTransactions() failed");
+          return;
+      }else{
+          // console.log("last transaction:", result.data[0]);
+          resolve(result.data);
+      }
+  });
+};
+
+exports.getTicker = function(resolve, reject){
+  xcoinAPI.xcoinApiCall('/public/ticker', {}, function(result) {
+      if (!result || !(result.status=="0000")) {
+          reject("[fetch.js] .getTicker() failed");
+          return;
+      }else{
+          console.log("Bithumb:", result.data);
+          resolve(result.data);
+      }
+  });
+};

@@ -20,13 +20,15 @@ let ticNumber = 0,
     maxBtc_krw = [0, -Infinity],
     fee_krw = 0,
     fee_btc = 0,
-    startTime = new Date();;
+    startTime = new Date(),
+    isIdling = true;
 
 // local var
 let btc_usd = 0,
     usd_krw = 0,
     btc_krw = 0,
-    btc_krw_b = 0;
+    btc_krw_b = 0,
+    hope;
 let machines = new Machines();
 let orders = new Orders();
 // fetch from db
@@ -63,29 +65,41 @@ function tic(error, response, rgResult) {
 
     Promise.all([new Promise(fetcher.getBtc_usd),
         new Promise(fetcher.getUsd_krw),
-        new Promise(fetcher.getBtc_krw)
+        new Promise(fetcher.getBtc_krw),
+        new Promise(fetcher.getRecentTransactions),
+        new Promise(fetcher.getTicker)
     ]).then(function(values) {
 
-        btc_usd = values[0],
-        usd_krw = values[1],
-        btc_krw = values[2].btc_krw,
+        btc_usd = values[0];
+        usd_krw = values[1];
+        btc_krw = values[2].btc_krw;
         btc_krw_b = values[2].btc_krw_b;
-        let hope = Math.round(btc_krw - btc_usd * usd_krw);
+        hope = Math.round(btc_krw - btc_usd * usd_krw);
         if (minHope[0] > hope) {
-            minHope = [hope.toFixed(2), btc_krw];
+            minHope = [hope, btc_krw];
         }
         if (maxHope[0] < hope) {
-            maxHope = [hope.toFixed(2), btc_krw];
+            maxHope = [hope, btc_krw];
         }
         if (minBtc_krw[1] > btc_krw)
-            minBtc_krw = [hope.toFixed(2), btc_krw];
+            minBtc_krw = [hope, btc_krw];
         if (maxBtc_krw[1] < btc_krw)
-            maxBtc_krw = [hope.toFixed(2), btc_krw];
+            maxBtc_krw = [hope, btc_krw];
         console.log("hope\t\tmin:", minHope, "\tmax:", maxHope);
         console.log("btc_krw\t\tmin:", minBtc_krw, "\tmax:", maxBtc_krw);
-        console.log("now\t hope:", hope.toFixed(2), "\tbtc_krw:", btc_krw, btc_krw_b, "\tbtc_usd:", btc_usd, "\tusd_krw:", usd_krw.toFixed(2) * 1);
+        console.log("now\t hope:", hope, "\tbtc_krw:", btc_krw, btc_krw_b, "\tbtc_usd:", btc_usd, "\tusd_krw:", usd_krw.toFixed(2) * 1);
         console.log("-------------------------------");
 
+        // if (isIdling) {
+        if(false){
+            if ( btc_krw > 1238000 && hope > -15000) {
+                console.log("It's too expensive!");
+                callTicLater();
+                return;
+            } else {
+                isIdling = false;
+            }
+        }
         machines.mind({
             hope: hope,
             btc_krw: btc_krw,
@@ -146,10 +160,10 @@ function tic(error, response, rgResult) {
                                 orders.push(newOrder);
                                 newOrder.set(result);
                                 newOrder.adjust(function() {
-                                    if (result.data[0] && result.data[0].fee*1 > 0){
+                                    if (result.data[0] && result.data[0].fee * 1 > 0) {
                                         console.log("[index.js] Fee! Rabbit ears down.");
                                         return; // end the Rabbit
-                                    }else{
+                                    } else {
                                         refreshOrdersChainAt(0);
                                     }
                                 });
@@ -178,13 +192,33 @@ function tic(error, response, rgResult) {
     });
 } // end of tic()
 
+let realPlayerCreatedAt,
+    makeRealPlayerCount = 0;
 function callTicLater() {
+
+    if (hope <= -50000 && makeRealPlayerCount == 0) {
+        console.log("[index.js] hope is", hope, "!! CHANGE CAPACITY!!");
+        machines.makeRealPlayer({
+          hope: hope,
+          btc_krw_b: btc_krw_b
+        });
+        realPlayerCreatedAt = new Date();
+        makeRealPlayerCount++;
+        setTimeout(tic, 60 * 1000);
+        return;
+    }
+    if (makeRealPlayerCount > 0) {
+        console.log("[index.js] real players created ", realPlayerCreatedAt.toLocaleString());
+    } else {
+        console.log("[index.js] real players have not appeared.");
+    }
+
     console.log(machines.presentation({
-      btc_krw: btc_krw,
-      btc_krw_b: btc_krw_b
+        btc_krw: btc_krw,
+        btc_krw_b: btc_krw_b
     }));
-    const ms = (new Date() % 57000 + 5000); // about a min
-    console.log("wait for", ms / 1000, "sec..");
+    const ms = (new Date() % 3000 + 5000); // about 10 secs
+    console.log("wait for", ms / 1000, "sec..\n");
     // time to break
     setTimeout(tic, ms);
 }

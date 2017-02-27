@@ -66,7 +66,7 @@ exports.Order = Backbone.Model.extend({
 
                 // successfully trade machines
                 // if ((internalTradedUnits * 2 + dealedUnits - that.get('adjustedUnits')) >= (m.get("capacity") - 0.00001)) {  // 0.00001 is for mistake of javascript
-                if ( (internalTradedUnits * 2 + dealedUnits - that.get('adjustedUnits') - m.get('capacity') ).toFixed(3) * 1 >= 0) { // 0.00001 is for mistake of javascript
+                if ( (internalTradedUnits * 2 + dealedUnits - that.get('adjustedUnits') - m.get('capacity') ).toFixed(3) * 1 >= 0) {
 
                     m.trade(function() {
                         that.set({
@@ -74,8 +74,8 @@ exports.Order = Backbone.Model.extend({
                         });
                         one(index + 1);
                     });
-                    // penging machines..
                 } else {
+                    // penging machines..
                     pendingMachines.push(m);
                     m.save({
                         status: "pending"
