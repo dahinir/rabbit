@@ -136,11 +136,11 @@ console.log(settings.length);
 */
 
 /*
-// 1,100,000 ~ 1,500,000
+// 1,100,000 ~ 1,600,000
 setting = {
     propensity: ["BTC_KRW_BID", "CRAVING_KRW_ASK"]
 };
-for (let btc_krw_bid = 1400000; btc_krw_bid < 1500000; btc_krw_bid += 1000) {
+for (let btc_krw_bid = 1500000; btc_krw_bid < 1600000; btc_krw_bid += 1000) {
     setting.btc_krw_bid = btc_krw_bid;
     // console.log("negativeHope:", hope);
 
@@ -148,7 +148,7 @@ for (let btc_krw_bid = 1400000; btc_krw_bid < 1500000; btc_krw_bid += 1000) {
         setting.craving_krw = craving_krw;
         settings.push(_.extend({}, setting));
         machine_count++;
-        // console.log(setting.negativeHope, setting.craving_krw);
+        console.log(setting.btc_krw_bid, setting.craving_krw);
     }
 }
 console.log(settings.length); // 4000:

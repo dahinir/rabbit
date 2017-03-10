@@ -223,18 +223,31 @@ exports.Machines = Backbone.Collection.extend({
             total_traded = 0,
             estimated_damage = 0,
             wanna_buy_btc = 0,
-            wanna_sell_btc = 0,
-            pending_btc = 0;
+            bought_btc = 0,
+            pending_btc = 0,
+            wanna_btc_for_netting = 0,
+            bought_btc_for_netting = 0,
+            profit_krw_sum_for_netting = 0;
 
 
         this.each(function(m) {
-            profit_krw_sum += m.get("profit_krw");
+            if (_.contains(m.get("propensity"), "BTC_KRW_BID"))
+                profit_krw_sum_for_netting += m.get("profit_krw");
+            else
+                profit_krw_sum += m.get("profit_krw");
             profit_rate_sum += m.get("profit_rate");
             total_traded += m.get('traded_count');
             if (m.get("status") == "krw") {
-                wanna_buy_btc += m.get("capacity");
+                if (_.contains(m.get("propensity"), "BTC_KRW_BID"))
+                    wanna_btc_for_netting += m.get("capacity");
+                else
+                    wanna_buy_btc += m.get("capacity");
             } else if (m.get("status") == "btc") {
-                wanna_sell_btc += m.get("capacity");
+                if (_.contains(m.get("propensity"), "BTC_KRW_BID"))
+                    bought_btc_for_netting += m.get("capacity");
+                else
+                    bought_btc += m.get("capacity");
+
                 if (m.get('last_traded_btc_krw') * 1 > 0)
                     estimated_damage += (m.get('last_traded_btc_krw') - btc_krw_b) * m.get('capacity');
             } else {
@@ -245,12 +258,16 @@ exports.Machines = Backbone.Collection.extend({
             so: this.length + " machines work",
             total_traded: new Intl.NumberFormat().format(total_traded),
             profit_krw_sum: "\u20A9 " + new Intl.NumberFormat().format(profit_krw_sum),
+            profit_krw_sum_for_netting: "\u20A9 " + new Intl.NumberFormat().format(profit_krw_sum_for_netting),
+            total_profit_krw: "\u20A9 " + new Intl.NumberFormat().format(profit_krw_sum+ profit_krw_sum_for_netting),
             estimated_damage: "\u20A9 " + new Intl.NumberFormat().format(estimated_damage),
-            estimated_profit_krw: "\u20A9 " + new Intl.NumberFormat().format(profit_krw_sum - estimated_damage),
+            estimated_profit_krw: "\u20A9 " + new Intl.NumberFormat().format(profit_krw_sum+ profit_krw_sum_for_netting - estimated_damage),
             // average_profit_krw: profit_krw_sum / this.length,
             // average_profit_rate: profit_rate_sum / this.length,
             need_krw: "\u20A9 " + new Intl.NumberFormat().format(wanna_buy_btc * btc_krw),
-            need_btc: wanna_sell_btc.toFixed(3),
+            bought_btc: bought_btc.toFixed(3),
+            need_krw_for_netting: "\u20A9 " + new Intl.NumberFormat().format(wanna_btc_for_netting*btc_krw),
+            bought_btc_for_netting: bought_btc_for_netting.toFixed(3),
             pending_btc: pending_btc
         };
     },
@@ -451,7 +468,7 @@ exports.Machines = Backbone.Collection.extend({
             } else {
                 one(index + 1);
             }
-            let newMachine = new Machine();
+            let newMachine = new exports.Machine();
             newMachine.save(setting, {
                 success: function() {
                     that.add(newMachine);

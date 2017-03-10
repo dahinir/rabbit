@@ -12,7 +12,6 @@ const Machines = require('./machine.js').Machines;
 const Order = require('./order.js').Order;
 const Orders = require('./order.js').Orders;
 
-// tic()
 let ticNumber = 0,
     minHope = [Infinity, 0],
     maxHope = [-Infinity, 0],
@@ -21,14 +20,13 @@ let ticNumber = 0,
     fee_krw = 0,
     fee_btc = 0,
     startTime = new Date(),
-    isIdling = true;
-
-// local var
-let btc_usd = 0,
+    isIdling = true,
+    btc_usd = 0,
     usd_krw = 0,
     btc_krw = 0,
     btc_krw_b = 0,
-    hope;
+    hope = 0,
+    btc_krw_rate_of_24h = 0;
 let machines = new Machines();
 let orders = new Orders();
 // fetch from db
@@ -85,7 +83,20 @@ function tic(error, response, rgResult) {
             minBtc_krw = [hope, btc_krw];
         if (maxBtc_krw[1] < btc_krw)
             maxBtc_krw = [hope, btc_krw];
-        console.log("hope\t\tmin:", minHope, "\tmax:", maxHope);
+
+        // btc_krw_rate_of_24h
+        let bithumbInfo = values[4];
+        if (btc_krw <= bithumbInfo.average_price){
+            btc_krw_rate_of_24h = (btc_krw - bithumbInfo.min_price) / (bithumbInfo.average_price - bithumbInfo.min_price) / 2;
+        }else{
+            btc_krw_rate_of_24h = (btc_krw - bithumbInfo.average_price) / (bithumbInfo.max_price - bithumbInfo.average_price) / 2 + 0.5;
+        }
+
+        if(btc_krw_rate_of_24h > 0.7 && hope > 30000)
+            console.log("I THINK IT'S TIME TO SELL!");
+        if(btc_krw_rate_of_24h < 0.3 && hope < -30000)
+            console.log("I THINK IT'S TIME TO BUY!");
+        console.log("btc_krw_rate_of_24h: ", btc_krw_rate_of_24h, "-------");      console.log("hope\t\tmin:", minHope, "\tmax:", maxHope);
         console.log("btc_krw\t\tmin:", minBtc_krw, "\tmax:", maxBtc_krw);
         console.log("now\t hope:", hope, "\tbtc_krw:", btc_krw, btc_krw_b, "\tbtc_usd:", btc_usd, "\tusd_krw:", usd_krw.toFixed(2) * 1);
         console.log("-------------------------------");
@@ -155,6 +166,8 @@ function tic(error, response, rgResult) {
                     if (btParams.type == "ask" || btParams.type == "bid") {
                         // console.log("[index.js] trade with Bithumb ", btParams);
                         xcoinAPI.xcoinApiCall('/trade/place', btParams, function(result) {
+                            if(participants.length < 50)
+                                console.log("[index.js] propensities: ", participants.pluck("propensity"));
                             console.log("[index.js] Bithumb trade result:", result);
                             if (result.status == '0000' && result.order_id) {
                                 orders.push(newOrder);
@@ -196,7 +209,7 @@ let realPlayerCreatedAt,
     makeRealPlayerCount = 0;
 function callTicLater() {
 
-    if (hope <= -50000 && makeRealPlayerCount == 0) {
+    if (hope <= -80000 && machines.length < 8000) {
         console.log("[index.js] hope is", hope, "!! CHANGE CAPACITY!!");
         machines.makeRealPlayer({
           hope: hope,
