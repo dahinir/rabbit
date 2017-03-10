@@ -378,6 +378,7 @@ exports.Machines = Backbone.Collection.extend({
             // }
             return (m.get('profit_rate') >= 1000) ? true : false;
         });
+        console.log("[machine.js] goodMachines.length: ", goodMachines.length);
 
         // let totalCapacity = 0;
         // _.each(goodMachines, function(m){
@@ -396,7 +397,7 @@ exports.Machines = Backbone.Collection.extend({
 
         function one(index) {
             if (rank.length <= index) {
-                console.log("[machine.js] Capcity chaged successfully. End index:", index);
+                console.log("[machine.js] New machines are created. End index:", index);
                 return;
             }
 
@@ -467,6 +468,7 @@ exports.Machines = Backbone.Collection.extend({
             //     };
             } else {
                 one(index + 1);
+                return;
             }
             let newMachine = new exports.Machine();
             newMachine.save(setting, {
@@ -477,7 +479,7 @@ exports.Machines = Backbone.Collection.extend({
             });
         }
         one(0);
-        // console.log(rank.length);
-        // console.log(rank[0].attributes);
+        console.log(rank.length);
+        console.log(rank[0].attributes);
     }
 });
