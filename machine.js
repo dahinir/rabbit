@@ -38,7 +38,8 @@ exports.Machine = Backbone.Model.extend({
         const success = options.success;
 
         let hope = attr.hope * 1,
-            btc_krw;
+            btc_krw,
+            btc_krw_rate_of_24h = attr.btc_krw_rate_of_24h * 1;
 
         if (this.get("status") == "krw") {
             btc_krw = attr.btc_krw * 1;
@@ -74,7 +75,8 @@ exports.Machine = Backbone.Model.extend({
                 }
                 if (_.contains(propensity, "BTC_KRW_BID")) {
                     if (btc_krw == this.get("btc_krw_bid")) { // Exactly same only!
-                        mind.type = "bid";
+                        if(hope < 50000)  // at least..
+                            mind.type = "bid";
                     }
                 }
                 if (_.contains(propensity, "DYNAMIC_DECRAVING_KRW_BY_TIME_BID")) {
@@ -172,6 +174,19 @@ exports.Machine = Backbone.Model.extend({
                     if (btc_krw == this.get("btc_krw_bid"))
                         mind.type = "bid";
                 }
+            }
+        }
+
+        if (_.contains(propensity, "BTC_KRW_RATE_OF_24H_AND_HOPE_BID")) {
+            if (this.get("status") == "krw") {
+                if(btc_krw_rate_of_24h < this.get("negativeRate"))
+                    if(hope < this.get("negativeHope"))
+                        mind.type = "bid";
+            }else if(this.get("status") == "btc"){
+                if(btc_krw_rate_of_24h > this.get("positiveRate"))
+                    if(hope > this.get("positiveHope"))
+                        if (btc_krw >= this.get("last_traded_btc_krw") + 2000)
+                            mind.type = "ask";
             }
         }
 
@@ -380,14 +395,6 @@ exports.Machines = Backbone.Collection.extend({
         });
         console.log("[machine.js] goodMachines.length: ", goodMachines.length);
 
-        // let totalCapacity = 0;
-        // _.each(goodMachines, function(m){
-        //     totalCapacity += m.get('capacity');
-        // });
-        // if( totalCapacity > 20 ){
-        //
-        // }
-
         let rank = _.sortBy(goodMachines, function(m) {
             let profit_rate = m.get('profit_rate');
             if(m.get('status') == 'btc')
@@ -395,13 +402,14 @@ exports.Machines = Backbone.Collection.extend({
             return -profit_rate;
         });
 
+        let totalCapacity = 0;
         function one(index) {
             if (rank.length <= index) {
                 console.log("[machine.js] New machines are created. End index:", index);
                 return;
             }
 
-            // 37.116 btc
+            // 33.116 btc
             let c = 0.004;
             if (index < 63) {
                 c = 0.256;
@@ -459,6 +467,16 @@ exports.Machines = Backbone.Collection.extend({
                     craving_krw: rank[index].get('craving_krw'),
                     positiveHope: rank[index].get('positiveHope')
                 };
+            } else if(_.contains(rank[index].get('propensity'),  "BTC_KRW_RATE_OF_24H_AND_HOPE_BID")){
+                setting = {
+                    capacity: c,
+                    propensity: rank[index].get('propensity'),
+                    negativeHope: rank[index].get('negativeHope'),
+                    positiveHope: rank[index].get('positiveHope'),
+                    craving_krw: rank[index].get('craving_krw'),
+                    negativeRate: rank[index].get('negativeRate'),
+                    positiveRate: rank[index].get('positiveRate')
+                };
             // } else if(_.contains(rank[index].get('propensity'), "BTC_KRW_BID")) {
             //     setting = {
             //         capacity: c,
@@ -473,13 +491,15 @@ exports.Machines = Backbone.Collection.extend({
             let newMachine = new exports.Machine();
             newMachine.save(setting, {
                 success: function() {
+                    totalCapacity += c;
                     that.add(newMachine);
                     one(index + 1);
                 }
             });
         }
         one(0);
-        console.log(rank.length);
-        console.log(rank[0].attributes);
+        console.log("[machine.js] New REAL type machines have ", totalCapacity, "capacity");
+        // console.log(rank.length);
+        // console.log(rank[0].attributes);
     }
 });

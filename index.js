@@ -101,6 +101,9 @@ function tic(error, response, rgResult) {
         console.log("now\t hope:", hope, "\tbtc_krw:", btc_krw, btc_krw_b, "\tbtc_usd:", btc_usd, "\tusd_krw:", usd_krw.toFixed(2) * 1);
         console.log("-------------------------------");
 
+        callTicLater();
+        return;
+
         // if (isIdling) {
         if(false){
             if ( btc_krw > 1238000 && hope > -15000) {
@@ -115,6 +118,7 @@ function tic(error, response, rgResult) {
             hope: hope,
             btc_krw: btc_krw,
             btc_krw_b: btc_krw_b,
+            btc_krw_rate_of_24h: btc_krw_rate_of_24h,
             success: result => {
                 let totalBid = result.totalBid,
                     totalAsk = result.totalAsk,
@@ -209,7 +213,7 @@ let realPlayerCreatedAt,
     makeRealPlayerCount = 0;
 function callTicLater() {
 
-    if (hope <= -80000 && machines.length < 8000) {
+    if (false && hope <= -61000 && btc_krw_rate_of_24h < 0.2 && machines.length < 12000) {
         console.log("[index.js] hope is", hope, "!! CHANGE CAPACITY!!");
         machines.makeRealPlayer({
           hope: hope,
@@ -221,9 +225,9 @@ function callTicLater() {
         return;
     }
     if (makeRealPlayerCount > 0) {
-        console.log("[index.js] real players created ", realPlayerCreatedAt.toLocaleString());
+        console.log("[index.js] Real players created!! ", realPlayerCreatedAt.toLocaleString());
     } else {
-        console.log("[index.js] real players have not appeared.");
+        console.log("[index.js] Real players have not appeared..");
     }
 
     console.log(machines.presentation({

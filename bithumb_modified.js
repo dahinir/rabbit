@@ -62,7 +62,14 @@ XCoinAPI.prototype.request = function(strHost, strMethod, rgParams, httpHeaders,
 			console.log(error);
 			return;
 		}
-
+// console.log("rgResult");
+// let _ = require('underscore');
+// console.log(_.isUndefined(rgResult));
+// console.log(_.isNull(rgResult));
+// console.log(_.isNumber(rgResult));
+// console.log(_.isObject(rgResult));
+// console.log(_.isString(rgResult));
+// console.log(rgResult.length);
 		var rgResultDecode = JSON.parse(rgResult);
 		// console.log(rgResultDecode);
 		callback(rgResultDecode);

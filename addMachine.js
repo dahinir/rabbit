@@ -154,6 +154,55 @@ for (let btc_krw_bid = 1500000; btc_krw_bid < 1600000; btc_krw_bid += 1000) {
 console.log(settings.length); // 4000:
 */
 
+/*
+// db.machines.find({createdAt:{$gt:ISODate("2017-03-11T00:00:00.000Z")}}).count();
+setting = {
+    propensity: ["BTC_KRW_RATE_OF_24H_AND_HOPE_BID"]
+};
+for (let negativeRate = 0.0; negativeRate < 0.5; negativeRate += 0.1) {
+    setting.negativeRate = negativeRate.toFixed(1) * 1;
+    console.log("negativeRate:", negativeRate);
+
+    for (let positiveRate = 0.5; positiveRate <= 1.0; positiveRate += 0.1) {
+        setting.positiveRate  = positiveRate.toFixed(1) * 1;
+
+        for (let negativeHope = -50000; negativeHope <= 20000; negativeHope += 10000) {
+            setting.negativeHope = negativeHope;
+            // console.log('\n');
+
+            for (let positiveHope = -20000; positiveHope <= 50000; positiveHope += 10000) {
+                setting.positiveHope = positiveHope;
+                settings.push(_.extend({}, setting));
+                machine_count++;
+                console.log(setting.negativeRate, setting.positiveRate, negativeHope, positiveHope);
+            }
+        }
+    }
+}
+console.log(settings.length); // 1920
+*/
+
+/*
+setting = {
+    propensity: ["BTC_KRW_RATE_OF_24H_AND_HOPE_BID", "CRAVING_KRW_ASK"]
+};
+for (let negativeRate = 0.0; negativeRate < 0.5; negativeRate += 0.1) {
+    setting.negativeRate = negativeRate.toFixed(1) * 1;
+    console.log("negativeRate:", negativeRate);
+
+    for (let negativeHope = -50000; negativeHope <= 20000; negativeHope += 10000) {
+        setting.negativeHope = negativeHope;
+        for (let craving_krw = 1000; craving_krw <= 50000; craving_krw += 1000) {
+            setting.craving_krw = craving_krw;
+            settings.push(_.extend({}, setting));
+            machine_count++;
+            console.log(setting.negativeRate, setting.negativeHope, setting.craving_krw);
+        }
+    }
+}
+console.log(settings.length); // 2000
+*/
+
 // SAVE TO THE DB
 function save(i) {
     if (settings[i])
