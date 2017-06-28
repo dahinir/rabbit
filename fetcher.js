@@ -1,33 +1,34 @@
 "use strict"
 
 const _ = require('underscore');
-
+const request = require('request');
 const KEYS = require('./credentials/keys.json');
-
 const xcoinAPI = require('./bithumb_modified.js');
 const CoinBaseClient = require('coinbase').Client;
 const coinBaseClient = new CoinBaseClient({
     apiKey: KEYS.COINBASE.API_KEY,
     apiSecret: KEYS.COINBASE.SECRET_KEY
 });
+const coinoneAPI = require("./coinone.js");
 
-exports.getBtc_usd = function(resolve, reject) {
+exports.getBtc_usd = function() {
+  return new Promise((resolve, reject) => {
     coinBaseClient.getBuyPrice({
         'currencyPair': 'BTC-USD'
     }, function(err, result) {
         if (!result || !result.data || !result.data.amount) {
-            reject("[fetch.js] .getBtc_usd() failed");
-            return;
+            throw new Error( "[fetch.js] .getBtc_usd() failed");
         }
 
         let btc_usd = result.data.amount * 1;
         // console.log("bit_usd:", btc_usd);
-        if (_.isNumber(btc_usd) && btc_usd < 2500 && btc_usd > 500) {
-            resolve(btc_usd);
+        if (_.isNumber(btc_usd) && btc_usd < 3500 && btc_usd > 500) {
+            resolve( btc_usd);
         } else {
-            reject("[fetch.js] btc_usd value is weird");
+            throw new Error( "[fetch.js] btc_usd value is weird");
         }
     });
+  });
 };
 
 exports.getUsd_krw = function(resolve, reject) {
@@ -49,45 +50,69 @@ exports.getUsd_krw = function(resolve, reject) {
     });
 };
 
-exports.getBtc_krw = function(resolve, reject) {
+exports.getBtc_krw = function() {
+  return new Promise((resolve, reject) => {
     xcoinAPI.xcoinApiCall('/public/orderbook', {}, function(result) {
+      // console.log(result.data);
         if (!result || !result.data || !result.data.asks[0].price) {
-            reject("[fetch.js] .getBtc_krw() failed");
-            return;
+            throw new Error( "[fetch.js] .getBtc_krw() failed");
         }
-        let btc_krw = result.data.asks[0].price * 1,
+        let btc_krw_a = result.data.asks[0].price * 1,
             btc_krw_b = result.data.bids[0].price * 1;
-        if (_.isNumber(btc_krw) && btc_krw < 2800000 && btc_krw > 710000) {
-            resolve({
-                btc_krw: btc_krw,
+        if (_.isNumber(btc_krw_a) && btc_krw_a < 4800000 && btc_krw_a > 1230000) {
+            resolve( {
+                btc_krw_a: btc_krw_a,
                 btc_krw_b: btc_krw_b
             });
         } else {
-            reject("[fetch.js] btc_krw value is weird");
+            throw new Error( "[fetch.js] btc_krw value is weird");
         }
     });
-};
-
-exports.getRecentTransactions = function(resolve, reject){
-  xcoinAPI.xcoinApiCall('/public/recent_transactions', {}, function(result) {
-      if (!result || !(result.status=="0000")) {
-          reject("[fetch.js] .getRecentTransactions() failed");
-          return;
-      }else{
-          // console.log("last transaction:", result.data[0]);
-          resolve(result.data);
-      }
   });
 };
 
-exports.getTicker = function(resolve, reject){
-  xcoinAPI.xcoinApiCall('/public/ticker', {}, function(result) {
-      if (!result || !(result.status=="0000")) {
-          reject("[fetch.js] .getTicker() failed");
-          return;
-      }else{
-          console.log("Bithumb:", result.data);
-          resolve(result.data);
-      }
+exports.getRecentTransactions = function(){
+  return new Promise((resolve, reject) => {
+    xcoinAPI.xcoinApiCall('/public/recent_transactions', {}, function(result) {
+        if (!result || !(result.status=="0000")) {
+            throw new Error( "[fetch.js] .getRecentTransactions() failed");
+        }else{
+            // console.log("last transaction:", result.data[0]);
+            resolve(result.data);
+        }
+    });
   });
 };
+
+exports.getTicker = function(){
+  return new Promise((resolve, reject) => {
+    xcoinAPI.xcoinApiCall('/public/ticker', {}, function(result) {
+        if (!result || !(result.status=="0000")) {
+            throw new Error( "[fetch.js] .getTicker() failed");
+        }else{
+            // console.log("[fetcher.js] Bithumb:", result.data);
+            resolve(result.data);
+        }
+    });
+  });
+};
+
+exports.getCoinoneEthOrderbook = function(resolve, reject) {
+  return new Promise((resolve, reject) => {
+    // this is public api
+    request({
+            method: "GET",
+            uri: "https://api.coinone.co.kr/orderbook/",
+            qs: {
+                currency: 'eth'
+            }
+        },
+        function(error, response, body) {
+            let result = JSON.parse(body);
+            // console.log(result)
+            if( result.result == 'success')
+                resolve(result);
+                // return result;
+        });
+  })
+}

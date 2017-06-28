@@ -4,10 +4,10 @@ const Machine = require('./machine.js').Machine,
     _ = require('underscore');
 
 // add new machines by newMachines.json
-let newMachines = new Machines(require('./addMachine.json'));
-newMachines.each(function(m) {
+// let newMachines = new Machines(require('./addMachine.json'));
+// newMachines.each(function(m) {
     // m.save();
-});
+// });
 // return;
 
 let setting = {
@@ -18,13 +18,39 @@ let setting = {
     // "positiveHope": 10000,
     // "neverHope": -10000,
     // "maxHope": 10000,
-    // "status": "krw",
-    "propensity": []
+    // "status": "KRW",
+    // "propensity": []
 };
 const settings = [];
 let machine_count = 0;
 
+new Machine().save({
+  coinType: "ETH",
+  marketName: "COINONE",
+  name: "SCATTERER",
+  buy_at: 0,
+  craving_krw: 0
+})
+/*
+setting = {
+  coinType: "ETH",
+  marketName: "COINONE",
+  name: "SCATTERER",
+  buy_at: 0,
+  craving_krw: 0
+}
+for (let buy_at = 300000; buy_at < 400000; buy_at += 50) {
+    setting.buy_at = buy_at;
 
+    for (let craving_krw = 1000; craving_krw <= 10000; craving_krw += 1000) {
+        setting.craving_krw = craving_krw;
+        settings.push(_.extend({}, setting));
+        machine_count++;
+        console.log(setting.buy_at, setting.craving_krw);
+    }
+}
+console.log(settings.length); // 20000
+*/
 
 /*
 // First penguins
@@ -209,11 +235,15 @@ function save(i) {
         new Machine().save(settings[i], {
             success: function() {
                 (i % 1000 == 0) ? console.log(i): 0;
-                save(i + 1);
+                // save(i + 1);
+                process.nextTick(() => {
+                  save(i+1)
+                })
             }
         });
 }
 // save(0);
 
+
 console.log("\nadded machines:", machine_count, settings.length);
-console.log("Rabbit needs", machine_count * 1000, "won");
+console.log("Rabbit needs", machine_count * 3000, "won");

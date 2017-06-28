@@ -1,54 +1,17 @@
 "use strict"
 
 const _ = require('underscore'),
+    Backbone = require('backbone'),
     pify = require('pify');
 
-// const xcoinAPI = require('./bithumb_modified.js');
+const xcoinAPI = require('./bithumb_modified.js');
 const fetcher = require('./fetcher.js');
 
-const Machine = require('./machine.js').Machine;
-const Machines = require('./machine.js').Machines;
-const Order = require('./order.js').Order;
-const Orders = require('./order.js').Orders;
+const Machine = require('./machine.js').BithumbBtcMachine;
+const Machines = require('./machine.js').BithumbBtcMachines;
+const Order = require('./order.js').BithumbOrder;
+const Orders = require('./order.js').BithumbOrders;
 
-global.rabbit = {
-    machines: new Machines(),
-    orders: new Orders()
-};
-
-global.rabbit.machines.fetch({
-  success: function() {
-    console.log("success")
-  }
-})
-return;
-
-// fetch from db
-global.rabbit.machines.fetchAll({
-    success: function() {
-        global.rabbit.orders.fetch({
-            data: {
-                isDone: false
-                // $skip: 10,
-                // $limit: 10
-            },
-            success: function() {
-                console.log("[index.js] ", global.rabbit.orders.length, "orders are loaded.");
-                console.log("[index.js] ", global.rabbit.machines.length, "machines are loaded.");
-                run();
-            }
-        });
-    }
-});
-
-function run(){
-    let ms = 3000;
-    require("./coinoneEth.js").tick(function(){
-       setTimeout(run, ms);
-    });
-}
-
-/*
 let ticNumber = 0,
     minHope = [Infinity, 0],
     maxHope = [-Infinity, 0],
@@ -64,6 +27,33 @@ let ticNumber = 0,
     btc_krw_b = 0,
     hope = 0,
     btc_krw_rate_of_24h = 0;
+let machines = new Machines();
+let orders = new Orders();
+// fetch from db
+machines.fetchAll({
+    success: function() {
+        orders.fetch({
+            data: {
+                isDone: false
+                // $skip: 10,
+                // $limit: 10
+            },
+            success: function() {
+                console.log("[index.js] ", orders.length, "orders are loaded.");
+                orders.each(function(o) {
+                    console.log("[index.js] ", o.id, "order will load their", o.get('machineIds').length, " machines");
+                    // deserialize participant machines
+                    o.machines = new Machines();
+                    _.each(o.get('machineIds'), function(machineId) {
+                        o.machines.push(machines.get(machineId));
+                    });
+                });
+                tic();
+            }
+        });
+    }
+});
+
 
 function tic(error, response, rgResult) {
     if (ticNumber != 0) {}
@@ -266,7 +256,29 @@ function refreshOrdersChainAt(index) {
         order_id: o.get("order_id").toString(), //"1485052731599",	// "1485011389177",
         type: o.get("btParams").type
     };
-
+    /*
+          let params = {
+            order_id: "1485052731599",	// "1485011389177",
+            type: "bid"
+          };
+          xcoinAPI.xcoinApiCall("/info/order_detail", params, function(result){
+            console.log(result);
+            { status: '5600', message: '거래 체결내역이 존재하지 않습니다.' }
+            or
+            { status: '0000',
+              data:
+               [ { cont_no: '1445825',
+                   transaction_date: '1485011389000',
+                   type: 'bid',
+                   order_currency: 'BTC',
+                   payment_currency: 'KRW',
+                   units_traded: '0.001',
+                   price: '1096000',
+                   fee: '0.0000015',
+                   total: '1096' } ] }
+          });
+          return;
+    */
     xcoinAPI.xcoinApiCall("/info/order_detail", params, function(result) {
         console.log("[index.js] Bithumb order_detail result:", result);
         o.set(result);
@@ -280,4 +292,3 @@ function refreshOrdersChainAt(index) {
 //     console.log("tic.", new Date());
 //     tic();
 // }
-*/

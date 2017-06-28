@@ -5,6 +5,7 @@ const request = require('request');
 const crypto = require("crypto");
 const _ = require("underscore");
 
+// run as singleton
 module.exports = new XCoinAPI(KEYS.COINONE.API_KEY, KEYS.COINONE.SECRET_KEY);
 
 function XCoinAPI(api_key, api_secret){
@@ -13,7 +14,7 @@ function XCoinAPI(api_key, api_secret){
 	this.api_secret = api_secret;
 }
 
-XCoinAPI.prototype.xcoinApiCall = function(endPoint, params, callback, method) {
+XCoinAPI.prototype.call = function(endPoint, params, callback, method) {
     let payload = Buffer.from(JSON.stringify(_.extend({
         "access_token": this.api_key,
         "nonce": Date.now()
