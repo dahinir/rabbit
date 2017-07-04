@@ -2,65 +2,189 @@
 
 const Backbone = require('backbone'),
     _ = require('underscore'),
-    backsync = require('backsync');
-// const Machines = require('./machine.js').Machines;
+    backsync = require('backsync'),
+    coinoneAPI = require("./coinone.js");
 
-/*
-{ status: '0000', order_id: '1485052731599', data: [] }
-or
-{ status: '0000',
-	order_id: '1485011389177',
-	data:
-	 [ { cont_id: '1445825',
-			 units: '0.001',
-			 price: '1096000',
-			 total: 1096,
-			 fee: '0.00000150' } ] }
-*/
-let Order = Backbone.Model.extend({
-    // urlRoot: "mongodb://localhost:27017/rabbit/orders",
-    url: "mongodb://localhost:27017/rabbit/orders",
+let Order = exports.Order = Backbone.Model.extend({
+    urlRoot: "mongodb://localhost:27017/rabbit/orders", // not url. cuz of backsync
     sync: backsync.mongodb(),
     idAttribute: "id",
     defaults: {
         isDone: false,  // even done adjust
         machineIds: [],
-        internalTradedUnits: 0,
-        // dealedUnits: 0,	// dealed with bithumb. not store. calculate everytime
-        adjustedUnits: 0, // adjusted with machines
-        coinType: 'btc' // 'btc' or 'eth'
+        internalTradeQuantity: 0,
+        adjustedQuantity: 0, // adjusted with machines
+        coinType: 'ETH', // 'btc' or 'eth'
+        marketName: "COINONE"
     },
     initialize: function(attributes, options) {
-        if (!this.id) {
-            this.set({
-                id: require('mongodb').ObjectID(),
-                createdAt: new Date()
-            });
-        }
+      if (!this.id)
+        this.set({
+          id: require('mongodb').ObjectID(),
+          created_at: new Date()
+        })
     },
-    // refresh: function(resolve, reject){
-    //     if (this.get('isDone')){
-    //         resolve();
-    //     }
-    // },
-    adjust: function(resolve, reject){
-        _.each(this.get("machineIds"), function(mId){
-            console.log("[order.js] traded machine id: ", mId);
-            global.rabbit.machines.get(mId).trade();
-        });
-        this.destroy();
+    completed: async function(){
+      console.log("[order.js] Completed order with", this.get("machineIds").length, "machines")
+      for (let machine of this.participants){
+        await machine.accomplish(this.get("price"))
+      }
+      // for (let mId of this.get("machineIds")){
+      //   console.log(mId)
+      //   console.log(global.rabbit.machines.length)
+      //   console.log(global.rabbit.machines.get(mId).attributes)
+      //   console.log(global.rabbit.machines.get("595b958342753ba3e4550580").attributes)
+      //   await global.rabbit.machines.get(mId).accomplish(this.get("price"))
+      // }
+      this.destroy()
     }
-}); // Order
+})
 
-let Orders = Backbone.Collection.extend({
+let Orders = exports.Orders = Backbone.Collection.extend({
     url: "mongodb://localhost:27017/rabbit/orders",
     sync: backsync.mongodb(),
-    model: Order
-});
+    model: Order,
+    // machines.mind()'s return object will be this options
+    placeOrder: async function(options){
+      if (!_.isObject(options))
+        throw new Error("[order.placeOrder()] options needed")
 
-exports.Order = Order;
-exports.Orders = Orders;
+      let marketAPI
+      switch (options.marketName) {
+        case "COINONE":
+          marketAPI = coinoneAPI
+          break
+      }
 
+      let type, price, quantity, internalTradeQuantity
+      if (options.bidQuantity > options.askQuantity){
+        type = "BID"
+        price = options.bidPrice
+        quantity = options.bidQuantity - options.askQuantity
+        internalTradeQuantity = options.askQuantity // Smaller one
+      }else if (options.bidQuantity < options.askQuantity){
+        type = "ASK"
+        price = options.askPrice
+        quantity = options.askQuantity - options.bidQuantity
+        internalTradeQuantity = options.bidQuantity
+      }else if (options.bidQuantity == options.askQuantity){
+        if (options.bidQuantity == 0){
+          console.log("[order.js] Won't place order")
+        }else{
+          console.log("[order.js] Perpect internal trade! Can you believe it?")
+          new Order({
+            machineIds: _.pluck(options.participants, "id"),
+            price: options.bidPrice // It can be askPrice but I prefer
+          }).completed()
+        }
+        return  // doesn't need deal with real market like Coinone
+      }
+
+      // Actual order here
+      let marketResult = await marketAPI({
+        type: type,
+        price: price,
+        qty: quantity,
+        coinType: options.coinType.toLowerCase()
+      })
+
+      // NEW ORDER ONLY HERE!
+      if (_.isString(marketResult.orderId)){
+        let newOrder = new Order({
+          orderId: marketResult.orderId,
+          machineIds: _.pluck(options.participants, "id"),
+          marketName: options.marketName,
+          coinType: options.coinType,
+          type: type,
+          price: price,
+          quantity: quantity,
+          internalTradeQuantity: internalTradeQuantity
+        });
+        newOrder.save()
+        // _.each(options.participants, machine => {
+        //   machine.save({
+        //     status: "PENDING"
+        //   })
+        // })
+        // Save all participants machines PENDING
+        savePending(0)
+        function savePending(index){
+          options.participants[index].save({
+            status: "PENDING"
+          },{
+            success: function (){
+              if (options.participants.length > index+1)
+                savePending(index + 1)
+            }
+          })
+        }
+        newOrder.participants = options.participants  // machines array. not as attributes
+        this.push(newOrder);
+      }
+    },
+    // Refresh All of this orders. no matter what marketName or coinType. All of them.
+    refresh: async function(options) {
+      // Coinone with Ethereum
+      let uncompletedOrderIds = _.pluck((await coinoneAPI({
+        type: "UNCOMPLETED_ORDERS",
+        coinType: "ETH"
+      })).limitOrders, "orderId")
+
+      for(let order of this.models){  // this.models returns array so can use for...of
+        if (_.contains(uncompletedOrderIds, order.get("orderId")) ){
+          // It's uncompleted order. Doesn't do anything.
+          console.log("[order.js] Uncompleted order id:", order.get("orderId"), ((new Date() - order.get("created_at")) / 60000).toFixed(2), "min ago")
+        }else{
+          console.log("[order.js] New completed order! id:", order.get("orderId"))
+          // New complete order!
+          await order.completed()
+        }
+      }
+    },
+    refresh_old: function(resolve, reject){
+        if(this.length == 0){
+            resolve && resolve();
+            return;
+        }
+        let thisOrders = this;
+        coinoneAPI.call("/v2/order/limit_orders", {"currency": this.coinType}, function(result){
+            let uncompletedOrderIds = [];
+
+            if(_.isObject(result) && result.result == 'success' ){
+                // console.log(result.limitOrders);
+                uncompletedOrderIds = _.pluck(result.limitOrders, "orderId");
+
+                one(0);
+            }else{
+                console.log("[order.js] coinone refresh error. not a big deal maybe.");
+                console.log(result);
+                reject && reject();
+                return;
+            }
+
+            function one(index){
+                if( index >= thisOrders.length){
+                    // finally
+                    resolve && resolve();
+                    return;
+                }
+                let o = thisOrders.at(index);
+                if (_.contains(uncompletedOrderIds, o.get("orderId")) ){
+                    console.log("[order.js] uncompleted order id: ", o.get("orderId"));
+                    one(index+1);
+                }else{
+                    // new complete order
+                    o.adjust(function(){
+                        one(index+1);
+                    });
+                }
+
+            }
+        });
+    }
+})
+
+// depressed
 exports.BithumbOrder = Order.extend({
   adjust: function(resolve, reject) {
       if (this.get("isDone")) {
@@ -136,16 +260,17 @@ exports.BithumbOrder = Order.extend({
 // });
 //
 
-const coinoneAPI = require("./coinone.js");
+// depressed
 exports.CoinoneOrder = Order.extend({
     defaults: _.extend({
-        marketName: "COINONE",
-        coinType: "ETH" // or "BTC"
+        marketName: "COINONE"
+        // coinType: "ETH" // or "BTC"
     }, Order.defaults)
 });
 
+// depressed
 exports.CoinoneOrders = Orders.extend({
-    coinType: "eth",  // or "btc"
+    coinType: "ETH",  // or "BTC"
     refresh: function(resolve, reject){
         if(this.length == 0){
             resolve && resolve();
@@ -184,36 +309,6 @@ exports.CoinoneOrders = Orders.extend({
                     });
                 }
 
-            }
-        });
-    },
-    makeOrder: function(resolve, reject, options){
-      let thisOrders = this;
-        let params = {
-            price: options.price,
-            qty: options.qty,
-            currency: thisOrders.coinType
-        };
-        let url = "/v2/order/limit_";
-        if( options.type == "bid")
-            url += "buy/";
-        else if( options.type == "ask")
-            url += "sell/";
-
-        console.log(url, params);
-
-        coinoneAPI.call(url, params, function(result){
-            if(_.isObject(result) && _.isString(result.orderId)){
-                // NEW ORDER ONLY HERE!
-                let newOrder = new exports.CoinoneOrder({
-                    orderId: result.orderId,
-                    coinType: thisOrders.coinType
-                });
-                thisOrders.push(newOrder);
-                resolve && resolve();
-            }else{
-                console.log("[order.js] Coinone order error. maybe not a problem.");
-                reject && reject();
             }
         });
     }

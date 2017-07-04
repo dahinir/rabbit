@@ -4,8 +4,8 @@ const Backbone = require('backbone'),
     backsync = require('backsync'),
     _ = require('underscore');
 
-// ONLY CASE: KRW WITH SEED MONEY!
-let Machine = Backbone.Model.extend({
+
+exports.Machine = Backbone.Model.extend({
     // urlRoot: "mongodb://localhost:27017/rabbit/bithumb_btc_machines",
     urlRoot: "mongodb://localhost:27017/rabbit/machines",
     sync: backsync.mongodb(),
@@ -38,25 +38,25 @@ let Machine = Backbone.Model.extend({
     mind: function(options) {
       if (this.get("status") == "PENDING")
         return {
-          type: "pending"
+          type: "PENDING"
         }
 
       options = options || {}
-      let mind //  will be new mind of this machine
+      let mind = {} //  will be new mind of this machine
 
       switch (this.get("name")) {
         case "SCATTERER": // These machines scatter every prices
           if (this.get("status") == "KRW") {
             if (options.minAskPrice == this.get("buy_at"))
               mind = {
-                type: "bid",
-                thePrice: options.minAskPrice
+                type: "BID",
+                price: options.minAskPrice
               }
           } else if (this.get("status") == "COIN") {
             if (options.maxBidPrice >= this.get("craving_krw") + this.get("last_traded_price"))
               mind = {
-                type: "ask",
-                thePrice: options.maxBidPrice
+                type: "ASK",
+                price: options.maxBidPrice
               }
           }
           break
@@ -65,8 +65,8 @@ let Machine = Backbone.Model.extend({
       mind.at = new Date()
       this.set({
         mind: mind
-      });
-      return mind;
+      })
+      return mind
     },
     mind_old: function(attr, options) {
         const success = options.success;
@@ -230,8 +230,30 @@ let Machine = Backbone.Model.extend({
         // To avoid RangeError: Maximum call stack size exceeded
         process.nextTick(success);  // call `success` as next tick!
     },
-    // new_trade: async function(){  // This is a async function cuz of usin database
-    // },
+    accomplish: function(tradedPrice) {
+      let changed = {
+          traded_count: this.get("traded_count") + 1,
+          last_traded_price: tradedPrice,
+          last_traded_at: new Date()
+        }
+      if (this.get("mind").type == "ASK"){
+        _.extend(changed, {
+          status: "KRW",
+          profit_krw: this.get("profit_krw") + (tradedPrice - this.get("last_traded_price")) * this.get("capacity"),
+          profit_rate: this.get("profit_rate") + (tradedPrice - this.get("last_traded_price"))
+        })
+      }else if (this.get("mind").type == "BID"){
+        changed.status = "COIN"
+      }
+      return new Promise(resolve => {
+        this.save(changed, {
+          success: function(){
+            resolve()
+          }
+        })
+      })
+    },
+    // depressed
     trade: function(resolve, reject) { // machine always trade completly with its mind..
         let mind = this.get("mind");
 
@@ -240,13 +262,13 @@ let Machine = Backbone.Model.extend({
             last_traded_price: mind.thePrice,
             last_traded_at: new Date()
         };
-        if (mind.type == "ask") {
+        if (mind.type == "ASK") {
             changed.status = "KRW";
             changed.profit_krw =
                 this.get("profit_krw") + (mind.thePrice - this.get("last_traded_price")) * this.get('capacity'); // there is no float in this line
             // changed.profit_rate = changed.profit_krw / this.get('capacity');
             changed.profit_rate = this.get('profit_rate') + (mind.thePrice - this.get("last_traded_price"));
-        } else if (mind.type == "bid") {
+        } else if (mind.type == "BID") {
             changed.status = "COIN";
         }
         // console.log("[machines.js] changed:", changed);
@@ -259,11 +281,23 @@ let Machine = Backbone.Model.extend({
     }
 });
 
-let Machines = Backbone.Collection.extend({
+exports.Machines = Backbone.Collection.extend({
     url: "mongodb://localhost:27017/rabbit/machines",
     sync: backsync.mongodb(),
     model: exports.Machine,
-    presentation: function(attrs) {
+    presentation: function(){
+      let profit_krw_sum = 0,
+      total_traded = 0
+
+      this.each(m => {
+        profit_krw_sum += m.get("profit_krw")
+        total_traded += m.get("traded_count")
+      })
+
+      console.log("profit_krw_sum:", "\u20A9 " + new Intl.NumberFormat().format(profit_krw_sum))
+      console.log("total_traded:", new Intl.NumberFormat().format(total_traded))
+    },
+    presentation_old: function(attrs) {
         attrs = attrs || {};
         let btc_krw_b = attrs.btc_krw_b,
             btc_krw = attrs.btc_krw;
@@ -363,38 +397,35 @@ let Machines = Backbone.Collection.extend({
     },
     mind: function(options) {
       let startTime = new Date()
-      let orderBook = options.orderBook
+      let minAskPrice = options.orderBook.ask[0].price * 1,
+          maxBidPrice = options.orderBook.bid[0].price * 1
 
-      let participants = []
-      let totalBid = 0,
+      let participants = [],
+        totalBid = 0,
         totalAsk = 0,
         internalTradedUnits = 0
 
-      // console.log(orderBook)
-      // console.log("minAsk:", orderBook.ask[0])
-      // console.log("maxBid:", orderBook.bid[0])
       this.each(function(m) {
         let mind = m.mind({
-          minAskPrice: orderBook.ask[0],
-          maxBidPrice: orderBook.bid[0]
+          minAskPrice: minAskPrice,
+          maxBidPrice: maxBidPrice
         })
-        if (mind.type == "bid")
+        if (mind.type == "BID"){
           totalBid += m.get('capacity')
-        else if (mind.type == "ask")
+          participants.push(m)
+        }else if (mind.type == "ASK"){
           totalAsk += m.get('capacity')
+          participants.push(m)
+        }
       })
 
-      if (totalBid > totalAsk)
-        internalTradedUnits = totalAsk
-      else if (totalBid < totalAsk)
-        internalTradedUnits = totalBid
-      else if (totalBid == totalAsk)
-        internalTradedUnits = totalBid
-
       let result = {
-        totalBid: totalBid,
-        totalAsk: totalAsk,
-        internalTradedUnits: internalTradedUnits,
+        marketName: this.at(0).get("marketName"),
+        coinType: this.at(0).get("coinType"),
+        bidQuantity: totalBid.toFixed(2) * 1,
+        askQuantity: totalAsk.toFixed(2) * 1,
+        bidPrice: minAskPrice,  // buy at minAskPrice
+        askPrice: maxBidPrice,
         participants: participants
       }
 
@@ -585,8 +616,8 @@ let Machines = Backbone.Collection.extend({
 });
 
 
-exports.Machine = Machine;
-exports.Machines = Machines;
+// exports.Machine = Machine;
+// exports.Machines = Machines;
 
 // exports.BithumbBtcMachine = Machine.extend({
 // });

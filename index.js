@@ -11,19 +11,14 @@ const Machines = require('./machine.js').Machines;
 const Order = require('./order.js').Order;
 const Orders = require('./order.js').Orders;
 
+// const tic = require("./tick.js")
+
 global.rabbit = {
     machines: new Machines(),
     orders: new Orders()
-};
+}
 
-global.rabbit.machines.fetch({
-  success: function() {
-    console.log("success")
-  }
-})
-return;
-
-// fetch from db
+// Fetch all machines and orders from db
 global.rabbit.machines.fetchAll({
     success: function() {
         global.rabbit.orders.fetch({
@@ -33,19 +28,97 @@ global.rabbit.machines.fetchAll({
                 // $limit: 10
             },
             success: function() {
-                console.log("[index.js] ", global.rabbit.orders.length, "orders are loaded.");
                 console.log("[index.js] ", global.rabbit.machines.length, "machines are loaded.");
+                console.log("[index.js] ", global.rabbit.orders.length, "orders are loaded.");
+                console.log("===start======================")
+
+                // console.log(global.rabbit.machines.get("595b958342753ba3e4550580").attributes)
+                // return
+                //
+                // for(let order of global.rabbit.orders.models){
+                //   let participants = []
+                //
+                // }
+                global.rabbit.orders.each(order => {
+                  let participants = []
+
+                  for (let mId of order.get("machineIds")){
+                    participants.push(global.rabbit.machines.get(mId))
+                  }
+
+                  if (order.get("machineIds").length == participants.length)
+                    order.participants = participants
+                  else
+
+                    throw new Error("Order's participants got problem")
+                  console.log(participants.length)
+                })
+// return
+
+                // Run rabbit, Don't look back.
                 run();
             }
-        });
+        })
     }
-});
+})
 
-function run(){
-    let ms = 3000;
-    require("./coinoneEth.js").tick(function(){
-       setTimeout(run, ms);
-    });
+let startTime = new Date();
+let coinoneEthMachines, orders
+async function run() {
+  if (_.isUndefined(coinoneEthMachines))
+    coinoneEthMachines = new Machines(global.rabbit.machines.where({
+      coinType: "ETH",
+      marketName: "COINONE"
+    }))
+
+  if (_.isUndefined(orders))
+    orders = new Orders(global.rabbit.orders.where({
+      coinType: "ETH",
+      marketName: "COINONE"
+    }))
+
+  try {
+    await require("./tick.js")(coinoneEthMachines, orders)
+  } catch (e) {
+    console.log(e)
+  } finally {
+    console.log("[index.js] It's been ", ((new Date() - startTime) / 1000).toFixed(2), "sec")
+    global.rabbit.machines.presentation()
+    console.log("--end------------------------\n")
+    setTimeout(run, 5000)
+  }
+}
+/*
+let count = 0, appStartTime = new Date()
+
+
+async function tick(coinoneEthMachines, orders){
+  try {
+    let tickStartTime = new Date();
+    console.log("[coinoneEth.js] Tick no.", count++, "with", coinoneEthMachines.length, "machines");
+
+    // Promise.all
+    let [orderBook] = [await fetcher.getCoinoneEthOrderbook()]
+    console.log("[coinoneEth.js] All fetchers've take", ((new Date() - tickStartTime) / 1000).toFixed(2), "sec")
+console.log(coinoneEthMachines.length)
+    // Machines.mind returns participant machines
+    let coinoneEthMachinesResult = coinoneEthMachines.mind({
+        orderBook: orderBook
+    })
+    // console.log(result)
+    console.log("[coinoneEth.js]", coinoneEthMachinesResult.participants.length, "coinoneEthMachines want to deal")
+
+    // Submit order
+    await orders.placeOrder(coinoneEthMachinesResult)
+    // Check previous orders out
+    await orders.refresh()
+  } catch (e) {
+    console.log(e)
+  } finally {
+    // One more tick please
+    setTimeout(tick, 1000)
+    console.log("[index.js] It's been ", ((new Date() - appStartTime) / 60000).toFixed(2), "min")
+  }
 }
 
 /*

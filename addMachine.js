@@ -24,14 +24,6 @@ let setting = {
 const settings = [];
 let machine_count = 0;
 
-new Machine().save({
-  coinType: "ETH",
-  marketName: "COINONE",
-  name: "SCATTERER",
-  buy_at: 0,
-  craving_krw: 0
-})
-/*
 setting = {
   coinType: "ETH",
   marketName: "COINONE",
@@ -50,7 +42,7 @@ for (let buy_at = 300000; buy_at < 400000; buy_at += 50) {
     }
 }
 console.log(settings.length); // 20000
-*/
+
 
 /*
 // First penguins
@@ -231,6 +223,7 @@ console.log(settings.length); // 2000
 
 // SAVE TO THE DB
 function save(i) {
+  try {
     if (settings[i])
         new Machine().save(settings[i], {
             success: function() {
@@ -241,8 +234,14 @@ function save(i) {
                 })
             }
         });
+  } catch (e) {
+    console.log(e)
+  } finally {
+
+  }
+
 }
-// save(0);
+save(0);
 
 
 console.log("\nadded machines:", machine_count, settings.length);

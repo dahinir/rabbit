@@ -1,46 +1,74 @@
 "use strict"
 
-const KEYS = require('./credentials/keys.json');
-const request = require('request');
-const crypto = require("crypto");
-const _ = require("underscore");
+const request = require('request'),
+  crypto = require("crypto"),
+  _ = require("underscore")
 
-// run as singleton
-module.exports = new XCoinAPI(KEYS.COINONE.API_KEY, KEYS.COINONE.SECRET_KEY);
+const KEYS = require('./credentials/keys.json').COINONE,
+	ROOT_URL = 'https://api.coinone.co.kr/'
 
-function XCoinAPI(api_key, api_secret){
- 	this.apiUrl = 'https://api.coinone.co.kr';
-	this.api_key = api_key;
-	this.api_secret = api_secret;
-}
+// {
+// 	type: "bid",
+// 	price: 162400,
+// 	qty: 0.01,
+// 	coinType: "ETH"
+// }
+module.exports = function (options) {
+	if (!_.isObject(options))
+		throw new Error("[coinone.js] options needed")
 
-XCoinAPI.prototype.call = function(endPoint, params, callback, method) {
-    let payload = Buffer.from(JSON.stringify(_.extend({
-        "access_token": this.api_key,
-        "nonce": Date.now()
-    }, params))).toString('base64');
+  return new Promise((resolve, reject) => {
+		let params = {
+		  access_token: KEYS.API_KEY,
+		  nonce: Date.now()
+		}
+		let	url = ROOT_URL
+		if (options.type == "BID"){
+			url += "v2/order/limit_buy/"
+			_.extend(params, {
+				price: options.price,
+				qty: options.qty || options.quantity,
+				currency: (options.coinType || options.currency).toLowerCase()
+			})
+		}else if (options.type == "ASK"){
+			url += "v2/order/limit_sell/"
+			_.extend(params, {
+				price: options.price,
+				qty: options.qty || options.quantity,
+				currency: (options.coinType || options.currency).toLowerCase()
+			})
+		}else if (options.type == "UNCOMPLETED_ORDERS"){
+			url += "v2/order/limit_orders/"
+			params.currency = (options.coinType || options.currency).toLowerCase()
+		}else if (!options.type){
+			url += options.url
+			delete options.url
+			_.extend(params, options)
+		}
 
-    let headers = {
-        // 'content-type':'application/json',
-        // "accept": "application/json",
-        'X-COINONE-PAYLOAD': payload,
-        'X-COINONE-SIGNATURE': crypto.createHmac("sha512", this.api_secret.toUpperCase()).update(payload).digest('hex')
-    }
+		let payload = new Buffer(JSON.stringify(params)).toString('base64')
 
-    request({
-            method: method || "POST",
-            uri: this.apiUrl + endPoint,
-            headers: headers,
-            // formData: rgParams
-            // json: true,
-            body: payload
-        },
-        function(error, response, body) {
-            if (error) {
-                console.log(error);
-                return;
-            }
+		let opts = {
+			method: "POST",
+		  url: url,
+		  headers: {
+			  'content-type':'application/json',
+			  'X-COINONE-PAYLOAD': payload,
+			  'X-COINONE-SIGNATURE': crypto
+			    .createHmac("sha512", KEYS.SECRET_KEY.toUpperCase())
+			    .update(payload)
+			    .digest('hex')
+			},
+		  body: payload
+		}
 
-            callback && callback(JSON.parse(body));
-        });
+    request(opts, function(error, response, body) {
+			let result = JSON.parse(body)
+			if (result.result == "success")
+    		resolve(result)
+			else {
+				reject(result.errorCode)
+			}
+    })
+  })	// end of new Promise()
 }
