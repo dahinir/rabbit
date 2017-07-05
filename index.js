@@ -20,46 +20,60 @@ global.rabbit = {
 
 // Fetch all machines and orders from db
 global.rabbit.machines.fetchAll({
-    success: function() {
-        global.rabbit.orders.fetch({
-            data: {
-                isDone: false
-                // $skip: 10,
-                // $limit: 10
-            },
-            success: function() {
-                console.log("[index.js] ", global.rabbit.machines.length, "machines are loaded.");
-                console.log("[index.js] ", global.rabbit.orders.length, "orders are loaded.");
-                console.log("===start======================")
+  success: function() {
+    global.rabbit.orders.fetch({
+      data: {
+          isDone: false
+          // $skip: 10,
+          // $limit: 10
+      },
+      success: function() {
+          console.log("[index.js] ", global.rabbit.machines.length, "machines are loaded.");
+          console.log("[index.js] ", global.rabbit.orders.length, "undone orders are loaded.");
+          console.log("===start======================")
 
-                // console.log(global.rabbit.machines.get("595b958342753ba3e4550580").attributes)
-                // return
-                //
-                // for(let order of global.rabbit.orders.models){
-                //   let participants = []
-                //
-                // }
-                global.rabbit.orders.each(order => {
-                  let participants = []
+          // console.log(global.rabbit.machines.get("595b958342753ba3e4550580").attributes)
+          // return
+          //
+          // for(let order of global.rabbit.orders.models){
+          //   let participants = []
+          //
+          // }
+          global.rabbit.orders.each(order => {
+            let participants = []
 
-                  for (let mId of order.get("machineIds")){
-                    participants.push(global.rabbit.machines.get(mId))
-                  }
-
-                  if (order.get("machineIds").length == participants.length)
-                    order.participants = participants
-                  else
-
-                    throw new Error("Order's participants got problem")
-                  console.log(participants.length)
-                })
-// return
-
-                // Run rabbit, Don't look back.
-                run();
+            for (let mId of order.get("machineIds")){
+              let m = global.rabbit.machines.get(mId)
+              if(_.isUndefined(m)){
+                console.log("undefined machine!")
+                console.log(order.attributes)
+                throw new Error("wtf")
+              }
+              // console.log(mId)
+              // console.log(m.attributes)
+              participants.push(m)
             }
-        })
-    }
+
+            if (order.get("machineIds").length == participants.length){
+              console.log("order id:" ,order.id, "got participants properly!")
+              order.participants = participants
+            }else{
+              console.log("---order got problem-----")
+              console.log(participants)
+              console.log(order.attributes)
+              throw new Error("Order's participants got problem")
+            }
+
+            console.log("added to order participants:", participants.length)
+          })
+// return
+// db.machines.find({created_at:{$gt:ISODate("2017-07-04T13:40:37.513Z")}}).pretty()
+
+          // Run rabbit, Don't look back.
+          run();
+      }
+    })
+  }
 })
 
 let startTime = new Date();
@@ -85,7 +99,7 @@ async function run() {
     console.log("[index.js] It's been ", ((new Date() - startTime) / 1000).toFixed(2), "sec")
     global.rabbit.machines.presentation()
     console.log("--end------------------------\n")
-    setTimeout(run, 5000)
+    setTimeout(run, 7000)
   }
 }
 /*

@@ -5,7 +5,7 @@ const Backbone = require('backbone'),
     backsync = require('backsync'),
     coinoneAPI = require("./coinone.js");
 
-let Order = exports.Order = Backbone.Model.extend({
+exports.Order = Backbone.Model.extend({
     urlRoot: "mongodb://localhost:27017/rabbit/orders", // not url. cuz of backsync
     sync: backsync.mongodb(),
     idAttribute: "id",
@@ -18,32 +18,37 @@ let Order = exports.Order = Backbone.Model.extend({
         marketName: "COINONE"
     },
     initialize: function(attributes, options) {
-      if (!this.id)
+      if (!this.id){
         this.set({
           id: require('mongodb').ObjectID(),
           created_at: new Date()
         })
+      }
     },
     completed: async function(){
-      console.log("[order.js] Completed order with", this.get("machineIds").length, "machines")
+      console.log("[order.js] Completed order with", this.participants.length, "machines")
+      // console.log(this.participants)
       for (let machine of this.participants){
+        if(machine.get("orderId"))
+          throw new Error("fuck! machine got orderId:", machine.get("orderId"))
         await machine.accomplish(this.get("price"))
       }
       // for (let mId of this.get("machineIds")){
-      //   console.log(mId)
-      //   console.log(global.rabbit.machines.length)
-      //   console.log(global.rabbit.machines.get(mId).attributes)
-      //   console.log(global.rabbit.machines.get("595b958342753ba3e4550580").attributes)
       //   await global.rabbit.machines.get(mId).accomplish(this.get("price"))
       // }
+      // let that = this
+      // that.save({
+      //   haha: true,
+      //   isDone: true
+      // })
       this.destroy()
     }
 })
 
-let Orders = exports.Orders = Backbone.Collection.extend({
+exports.Orders = Backbone.Collection.extend({
     url: "mongodb://localhost:27017/rabbit/orders",
     sync: backsync.mongodb(),
-    model: Order,
+    model: exports.Order,
     // machines.mind()'s return object will be this options
     placeOrder: async function(options){
       if (!_.isObject(options))
@@ -72,27 +77,30 @@ let Orders = exports.Orders = Backbone.Collection.extend({
           console.log("[order.js] Won't place order")
         }else{
           console.log("[order.js] Perpect internal trade! Can you believe it?")
-          new Order({
-            machineIds: _.pluck(options.participants, "id"),
+          new exports.Order({
+            machineIds: options.machineIds,
             price: options.bidPrice // It can be askPrice but I prefer
           }).completed()
         }
+////!!!!!! THIS IS async func! code below return may be excuted .. i dont know
         return  // doesn't need deal with real market like Coinone
       }
 
       // Actual order here
       let marketResult = await marketAPI({
         type: type,
+        // price: price -100000,
         price: price,
         qty: quantity,
         coinType: options.coinType.toLowerCase()
       })
+      console.log("[order.js] order is placed:", marketResult)
 
       // NEW ORDER ONLY HERE!
       if (_.isString(marketResult.orderId)){
-        let newOrder = new Order({
+        let newOrder = new exports.Order({
           orderId: marketResult.orderId,
-          machineIds: _.pluck(options.participants, "id"),
+          machineIds: options.machineIds,
           marketName: options.marketName,
           coinType: options.coinType,
           type: type,
@@ -100,26 +108,36 @@ let Orders = exports.Orders = Backbone.Collection.extend({
           quantity: quantity,
           internalTradeQuantity: internalTradeQuantity
         });
-        newOrder.save()
-        // _.each(options.participants, machine => {
-        //   machine.save({
-        //     status: "PENDING"
-        //   })
-        // })
-        // Save all participants machines PENDING
-        savePending(0)
-        function savePending(index){
-          options.participants[index].save({
-            status: "PENDING"
-          },{
-            success: function (){
-              if (options.participants.length > index+1)
-                savePending(index + 1)
+
+        newOrder.save({},{
+          success: function(){
+            console.log("[order.js] Successfully saved new order")
+            // _.each(options.participants, machine => {
+            //   machine.save({
+            //     status: "PENDING"
+            //   })
+            // })
+            // Save all participants machines PENDING
+            // console.log("befor savePending")
+            savePending(0)  // saving start
+            // console.log("after savePending:", options.participants.length)
+            function savePending(index){
+              options.participants[index].save({
+                status: "PENDING"
+              },{
+                success: function (){
+                  // console.log("[order.js] Participant saved as PENDING, index:", index)
+                  if (options.participants.length > index+1)
+                    savePending(index + 1)
+                }
+              })
             }
-          })
-        }
+          }
+        })
+
         newOrder.participants = options.participants  // machines array. not as attributes
         this.push(newOrder);
+        console.log("end of order.placeOrder()")
       }
     },
     // Refresh All of this orders. no matter what marketName or coinType. All of them.
@@ -140,8 +158,8 @@ let Orders = exports.Orders = Backbone.Collection.extend({
           await order.completed()
         }
       }
-    },
-    refresh_old: function(resolve, reject){
+    }
+/*    refresh_old: function(resolve, reject){
         if(this.length == 0){
             resolve && resolve();
             return;
@@ -181,9 +199,10 @@ let Orders = exports.Orders = Backbone.Collection.extend({
 
             }
         });
-    }
+    }  */
 })
 
+/*
 // depressed
 exports.BithumbOrder = Order.extend({
   adjust: function(resolve, reject) {
@@ -258,7 +277,6 @@ exports.BithumbOrder = Order.extend({
 //
 // exports.BithumbOrders = Orders.extend({
 // });
-//
 
 // depressed
 exports.CoinoneOrder = Order.extend({
@@ -313,3 +331,4 @@ exports.CoinoneOrders = Orders.extend({
         });
     }
 });
+*/

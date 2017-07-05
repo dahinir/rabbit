@@ -2,7 +2,7 @@
 
 const Backbone = require('backbone'),
     backsync = require('backsync'),
-    _ = require('underscore');
+    _ = require('underscore')
 
 
 exports.Machine = Backbone.Model.extend({
@@ -27,7 +27,16 @@ exports.Machine = Backbone.Model.extend({
         traded_count: 0,
         last_traded_price: 0
     },
-    initialize: function() {
+    initialize: function(attributes, options) {
+      // if (attributes.orderId){
+      //   console.log("SOMETHING WRONG!!")
+      //   console.log(attributes)
+      //   throw new Error("a")
+      // }
+      this.on("change:orderId", function(e){
+        console.log(e.attributes)
+        throw new Error("fuck.. orderId:")
+      });
       if (!this.id)
         this.set({
           id: require('mongodb').ObjectID(),
@@ -47,7 +56,7 @@ exports.Machine = Backbone.Model.extend({
       switch (this.get("name")) {
         case "SCATTERER": // These machines scatter every prices
           if (this.get("status") == "KRW") {
-            if (options.minAskPrice == this.get("buy_at"))
+            if (options.minAskPrice == this.get("buy_at") || options.minAskPrice == this.get("buy_at") - 50)
               mind = {
                 type: "BID",
                 price: options.minAskPrice
@@ -68,7 +77,7 @@ exports.Machine = Backbone.Model.extend({
       })
       return mind
     },
-    mind_old: function(attr, options) {
+/*    mind_old: function(attr, options) {
         const success = options.success;
 
         let hope = attr.hope * 1,
@@ -229,7 +238,7 @@ exports.Machine = Backbone.Model.extend({
         });
         // To avoid RangeError: Maximum call stack size exceeded
         process.nextTick(success);  // call `success` as next tick!
-    },
+    },*/
     accomplish: function(tradedPrice) {
       let changed = {
           traded_count: this.get("traded_count") + 1,
@@ -245,7 +254,10 @@ exports.Machine = Backbone.Model.extend({
       }else if (this.get("mind").type == "BID"){
         changed.status = "COIN"
       }
+
       return new Promise(resolve => {
+        // console.log("[machine.js] save with changed:", changed)
+        // console.log(this.attributes)
         this.save(changed, {
           success: function(){
             resolve()
@@ -254,7 +266,7 @@ exports.Machine = Backbone.Model.extend({
       })
     },
     // depressed
-    trade: function(resolve, reject) { // machine always trade completly with its mind..
+    trade_old: function(resolve, reject) { // machine always trade completly with its mind..
         let mind = this.get("mind");
 
         let changed = {
@@ -297,7 +309,7 @@ exports.Machines = Backbone.Collection.extend({
       console.log("profit_krw_sum:", "\u20A9 " + new Intl.NumberFormat().format(profit_krw_sum))
       console.log("total_traded:", new Intl.NumberFormat().format(total_traded))
     },
-    presentation_old: function(attrs) {
+/*    presentation_old: function(attrs) {
         attrs = attrs || {};
         let btc_krw_b = attrs.btc_krw_b,
             btc_krw = attrs.btc_krw;
@@ -354,9 +366,7 @@ exports.Machines = Backbone.Collection.extend({
             bought_btc_for_netting: bought_btc_for_netting.toFixed(3),
             pending_btc: pending_btc
         };
-    },
-    // fetalAll_new: async function(){
-    // },
+    }, */
     fetchAll: function(options) {
       options = options || {};
       const success = options.success;
@@ -401,6 +411,7 @@ exports.Machines = Backbone.Collection.extend({
           maxBidPrice = options.orderBook.bid[0].price * 1
 
       let participants = [],
+        machineIds = [],
         totalBid = 0,
         totalAsk = 0,
         internalTradedUnits = 0
@@ -413,10 +424,16 @@ exports.Machines = Backbone.Collection.extend({
         if (mind.type == "BID"){
           totalBid += m.get('capacity')
           participants.push(m)
+          machineIds.push(m.id)
+          // DONT USE `_.pluck(options.participants, "id")` It will push ObjectID("adf0oqh3t")
         }else if (mind.type == "ASK"){
           totalAsk += m.get('capacity')
           participants.push(m)
+          machineIds.push(m.id)
         }
+
+        if(m.get("orderId"))
+          throw new Error("[machine.js] FUCK!! machine got orderId:", m.get("orderId"))
       })
 
       let result = {
@@ -426,13 +443,15 @@ exports.Machines = Backbone.Collection.extend({
         askQuantity: totalAsk.toFixed(2) * 1,
         bidPrice: minAskPrice,  // buy at minAskPrice
         askPrice: maxBidPrice,
-        participants: participants
+        participants: participants,
+        machineIds: machineIds
       }
 
+      console.log("[machine.js] bidPrice:", minAskPrice, "askPrice:", maxBidPrice)
       console.log("[machine.js] machines.mind() takes", ((new Date() - startTime) / 1000).toFixed(2), "sec")
       return result
-    },
-    mind_old: function(options) {
+    }
+/*    mind_old: function(options) {
         let startTime = new Date();
 
         let hope = options.hope,
@@ -489,7 +508,7 @@ exports.Machines = Backbone.Collection.extend({
         }
         one(0);
     },
-    makeRealPlayer: function(attr) {
+    makeRealPlayer_old: function(attr) {
         attr = attr || {};
         let btc_krw_b = attr.btc_krw_b,
             hope = attr.hope;
@@ -612,7 +631,7 @@ exports.Machines = Backbone.Collection.extend({
         console.log("[machine.js] New REAL type machines have ", totalCapacity, "capacity");
         // console.log(rank.length);
         // console.log(rank[0].attributes);
-    }
+    } */
 });
 
 
