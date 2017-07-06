@@ -84,20 +84,40 @@ exports.getRecentTransactions = function(){
   });
 };
 
-exports.getTicker = function(){
+exports.getKorbitInfo = function(){
   return new Promise((resolve, reject) => {
-    xcoinAPI.xcoinApiCall('/public/ticker', {}, function(result) {
-        if (!result || !(result.status=="0000")) {
-            throw new Error( "[fetch.js] .getTicker() failed");
-        }else{
-            // console.log("[fetcher.js] Bithumb:", result.data);
-            resolve(result.data);
+    request({
+        method: "GET",
+        uri: "https://api.korbit.co.kr/v1/ticker/detailed",
+        qs: {
+          currency_pair: "eth_krw"
         }
-    });
-  });
-};
+      },
+      function(error, response, body) {
+        let result = JSON.parse(body);
+        if (result.result == 'success')
+          resolve(result);
+      })
+  })
+}
 
-exports.getCoinoneEthOrderbook = function(resolve, reject) {
+exports.getCoinoneInfo = function(){
+  return new Promise((resolve, reject) => {
+    request({
+        method: "GET",
+        uri: "https://api.coinone.co.kr/ticker/",
+        qs: {
+          currency: 'eth'
+        }
+      },
+      function(error, response, body) {
+        let result = JSON.parse(body);
+        if (result.result == 'success')
+          resolve(result);
+      })
+  })
+}
+exports.getCoinoneEthOrderbook = function() {
   return new Promise((resolve, reject) => {
     // this is public api
     request({

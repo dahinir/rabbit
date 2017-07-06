@@ -76,7 +76,8 @@ global.rabbit.machines.fetchAll({
   }
 })
 
-let startTime = new Date();
+let startTime = new Date(),
+  BREAKTIME = 7000  // ms
 let coinoneEthMachines, orders
 async function run() {
   if (_.isUndefined(coinoneEthMachines))
@@ -98,8 +99,8 @@ async function run() {
   } finally {
     console.log("[index.js] It's been ", ((new Date() - startTime) / 1000).toFixed(2), "sec")
     global.rabbit.machines.presentation()
-    console.log("--end------------------------\n")
-    setTimeout(run, 7000)
+    console.log("----",BREAKTIME,"ms later--------------------\n")
+    setTimeout(run, BREAKTIME)
   }
 }
 /*

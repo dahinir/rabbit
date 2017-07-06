@@ -27,10 +27,9 @@ exports.Order = Backbone.Model.extend({
     },
     completed: async function(){
       console.log("[order.js] Completed order with", this.participants.length, "machines")
-      // console.log(this.participants)
+
       for (let machine of this.participants){
-        if(machine.get("orderId"))
-          throw new Error("fuck! machine got orderId:", machine.get("orderId"))
+        console.log("machine id:", machine.id)
         await machine.accomplish(this.get("price"))
       }
       // for (let mId of this.get("machineIds")){
@@ -137,12 +136,12 @@ exports.Orders = Backbone.Collection.extend({
 
         newOrder.participants = options.participants  // machines array. not as attributes
         this.push(newOrder);
-        console.log("end of order.placeOrder()")
+        // console.log("end of order.placeOrder()")
       }
     },
     // Refresh All of this orders. no matter what marketName or coinType. All of them.
     refresh: async function(options) {
-      // Coinone with Ethereum
+      // Fetch from Coinone with Ethereum
       let uncompletedOrderIds = _.pluck((await coinoneAPI({
         type: "UNCOMPLETED_ORDERS",
         coinType: "ETH"
@@ -151,9 +150,9 @@ exports.Orders = Backbone.Collection.extend({
       for(let order of this.models){  // this.models returns array so can use for...of
         if (_.contains(uncompletedOrderIds, order.get("orderId")) ){
           // It's uncompleted order. Doesn't do anything.
-          console.log("[order.js] Uncompleted order id:", order.get("orderId"), ((new Date() - order.get("created_at")) / 60000).toFixed(2), "min ago")
+          console.log("[order.js] Uncompleted order id:", order.get("orderId"), ((new Date() - order.get("created_at")) / 60000).toFixed(2), "min ago", order.get("price"), order.get("type"))
         }else{
-          console.log("[order.js] New completed order! id:", order.get("orderId"))
+          console.log("[order.js] New completed order! id:", order.get("orderId"), order.get("price"), order.get("type"))
           // New complete order!
           await order.completed()
         }

@@ -306,8 +306,8 @@ exports.Machines = Backbone.Collection.extend({
         total_traded += m.get("traded_count")
       })
 
-      console.log("profit_krw_sum:", "\u20A9 " + new Intl.NumberFormat().format(profit_krw_sum))
-      console.log("total_traded:", new Intl.NumberFormat().format(total_traded))
+      console.log("PROFIT:", "\u20A9 " + new Intl.NumberFormat().format(profit_krw_sum))
+      console.log("TOTAL TRADED:", new Intl.NumberFormat().format(total_traded))
     },
 /*    presentation_old: function(attrs) {
         attrs = attrs || {};

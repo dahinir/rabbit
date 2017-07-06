@@ -11,12 +11,20 @@ console.log("[tick.js] Loaded!")
 let count = 0
 
 module.exports = async function(machines, orders){
-  let tickStartTime = new Date();
-  console.log("[tick.js] Tick no.", ++count, "with", machines.length, "machines");
+  let startTime = new Date();
+  console.log("Tick no.", ++count, "with", machines.length, "machines");
 
   // Promise.all
-  let [orderBook] = [await fetcher.getCoinoneEthOrderbook()]
-  console.log("[tick.js] All fetchers've take", ((new Date() - tickStartTime) / 1000).toFixed(2), "sec")
+  let [orderBook, coinoneInfo] = [await fetcher.getCoinoneEthOrderbook(), await fetcher.getCoinoneInfo()]
+  let fetchingTime = ((new Date() - startTime) / 1000).toFixed(2) // sec
+  console.log("== in 24hrs at Coinone:", coinoneInfo.low, "~", coinoneInfo.high, ":",
+      ((coinoneInfo.last- coinoneInfo.low)/(coinoneInfo.high- coinoneInfo.low)*100).toFixed(2),"%" )
+  console.log("All fetchers've take", fetchingTime, "sec")
+  if (fetchingTime > 1.7 ){
+    console.log("Fetched too late, pass this tic")
+    return
+  }
+
   // Machines.mind returns participant machines
   let machinesResult = machines.mind({
       orderBook: orderBook
