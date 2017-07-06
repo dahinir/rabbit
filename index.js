@@ -76,10 +76,17 @@ global.rabbit.machines.fetchAll({
   }
 })
 
-let startTime = new Date(),
-  BREAKTIME = 7000  // ms
+let killSign = false
+process.on('SIGINT', function() {
+  console.log(": Kill sign submitted.");
+  killSign = true
+})
+
+let MIN_TERM = 1332  // ms
 let coinoneEthMachines, orders
 async function run() {
+  let startTime = new Date()
+
   if (_.isUndefined(coinoneEthMachines))
     coinoneEthMachines = new Machines(global.rabbit.machines.where({
       coinType: "ETH",
@@ -97,10 +104,19 @@ async function run() {
   } catch (e) {
     console.log(e)
   } finally {
-    console.log("[index.js] It's been ", ((new Date() - startTime) / 1000).toFixed(2), "sec")
     global.rabbit.machines.presentation()
-    console.log("----",BREAKTIME,"ms later--------------------\n")
-    setTimeout(run, BREAKTIME)
+    console.log("[index.js] It's been ", ((new Date() - startTime) / 1000).toFixed(2), "sec")
+
+    if (killSign){
+      console.log("Rabbit is stopped gracefully.")
+      return
+    }else{
+      let breakTime = MIN_TERM - (new Date() - startTime)
+      breakTime = (breakTime < 0)? 0 : breakTime
+      console.log("----", breakTime,"ms later--------------------\n")
+      // One more time
+      setTimeout(run, breakTime)
+    }
   }
 }
 /*

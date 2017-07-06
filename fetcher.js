@@ -111,9 +111,11 @@ exports.getCoinoneInfo = function(){
         }
       },
       function(error, response, body) {
-        let result = JSON.parse(body);
+        let result = JSON.parse(body)
         if (result.result == 'success')
-          resolve(result);
+          resolve(result)
+        else
+          reject(result)
       })
   })
 }
@@ -128,11 +130,12 @@ exports.getCoinoneEthOrderbook = function() {
             }
         },
         function(error, response, body) {
-            let result = JSON.parse(body);
+            let result = JSON.parse(body)
             // console.log(result)
             if( result.result == 'success')
-                resolve(result);
-                // return result;
+              resolve(result)
+            else
+              reject(result)
         });
   })
 }
