@@ -11,7 +11,15 @@ const Machines = require('./machine.js').Machines;
 const Order = require('./order.js').Order;
 const Orders = require('./order.js').Orders;
 
-// const tic = require("./tick.js")
+console.log("It's been",
+  Math.ceil((new Date() - new Date('July 4, 2017 13:20:00'))/ 86400000),
+  "days")
+  
+let killSign = false
+process.on('SIGINT', function() {
+  console.log(": Kill sign submitted.");
+  killSign = true
+})
 
 global.rabbit = {
     machines: new Machines(),
@@ -76,14 +84,9 @@ global.rabbit.machines.fetchAll({
   }
 })
 
-let killSign = false
-process.on('SIGINT', function() {
-  console.log(": Kill sign submitted.");
-  killSign = true
-})
-
-let MIN_TERM = 1332  // ms
+let MIN_TERM = 2700  // ms
 let coinoneEthMachines, orders
+
 async function run() {
   let startTime = new Date()
 
@@ -100,12 +103,13 @@ async function run() {
     }))
 
   try {
+    // HERE BABE HERE IT IS
     await require("./tick.js")(coinoneEthMachines, orders)
   } catch (e) {
     console.log(e)
   } finally {
     global.rabbit.machines.presentation()
-    console.log("[index.js] It's been ", ((new Date() - startTime) / 1000).toFixed(2), "sec")
+
 
     if (killSign){
       console.log("Rabbit is stopped gracefully.")
@@ -113,7 +117,7 @@ async function run() {
     }else{
       let breakTime = MIN_TERM - (new Date() - startTime)
       breakTime = (breakTime < 0)? 0 : breakTime
-      console.log("----", breakTime,"ms later--------------------\n")
+      console.log("-- takes", (new Date() -startTime)/1000,"sec, so", breakTime,"ms later--------------------\n")
       // One more time
       setTimeout(run, breakTime)
     }

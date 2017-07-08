@@ -410,6 +410,8 @@ exports.Machines = Backbone.Collection.extend({
       let minAskPrice = options.orderBook.ask[0].price * 1,
           maxBidPrice = options.orderBook.bid[0].price * 1
 
+      console.log("[machine.js] maxBid:", maxBidPrice, " minAsk:", minAskPrice, )
+
       let participants = [],
         machineIds = [],
         totalBid = 0,
@@ -431,9 +433,6 @@ exports.Machines = Backbone.Collection.extend({
           participants.push(m)
           machineIds.push(m.id)
         }
-
-        if(m.get("orderId"))
-          throw new Error("[machine.js] FUCK!! machine got orderId:", m.get("orderId"))
       })
 
       let result = {
@@ -447,7 +446,6 @@ exports.Machines = Backbone.Collection.extend({
         machineIds: machineIds
       }
 
-      console.log("[machine.js] bidPrice:", minAskPrice, "askPrice:", maxBidPrice)
       console.log("[machine.js] machines.mind() takes", ((new Date() - startTime) / 1000).toFixed(2), "sec")
       return result
     }

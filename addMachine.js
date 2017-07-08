@@ -31,7 +31,7 @@ setting = {
   buy_at: 0,
   craving_krw: 0
 }
-for (let buy_at = 300000; buy_at < 400000; buy_at += 100) {
+for (let buy_at = 200000; buy_at < 400000; buy_at += 100) {
     setting.buy_at = buy_at;
 
     for (let craving_krw = 1000; craving_krw <= 10000; craving_krw += 1000) {
@@ -41,7 +41,7 @@ for (let buy_at = 300000; buy_at < 400000; buy_at += 100) {
         console.log(setting.buy_at, setting.craving_krw);
     }
 }
-console.log(settings.length); // 10000
+console.log(settings.length); // 20000
 
 
 /*

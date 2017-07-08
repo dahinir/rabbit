@@ -20,6 +20,7 @@ module.exports = async function(machines, orders){
 
   console.log("== in 24hrs at Coinone:", coinoneInfo.low, "~", coinoneInfo.high, ":",coinoneInfo.last,"(",
       ((coinoneInfo.last- coinoneInfo.low)/(coinoneInfo.high- coinoneInfo.low)*100).toFixed(2),"% )" )
+  // console.log("")
   console.log("All fetchers've take", fetchingTime, "sec")
   if (fetchingTime > 7.0 ){
     console.log("Fetched too late, pass this tic")

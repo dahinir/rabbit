@@ -94,9 +94,11 @@ exports.getKorbitInfo = function(){
         }
       },
       function(error, response, body) {
-        let result = JSON.parse(body);
-        if (result.result == 'success')
-          resolve(result);
+        let result = JSON.parse(body)
+        if (result.timestamp > 0)
+          resolve(result)
+        else
+          reject(result)
       })
   })
 }

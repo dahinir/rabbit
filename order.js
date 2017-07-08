@@ -76,14 +76,20 @@ exports.Orders = Backbone.Collection.extend({
           console.log("[order.js] Won't place order")
         }else{
           console.log("[order.js] Perpect internal trade! Can you believe it?")
-          new exports.Order({
+          console.log(options)
+          // This order won't save in db. only runtime
+          let newOrder = new exports.Order({
             machineIds: options.machineIds,
             price: options.bidPrice // It can be askPrice but I prefer
-          }).completed()
+          })
+          newOrder.participants = options.participants  // machines array. not as attributes
+          await newOrder.completed()
         }
-////!!!!!! THIS IS async func! code below return may be excuted .. i dont know
         return  // doesn't need deal with real market like Coinone
       }
+
+      if (internalTradeQuantity > 0)
+        console.log("Whoa! internalTradeQuantity:", internalTradeQuantity)
 
       // Actual order here
       let marketResult = await marketAPI({
@@ -95,7 +101,7 @@ exports.Orders = Backbone.Collection.extend({
       })
       console.log("[order.js] order is placed:", marketResult)
 
-      // NEW ORDER ONLY HERE!
+      // NEW ORDER ONLY HERE! ..and when perpect internal occur
       if (_.isString(marketResult.orderId)){
         let newOrder = new exports.Order({
           orderId: marketResult.orderId,
@@ -141,6 +147,9 @@ exports.Orders = Backbone.Collection.extend({
     },
     // Refresh All of this orders. no matter what marketName or coinType. All of them.
     refresh: async function(options) {
+      if (this.length == 0)
+        return
+
       // Fetch from Coinone with Ethereum
       let uncompletedOrderIds = _.pluck((await coinoneAPI({
         type: "UNCOMPLETED_ORDERS",
@@ -150,14 +159,16 @@ exports.Orders = Backbone.Collection.extend({
       for(let order of this.models){  // this.models returns array so can use for...of
         if (_.contains(uncompletedOrderIds, order.get("orderId")) ){
           // It's uncompleted order. Doesn't do anything.
-          console.log("[order.js] Uncompleted order id:", order.get("orderId"), ((new Date() - order.get("created_at")) / 60000).toFixed(2), "min ago", order.get("price"), order.get("type"))
+          console.log("[order.js] Uncompleted orderId:", order.get("orderId"),
+            order.get("price"), order.get("quantity").toFixed(2), order.get("type"),
+            ((new Date() - order.get("created_at")) / 60000).toFixed(2), "min ago\t")
         }else{
-          console.log("[order.js] New completed order! id:", order.get("orderId"), order.get("price"), order.get("type"))
+          console.log("[order.js] New completed order! id:", order.get("orderId"), order.get("type"))
           // New complete order!
           await order.completed()
         }
       }
-    }
+    } // end of refresh
 /*    refresh_old: function(resolve, reject){
         if(this.length == 0){
             resolve && resolve();
