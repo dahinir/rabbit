@@ -94,7 +94,15 @@ exports.getKorbitInfo = function(){
         }
       },
       function(error, response, body) {
-        let result = JSON.parse(body)
+        let result
+        try {
+          result = JSON.parse(body)
+        } catch (e) {
+          // throw new Error("[fetcher.js] Maybe not a problem")
+          reject()
+          return
+        }
+
         if (result.timestamp > 0)
           resolve(result)
         else
@@ -113,7 +121,15 @@ exports.getCoinoneInfo = function(){
         }
       },
       function(error, response, body) {
-        let result = JSON.parse(body)
+        let result
+        try {
+          result = JSON.parse(body)
+        } catch (e) {
+          // throw new Error("[fetcher.js] Maybe not a problem")
+          reject()
+          return
+        }
+
         if (result.result == 'success')
           resolve(result)
         else
@@ -132,8 +148,15 @@ exports.getCoinoneEthOrderbook = function() {
             }
         },
         function(error, response, body) {
-            let result = JSON.parse(body)
-            // console.log(result)
+            let result
+            try {
+              result = JSON.parse(body)
+            } catch (e) {
+              // throw new Error("[fetcher.js] Maybe not a problem")
+              reject()
+              return
+            }
+
             if( result.result == 'success')
               resolve(result)
             else

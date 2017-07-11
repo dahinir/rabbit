@@ -46,9 +46,9 @@ module.exports = function (options) {
 			_.extend(params, options)
 		}
 
-		let payload = new Buffer(JSON.stringify(params)).toString('base64')
+		const payload = new Buffer(JSON.stringify(params)).toString('base64')
 
-		let opts = {
+		const opts = {
 			method: "POST",
 		  url: url,
 		  headers: {
@@ -63,12 +63,16 @@ module.exports = function (options) {
 		}
 
     request(opts, function(error, response, body) {
-			let result = JSON.parse(body)
-			if (result.result == "success")
-    		resolve(result)
-			else {
-				reject(result.errorCode)
-			}
+      try {
+        const result = JSON.parse(body)
+        if (result.result == "success")
+      		resolve(result)
+        else
+          reject()
+      } catch (e) {
+        // throw new Error("[coinone.js] Maybe not a problem")
+        reject(e)
+      }
     })
   })	// end of new Promise()
 }

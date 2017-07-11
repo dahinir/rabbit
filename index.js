@@ -14,7 +14,7 @@ const Orders = require('./order.js').Orders;
 console.log("It's been",
   Math.ceil((new Date() - new Date('July 4, 2017 13:20:00'))/ 86400000),
   "days")
-  
+
 let killSign = false
 process.on('SIGINT', function() {
   console.log(": Kill sign submitted.");
@@ -48,7 +48,7 @@ global.rabbit.machines.fetchAll({
           //
           // }
           global.rabbit.orders.each(order => {
-            let participants = []
+            const participants = []
 
             for (let mId of order.get("machineIds")){
               let m = global.rabbit.machines.get(mId)
@@ -84,42 +84,27 @@ global.rabbit.machines.fetchAll({
   }
 })
 
-let MIN_TERM = 2700  // ms
-let coinoneEthMachines, orders
+const MIN_TERM = 2700  // ms
 
 async function run() {
-  let startTime = new Date()
-
-  if (_.isUndefined(coinoneEthMachines))
-    coinoneEthMachines = new Machines(global.rabbit.machines.where({
-      coinType: "ETH",
-      marketName: "COINONE"
-    }))
-
-  if (_.isUndefined(orders))
-    orders = new Orders(global.rabbit.orders.where({
-      coinType: "ETH",
-      marketName: "COINONE"
-    }))
+  const startTime = new Date()
 
   try {
     // HERE BABE HERE IT IS
-    await require("./tick.js")(coinoneEthMachines, orders)
+    await require("./tick.js")()
   } catch (e) {
     console.log(e)
   } finally {
     global.rabbit.machines.presentation()
 
-
     if (killSign){
       console.log("Rabbit is stopped gracefully.")
       return
     }else{
-      let breakTime = MIN_TERM - (new Date() - startTime)
-      breakTime = (breakTime < 0)? 0 : breakTime
-      console.log("-- takes", (new Date() -startTime)/1000,"sec, so", breakTime,"ms later--------------------\n")
+      const BREAK_TIME = MIN_TERM - (new Date() - startTime)
+      console.log("-- takes", (new Date() -startTime)/1000,"sec, so", BREAK_TIME,"ms later--------------------\n")
       // One more time
-      setTimeout(run, breakTime)
+      setTimeout(run, BREAK_TIME)
     }
   }
 }

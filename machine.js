@@ -43,7 +43,7 @@ exports.Machine = Backbone.Model.extend({
           created_at: new Date()
         })
     },
-    // Set new mind! won't deal with databases
+    // Set new mind in runtime instance! won't deal with databases
     mind: function(options) {
       if (this.get("status") == "PENDING")
         return {
@@ -239,6 +239,21 @@ exports.Machine = Backbone.Model.extend({
         // To avoid RangeError: Maximum call stack size exceeded
         process.nextTick(success);  // call `success` as next tick!
     },*/
+    // The order is submitted
+    pend: function(){
+      let id = this.id
+      return new Promise(resolve => {
+        this.save({
+          status: "PENDING"
+        }, {
+          success: function(){
+            // console.log("[machine.js] pending successfully. id:", id)
+            resolve()
+          }
+        })
+      })
+    },
+    // YES
     accomplish: function(tradedPrice) {
       let changed = {
           traded_count: this.get("traded_count") + 1,
@@ -299,15 +314,18 @@ exports.Machines = Backbone.Collection.extend({
     model: exports.Machine,
     presentation: function(){
       let profit_krw_sum = 0,
-      total_traded = 0
+        total_traded = 0,
+        coin_sum = 0
 
       this.each(m => {
         profit_krw_sum += m.get("profit_krw")
         total_traded += m.get("traded_count")
+        coin_sum += (m.get("status")=="COIN")? m.get("capacity"):0
       })
 
-      console.log("PROFIT:", "\u20A9 " + new Intl.NumberFormat().format(profit_krw_sum))
-      console.log("TOTAL TRADED:", new Intl.NumberFormat().format(total_traded))
+      console.log("Profit: \u20A9 " + new Intl.NumberFormat().format(profit_krw_sum),
+        ", Bought Coin:", coin_sum.toFixed(2))
+      console.log("Total Traded:", new Intl.NumberFormat().format(total_traded))
     },
 /*    presentation_old: function(attrs) {
         attrs = attrs || {};

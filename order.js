@@ -65,12 +65,12 @@ exports.Orders = Backbone.Collection.extend({
         type = "BID"
         price = options.bidPrice
         quantity = options.bidQuantity - options.askQuantity
-        internalTradeQuantity = options.askQuantity // Smaller one
+        internalTradeQuantity = options.askQuantity * 2 // Smaller one
       }else if (options.bidQuantity < options.askQuantity){
         type = "ASK"
         price = options.askPrice
         quantity = options.askQuantity - options.bidQuantity
-        internalTradeQuantity = options.bidQuantity
+        internalTradeQuantity = options.bidQuantity * 2
       }else if (options.bidQuantity == options.askQuantity){
         if (options.bidQuantity == 0){
           console.log("[order.js] Won't place order")
@@ -80,7 +80,10 @@ exports.Orders = Backbone.Collection.extend({
           // This order won't save in db. only runtime
           let newOrder = new exports.Order({
             machineIds: options.machineIds,
-            price: options.bidPrice // It can be askPrice but I prefer
+            coinType: options.coinType,
+            price: options.bidPrice, // It can be askPrice but I prefer
+            quantity: 0,
+            internalTradeQuantity: options.bidQuantity * 2
           })
           newOrder.participants = options.participants  // machines array. not as attributes
           await newOrder.completed()
@@ -99,7 +102,7 @@ exports.Orders = Backbone.Collection.extend({
         qty: quantity,
         coinType: options.coinType.toLowerCase()
       })
-      console.log("[order.js] order is placed:", marketResult)
+      console.log("[order.js] order is placed", type, price, quantity, marketResult)
 
       // NEW ORDER ONLY HERE! ..and when perpect internal occur
       if (_.isString(marketResult.orderId)){
@@ -114,35 +117,21 @@ exports.Orders = Backbone.Collection.extend({
           internalTradeQuantity: internalTradeQuantity
         });
 
+        // Here
+        for(let m of options.participants)
+          await m.pend()
+        console.log("[order.js] All participants are successfully pended.")
+
         newOrder.save({},{
           success: function(){
-            console.log("[order.js] Successfully saved new order")
-            // _.each(options.participants, machine => {
-            //   machine.save({
-            //     status: "PENDING"
-            //   })
-            // })
-            // Save all participants machines PENDING
-            // console.log("befor savePending")
-            savePending(0)  // saving start
-            // console.log("after savePending:", options.participants.length)
-            function savePending(index){
-              options.participants[index].save({
-                status: "PENDING"
-              },{
-                success: function (){
-                  // console.log("[order.js] Participant saved as PENDING, index:", index)
-                  if (options.participants.length > index+1)
-                    savePending(index + 1)
-                }
-              })
-            }
+            // This will be called after order.placeOrder() ended. but it's okay i think
+            console.log("[order.js] New order successfully saved.")
           }
         })
 
         newOrder.participants = options.participants  // machines array. not as attributes
         this.push(newOrder);
-        // console.log("end of order.placeOrder()")
+        console.log("[order.js] end of order.placeOrder()")
       }
     },
     // Refresh All of this orders. no matter what marketName or coinType. All of them.
@@ -161,7 +150,8 @@ exports.Orders = Backbone.Collection.extend({
           // It's uncompleted order. Doesn't do anything.
           console.log("[order.js] Uncompleted orderId:", order.get("orderId"),
             order.get("price"), order.get("quantity").toFixed(2), order.get("type"),
-            ((new Date() - order.get("created_at")) / 60000).toFixed(2), "min ago\t")
+            ((new Date() - order.get("created_at")) / 60000).toFixed(2), "min ago\t",
+            order.get("internalTradeQuantity"))
         }else{
           console.log("[order.js] New completed order! id:", order.get("orderId"), order.get("type"))
           // New complete order!
