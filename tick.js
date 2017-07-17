@@ -1,10 +1,10 @@
 "use strict"
 
-const _ = require('underscore');
-const Machines = require("./machine").Machines;
-const fetcher = require('./fetcher.js');
-const Order = require('./order.js').Order;
-const Orders = require('./order.js').Orders;
+const _ = require('underscore'),
+ fetcher = require('./fetcher.js'),
+ Machines = require("./machine").Machines,
+ Arbitrages = require('./machine.js').Arbitrages,
+ Orders = require('./order.js').Orders
 
 console.log("[tick.js] Loaded!")
 
@@ -17,15 +17,21 @@ const orders = new Orders(global.rabbit.orders.where({
     coinType: "ETH",
     marketName: "COINONE"
   }))
+const arbitrages = new Arbitrages()
 
 module.exports = async function(){
-  let startTime = new Date();
-  console.log("Tick no.", ++count, "with", machines.length, "machines. Now fetching..");
+  let startTime = new Date()
+  console.log("Tick no.", ++count, "with", machines.length, "machines. ",
+    startTime, "Now fetching..")
 
-  // Promise.all
-  let [orderBook, coinoneInfo, korbitInfo]
-    = [await fetcher.getCoinoneEthOrderbook(), await fetcher.getCoinoneInfo(), await fetcher.getKorbitInfo()]
-  let fetchingTime = ((new Date() - startTime) / 1000).toFixed(2) // sec
+  // Act like Promise.all()
+  const coinoneInfoPromise = fetcher.getCoinoneInfo(),
+    coinoneEthOrderbookPromise = fetcher.getCoinoneEthOrderbook(),
+    korbitEthOrderbookPromise = fetcher.getKorbitEthOrderbook()
+  const coinoneInfo = await coinoneInfoPromise,
+    coinoneEthOrderbook = await coinoneEthOrderbookPromise,
+    korbitEthOrderbook = await korbitEthOrderbookPromise
+  const fetchingTime = ((new Date() - startTime) / 1000).toFixed(2) // sec
 
   console.log("== in 24hrs at Coinone:", coinoneInfo.low, "~", coinoneInfo.high, ":",coinoneInfo.last,"(",
       ((coinoneInfo.last- coinoneInfo.low)/(coinoneInfo.high- coinoneInfo.low)*100).toFixed(2),"% )" )
@@ -38,10 +44,19 @@ module.exports = async function(){
 
   // Machines.mind returns participant machines
   let machinesResult = machines.mind({
-      orderBook: orderBook
+      orderbook: coinoneEthOrderbook
   })
   // console.log(result)
   console.log("[tick.js]", machinesResult.participants.length, "machinesResult want to deal")
+
+  // console.log("before mind: arbitrages.length", arbitrages.length)
+  // const result = arbitrages.mind({
+  //   coinoneEthOrderbook: coinoneEthOrderbook,
+  //   korbitEthOrderbook: korbitEthOrderbook
+  // })
+  // console.log("after mind: arbitrages.length", arbitrages.length)
+  // console.log(result)
+
 
   // Submit order
   await orders.placeOrder(machinesResult)

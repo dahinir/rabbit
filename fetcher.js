@@ -110,6 +110,39 @@ exports.getKorbitInfo = function(){
       })
   })
 }
+exports.getKorbitEthOrderbook = function() {
+  return new Promise((resolve, reject) => {
+    // this is public api
+    request({
+            method: "GET",
+            uri: "https://api.korbit.co.kr/v1/orderbook",
+            qs: {
+                currency_pair: 'eth_krw'
+            }
+        },
+        function(error, response, body) {
+            let data
+            try {
+              data = JSON.parse(body)
+            } catch (e) {
+              // throw new Error("[fetcher.js] Maybe not a problem")
+              reject()
+              return
+            }
+
+            const result = {
+              timestamp: data.timestamp * 1,
+              bid: data.bids.map(([price, qty]) => {return {price: price*1, qty: qty*1}}),
+              ask: data.asks.map(([price, qty]) => {return {price: price*1, qty: qty*1}})
+            }
+
+            if (result.timestamp > 0)
+              resolve(result)
+            else
+              reject(result)
+        });
+  })
+}
 
 exports.getCoinoneInfo = function(){
   return new Promise((resolve, reject) => {
@@ -139,7 +172,6 @@ exports.getCoinoneInfo = function(){
 }
 exports.getCoinoneEthOrderbook = function() {
   return new Promise((resolve, reject) => {
-    // this is public api
     request({
             method: "GET",
             uri: "https://api.coinone.co.kr/orderbook/",
@@ -148,16 +180,22 @@ exports.getCoinoneEthOrderbook = function() {
             }
         },
         function(error, response, body) {
-            let result
+            let data
             try {
-              result = JSON.parse(body)
+              data = JSON.parse(body)
             } catch (e) {
               // throw new Error("[fetcher.js] Maybe not a problem")
               reject()
               return
             }
 
-            if( result.result == 'success')
+            const result = {
+              timestamp: data.timestamp * 1,
+              bid: data.bid.map(({price, qty}) => {return {price: price*1, qty: qty*1}}),
+              ask: data.ask.map(({price, qty}) => {return {price: price*1, qty: qty*1}})
+            }
+
+            if( data.result == 'success')
               resolve(result)
             else
               reject(result)

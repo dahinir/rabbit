@@ -3,7 +3,9 @@
 const Backbone = require('backbone'),
     _ = require('underscore'),
     backsync = require('backsync'),
-    coinoneAPI = require("./coinone.js");
+    coinoneAPI = require("./coinone.js"),
+    korbitAPI = require("./korbit.js")
+
 
 exports.Order = Backbone.Model.extend({
     urlRoot: "mongodb://localhost:27017/rabbit/orders", // not url. cuz of backsync
@@ -30,7 +32,7 @@ exports.Order = Backbone.Model.extend({
 
       for (let machine of this.participants){
         console.log("machine id:", machine.id)
-        await machine.accomplish(this.get("price"))
+        await machine.accomplish(this)
       }
       // for (let mId of this.get("machineIds")){
       //   await global.rabbit.machines.get(mId).accomplish(this.get("price"))
@@ -49,6 +51,20 @@ exports.Orders = Backbone.Collection.extend({
     sync: backsync.mongodb(),
     model: exports.Order,
     // machines.mind()'s return object will be this options
+    placeTest: async function(options){
+      // console.log(options)
+      return new Promise(resolve => {
+        let aa = options.a
+
+        const ms = (options.a == 1)?5000:3000
+        console.log("ms:",ms)
+
+        setTimeout(() => {
+          console.log(options.a)
+          resolve();
+        }, ms);
+      });
+    },
     placeOrder: async function(options){
       if (!_.isObject(options))
         throw new Error("[order.placeOrder()] options needed")
@@ -57,6 +73,9 @@ exports.Orders = Backbone.Collection.extend({
       switch (options.marketName) {
         case "COINONE":
           marketAPI = coinoneAPI
+          break
+        case "KORBIT":
+          marketAPI = korbitAPI
           break
       }
 
@@ -76,9 +95,9 @@ exports.Orders = Backbone.Collection.extend({
           console.log("[order.js] Won't place order")
         }else{
           console.log("[order.js] Perpect internal trade! Can you believe it?")
-          console.log(options)
+          // console.log(options)
           // This order won't save in db. only runtime
-          let newOrder = new exports.Order({
+          const newOrder = new exports.Order({
             machineIds: options.machineIds,
             coinType: options.coinType,
             price: options.bidPrice, // It can be askPrice but I prefer
@@ -95,18 +114,19 @@ exports.Orders = Backbone.Collection.extend({
         console.log("Whoa! internalTradeQuantity:", internalTradeQuantity)
 
       // Actual order here
-      let marketResult = await marketAPI({
+      const marketResult = await marketAPI({
         type: type,
         // price: price -100000,
         price: price,
         qty: quantity,
-        coinType: options.coinType.toLowerCase()
+        coinType: options.coinType
       })
-      console.log("[order.js] order is placed", type, price, quantity, marketResult)
+      console.log("[order.js] The order is placed", options.marketName, type, price, quantity, marketResult)
+      // console.log(marketResult.orderId)
 
-      // NEW ORDER ONLY HERE! ..and when perpect internal occur
-      if (_.isString(marketResult.orderId)){
-        let newOrder = new exports.Order({
+      // NEW ORDER ONLY HERE ..and when a perpect internal occur
+      if (marketResult.orderId){
+        const newOrder = new exports.Order({
           orderId: marketResult.orderId,
           machineIds: options.machineIds,
           marketName: options.marketName,
@@ -117,7 +137,7 @@ exports.Orders = Backbone.Collection.extend({
           internalTradeQuantity: internalTradeQuantity
         });
 
-        // Here
+        // Pend the machines
         for(let m of options.participants)
           await m.pend()
         console.log("[order.js] All participants are successfully pended.")
@@ -131,7 +151,12 @@ exports.Orders = Backbone.Collection.extend({
 
         newOrder.participants = options.participants  // machines array. not as attributes
         this.push(newOrder);
-        console.log("[order.js] end of order.placeOrder()")
+        console.log("[order.js] End of order.placeOrder() with new order")
+        return newOrder
+      }else {
+        console.log("[order.js] Placed order but didn't receive orderId. It needed to check")
+        console.log(newOrder)
+        throw new Error("KILL_ME")
       }
     },
     // Refresh All of this orders. no matter what marketName or coinType. All of them.
@@ -145,7 +170,7 @@ exports.Orders = Backbone.Collection.extend({
         coinType: "ETH"
       })).limitOrders, "orderId")
 
-      for(let order of this.models){  // this.models returns array so can use for...of
+      for(let order of this.models){  // this.models is an array
         if (_.contains(uncompletedOrderIds, order.get("orderId")) ){
           // It's uncompleted order. Doesn't do anything.
           console.log("[order.js] Uncompleted orderId:", order.get("orderId"),
@@ -153,7 +178,7 @@ exports.Orders = Backbone.Collection.extend({
             ((new Date() - order.get("created_at")) / 60000).toFixed(2), "min ago\t",
             order.get("internalTradeQuantity"))
         }else{
-          console.log("[order.js] New completed order! id:", order.get("orderId"), order.get("type"))
+          console.log("[order.js] New completed order! id:", order.get("orderId"), order.get("type"), order.get("price"))
           // New complete order!
           await order.completed()
         }

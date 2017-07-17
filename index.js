@@ -8,12 +8,11 @@ const fetcher = require('./fetcher.js');
 
 const Machine = require('./machine.js').Machine;
 const Machines = require('./machine.js').Machines;
+const Arbitrage = require('./machine.js').Arbitrage,
+  Arbitrages = require('./machine.js').Arbitrages
 const Order = require('./order.js').Order;
 const Orders = require('./order.js').Orders;
 
-console.log("It's been",
-  Math.ceil((new Date() - new Date('July 4, 2017 13:20:00'))/ 86400000),
-  "days")
 
 let killSign = false
 process.on('SIGINT', function() {
@@ -23,64 +22,74 @@ process.on('SIGINT', function() {
 
 global.rabbit = {
     machines: new Machines(),
+    arbitrages: new Arbitrages(),
     orders: new Orders()
 }
+
+global.rabbit.STARTED = new Date('July 4, 2017 13:20:00')
+
+console.log("It's been",
+  Math.floor((new Date() - global.rabbit.STARTED)/ 86400000),
+  "days")
 
 // Fetch all machines and orders from db
 global.rabbit.machines.fetchAll({
   success: function() {
-    global.rabbit.orders.fetch({
+    global.rabbit.arbitrages.fetch({
       data: {
-          isDone: false
-          // $skip: 10,
-          // $limit: 10
+        status: "PENDING"
       },
-      success: function() {
-          console.log("[index.js] ", global.rabbit.machines.length, "machines are loaded.");
-          console.log("[index.js] ", global.rabbit.orders.length, "undone orders are loaded.");
-          console.log("===start======================")
+      success: function(){
+        global.rabbit.orders.fetch({
+          data: {
+              isDone: false
+              // $skip: 10,
+              // $limit: 10
+          },
+          success: function() {
+              console.log("[index.js] ", global.rabbit.machines.length, "machines are loaded.");
+              console.log("[index.js] ", global.rabbit.orders.length, "undone orders are loaded.");
+              console.log("===start======================")
 
-          // console.log(global.rabbit.machines.get("595b958342753ba3e4550580").attributes)
-          // return
-          //
-          // for(let order of global.rabbit.orders.models){
-          //   let participants = []
-          //
-          // }
-          global.rabbit.orders.each(order => {
-            const participants = []
+              if (global.rabbit.machines.length != 40000)
+                throw new Error("How many machines do you have?")
 
-            for (let mId of order.get("machineIds")){
-              let m = global.rabbit.machines.get(mId)
-              if(_.isUndefined(m)){
-                console.log("undefined machine!")
-                console.log(order.attributes)
-                throw new Error("wtf")
-              }
-              // console.log(mId)
-              // console.log(m.attributes)
-              participants.push(m)
-            }
+              global.rabbit.orders.each(order => {
+                let participants = []
 
-            if (order.get("machineIds").length == participants.length){
-              console.log("order id:" ,order.id, "got participants properly!")
-              order.participants = participants
-            }else{
-              console.log("---order got problem-----")
-              console.log(participants)
-              console.log(order.attributes)
-              throw new Error("Order's participants got problem")
-            }
+                for (let mId of order.get("machineIds")){
+                  let m = global.rabbit.machines.get(mId)
+                  if(_.isUndefined(m)){
+                    m = global.rabbit.arbitrages.get(mId)
+                    if(_.isUndefined(m)){
+                      console.log("undefined machine! order.attributes:", order.attributes)
+                      throw new Error("wtf")
+                    }
+                  }
+                  // console.log(mId)
+                  // console.log(m.attributes)
+                  participants.push(m)
+                }
 
-            console.log("added to order participants:", participants.length)
-          })
-// return
-// db.machines.find({created_at:{$gt:ISODate("2017-07-04T13:40:37.513Z")}}).pretty()
+                if (order.get("machineIds").length == participants.length){
+                  console.log("orderId:" ,order.get("orderId"), "got participants properly!")
+                  order.participants = participants
+                }else{
+                  console.log("---order got problem-----")
+                  console.log(participants)
+                  console.log(order.attributes)
+                  throw new Error("Order's participants got problem")
+                }
 
-          // Run rabbit, Don't look back.
-          run();
+                console.log("added to order participants:", participants.length)
+              })
+
+              // Run rabbit, Don't look back.
+              run();
+          }
+        })  // End of orders.fetch()
       }
-    })
+    })  // End of arbitrages.fetch()
   }
 })
 
@@ -90,15 +99,23 @@ async function run() {
   const startTime = new Date()
 
   try {
+    // Korbit is an idiot
+    await require("./korbit.js")({type: "REFRESH_TOKEN"})
+
     // HERE BABE HERE IT IS
     await require("./tick.js")()
+
   } catch (e) {
+    console.log("[index.js] Tick've got error!")
     console.log(e)
+    if (e && e.message == "KILL_ME")
+      killSign = true
   } finally {
     global.rabbit.machines.presentation()
+    await global.rabbit.arbitrages.presentation()
 
     if (killSign){
-      console.log("Rabbit is stopped gracefully.")
+      console.log("Rabbit is stopped by killSign. Gracefully maybe.")
       return
     }else{
       const BREAK_TIME = MIN_TERM - (new Date() - startTime)
