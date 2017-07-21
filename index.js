@@ -28,9 +28,6 @@ global.rabbit = {
 
 global.rabbit.STARTED = new Date('July 4, 2017 13:20:00')
 
-console.log("It's been",
-  Math.floor((new Date() - global.rabbit.STARTED)/ 86400000),
-  "days")
 
 // Fetch all machines and orders from db
 global.rabbit.machines.fetchAll({
@@ -51,7 +48,7 @@ global.rabbit.machines.fetchAll({
               console.log("[index.js] ", global.rabbit.orders.length, "undone orders are loaded.");
               console.log("===start======================")
 
-              if (global.rabbit.machines.length != 40000)
+              if (global.rabbit.machines.length != 60000)
                 throw new Error("How many machines do you have?")
 
               global.rabbit.orders.each(order => {
@@ -74,6 +71,7 @@ global.rabbit.machines.fetchAll({
                 if (order.get("machineIds").length == participants.length){
                   console.log("orderId:" ,order.get("orderId"), "got participants properly!")
                   order.participants = participants
+
                 }else{
                   console.log("---order got problem-----")
                   console.log(participants)
@@ -93,8 +91,8 @@ global.rabbit.machines.fetchAll({
   }
 })
 
-const MIN_TERM = 2700  // ms
-
+const MIN_TERM = 2700,  // ms
+  ERROR_BUFFER = 60000  // A minute
 async function run() {
   const startTime = new Date()
 
@@ -107,19 +105,19 @@ async function run() {
 
   } catch (e) {
     console.log("[index.js] Tick've got error!")
+    // e.message ? console.log(e.message): console.log(e)
     console.log(e)
+
     if (e && e.message == "KILL_ME")
       killSign = true
   } finally {
-    global.rabbit.machines.presentation()
-    await global.rabbit.arbitrages.presentation()
 
     if (killSign){
       console.log("Rabbit is stopped by killSign. Gracefully maybe.")
       return
     }else{
       const BREAK_TIME = MIN_TERM - (new Date() - startTime)
-      console.log("-- takes", (new Date() -startTime)/1000,"sec, so", BREAK_TIME,"ms later--------------------\n")
+      console.log("-- takes", (new Date() -startTime)/1000,"sec, so", BREAK_TIME,"ms later --------------------\n")
       // One more time
       setTimeout(run, BREAK_TIME)
     }

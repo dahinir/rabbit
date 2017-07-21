@@ -170,6 +170,7 @@ exports.getCoinoneInfo = function(){
       })
   })
 }
+
 exports.getCoinoneEthOrderbook = function() {
   return new Promise((resolve, reject) => {
     request({
@@ -180,25 +181,23 @@ exports.getCoinoneEthOrderbook = function() {
             }
         },
         function(error, response, body) {
-            let data
+            let data, result
             try {
               data = JSON.parse(body)
+              result = {
+                timestamp: data.timestamp * 1,
+                bid: data.bid.map(({price, qty}) => {return {price: price*1, qty: qty*1}}),
+                ask: data.ask.map(({price, qty}) => {return {price: price*1, qty: qty*1}})
+              }
             } catch (e) {
-              // throw new Error("[fetcher.js] Maybe not a problem")
-              reject()
+              reject("[fetcher.js] Maybe market's problem. not me")
               return
-            }
-
-            const result = {
-              timestamp: data.timestamp * 1,
-              bid: data.bid.map(({price, qty}) => {return {price: price*1, qty: qty*1}}),
-              ask: data.ask.map(({price, qty}) => {return {price: price*1, qty: qty*1}})
             }
 
             if( data.result == 'success')
               resolve(result)
             else
-              reject(result)
+              reject("[fetcher.js] idk what wrong?")
         });
   })
 }

@@ -40,7 +40,7 @@ function refreshToken(){
 
     // More than 10 mins left to expire. so don't need to refresh
     if (cookie.expires_in * 1000 - (Date.now() - cookie.saved_at) > 10*60*1000){
-      console.log("[korbit.js] Token expires in", (cookie.expires_in * 1000 - (Date.now() - cookie.saved_at))/60000, "mins")
+      // console.log("[korbit.js] Token expires in", (cookie.expires_in * 1000 - (Date.now() - cookie.saved_at))/60000, "mins")
       resolve(cookie)
       return
     }
@@ -85,56 +85,79 @@ module.exports = function (options) {
 		return refreshToken()
 
   return new Promise((resolve, reject) => {
-		let	url = ROOT_URL,
-      params = {
-        nonce: Date.now()
-      }
+    const headers = {"Authorization": "Bearer " + cookie.access_token}
+    let opts
 
 		if (options.type == "BID"){
-			url += "v1/user/orders/buy"
-			_.extend(params, {
-				price: options.price,
-				coin_amount: options.qty,
-				currency_pair: (options.coinType == "ETH")?"eth_krw":"eth_krw",  // Only eth..
-        type: "limit"
-			})
+      opts = {
+        method: "POST",
+        headers: headers,
+        url: ROOT_URL + "v1/user/orders/buy",
+        form: {
+          price: options.price,
+  				coin_amount: options.qty,
+  				currency_pair: (options.coinType == "ETH")?"eth_krw":"eth_krw",  // Only eth..
+          type: "limit",
+          nonce: Date.now()
+        }
+      }
 		}else if (options.type == "ASK"){
-			url += "v1/user/orders/sell"
-			_.extend(params, {
-        price: options.price,
-				coin_amount: options.qty,
+      opts = {
+        method: "POST",
+        headers: headers,
+        url: ROOT_URL + "v1/user/orders/sell",
+        form: {
+          price: options.price,
+  				coin_amount: options.qty,
+  				currency_pair: (options.coinType == "ETH")?"eth_krw":"eth_krw",  // Only eth..
+          type: "limit",
+          nonce: Date.now()
+        }
+      }
+		}else if (options.type == "UNCOMPLETED_ORDERS"){
+      const	currency_pair = (options.coinType == "ETH")?"eth_krw":"eth_krw",  // Only eth..
+        offset = 0, // default 0
+        limit = 10   // default 10; korbit's max order is 10.. lol
+      opts = {
+        method: "GET",
+        headers: headers,
+        url: ROOT_URL + "v1/user/orders/open?currency_pair=" + currency_pair +
+          "&offset=" + offset + "&limit=" + limit
+      }
+		}else if (options.type == "COMPLETED_ORDERS"){
+      url += "v1/user/transactions"
+      _.extend(params, {
+        // order_id: ,
+        category: "fills",
 				currency_pair: (options.coinType == "ETH")?"eth_krw":"eth_krw",  // Only eth..
-        type: "limit"
+        offset: 0,
+        limit: 2
 			})
-		}
-    // else if (options.type == "UNCOMPLETED_ORDERS"){
-		// 	url += "v2/order/limit_orders/"
-		// 	params.currency = (options.coinType || options.currency).toLowerCase()
-		// }else if (!options.type){
+    }
+    // else if (!options.type){
 		// 	url += options.url
 		// 	delete options.url
 		// 	_.extend(params, options)
 		// }
 
-    request({
-      method: "POST",
-      url: url,
-      headers: {"Authorization": "Bearer " + cookie.access_token},
-      form: params
-    }, function(error, response, body) {
+    // console.log("korbit called!")
+    request(opts, function(error, response, body) {
+      // console.log("korbit got answer")
+      // console.log(body)
 			let result
       try {
         result = JSON.parse(body)
       } catch (e) {
-        reject(e)
+        console.log("[korbit.js] korbit's answer can't parse for JSON. maybe not a problem")
+        reject()
         return
       }
 
-      if (result.status == "success"){
+      if (result.status == "success" || _.isArray(result)){
         resolve(result)
       }else{
-        console.log("[korbit.js] status:", result.status)
-        reject(result)
+        console.log("[korbit.js] result is funny:", result)
+        reject()
       }
     })
 

@@ -22,15 +22,22 @@ const arbitrages = new Arbitrages()
 module.exports = async function(){
   let startTime = new Date()
   console.log("Tick no.", ++count, "with", machines.length, "machines. ",
-    startTime, "Now fetching..")
+    startTime.toLocaleString(), "It's been", Math.floor((new Date() - global.rabbit.STARTED)/ 86400000),
+      "days.  Now fetching..")
 
-  // Act like Promise.all()
-  const coinoneInfoPromise = fetcher.getCoinoneInfo(),
+  let coinoneInfo, coinoneEthOrderbook, korbitEthOrderbook
+  try {
+    // Act like Promise.all()
+    const coinoneInfoPromise = fetcher.getCoinoneInfo(),
     coinoneEthOrderbookPromise = fetcher.getCoinoneEthOrderbook(),
     korbitEthOrderbookPromise = fetcher.getKorbitEthOrderbook()
-  const coinoneInfo = await coinoneInfoPromise,
+    coinoneInfo = await coinoneInfoPromise,
     coinoneEthOrderbook = await coinoneEthOrderbookPromise,
     korbitEthOrderbook = await korbitEthOrderbookPromise
+    global.rabbit.coinoneInfo = coinoneInfo
+  } catch (e) {
+    throw new Error("[tick.js] Fail to fetch. Let me try again.")
+  }
   const fetchingTime = ((new Date() - startTime) / 1000).toFixed(2) // sec
 
   console.log("== in 24hrs at Coinone:", coinoneInfo.low, "~", coinoneInfo.high, ":",coinoneInfo.last,"(",
@@ -59,7 +66,15 @@ module.exports = async function(){
 
 
   // Submit order
-  await orders.placeOrder(machinesResult)
+  if (true)
+    await orders.placeOrder(machinesResult)
+  else
+    console.log(machinesResult)
+
   // Check previous orders out
   await orders.refresh()
+
+  // Summary
+  machines.presentation(coinoneEthOrderbook)
+  // await global.rabbit.arbitrages.presentation()
 }

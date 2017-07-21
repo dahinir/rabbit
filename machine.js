@@ -43,12 +43,17 @@ exports.Machine = Backbone.Model.extend({
           created_at: new Date()
         })
     },
-    // Set new mind in runtime instance! won't deal with databases
+    // Set new mind in runtime instance only. won't deal with databases
     mind: function(options) {
       if (this.get("status") == "PENDING")
         return {
           type: "PENDING"
         }
+      // Fee is mo expensive.. depressed until Lv5
+      // if (this.get("craving_krw") < 7000)
+      //   return {
+      //     type: "DEPRESSED"
+      //   }
 
       options = options || {}
       let mind = {} //  will be new mind of this machine
@@ -62,6 +67,7 @@ exports.Machine = Backbone.Model.extend({
                 price: options.minAskPrice
               }
           } else if (this.get("status") == "COIN") {
+            // Used this.get("last_traded_price") not this.get("buy_at") cuz I wanna know what craving_krw is best for profit per unit time
             if (options.maxBidPrice >= this.get("craving_krw") + this.get("last_traded_price"))
               mind = {
                 type: "ASK",
@@ -77,168 +83,6 @@ exports.Machine = Backbone.Model.extend({
       })
       return mind
     },
-/*    mind_old: function(attr, options) {
-        const success = options.success;
-
-        let hope = attr.hope * 1,
-            thePrice,
-            btc_krw_rate_of_24h = attr.btc_krw_rate_of_24h * 1;
-
-        if (this.get("status") == "KRW") {
-            thePrice = attr.minAskPrice * 1;
-        } else if (this.get("status" == "COIN")) {
-            thePrice = attr.maxBidPrice * 1;
-        } else {
-            // `status` maybe `pending`
-            success();
-            return;
-        }
-
-        let negativeHope = this.get('negativeHope'),
-            positiveHope = this.get('positiveHope'),
-            propensity = this.get('propensity'); // it's an Array
-
-        let mind = {
-            type: "none",
-            thePrice: thePrice,
-            at: new Date()
-        };
-
-        if (this.get("traded_count") > 0) {
-            if (this.get("status") == "KRW") {
-                if (_.contains(propensity, "DECRAVING_KRW_BID")) {
-                    if (thePrice <= this.get("last_traded_price") - this.get("decraving_krw")) {
-                        mind.type = "bid";
-                    }
-                }
-                if (_.contains(propensity, "NEGATIVE_HOPE_BID")) {
-                    if (hope <= negativeHope) {
-                        mind.type = "bid";
-                    }
-                }
-                if (_.contains(propensity, "BTC_KRW_BID")) {
-                    if (thePrice == this.get("btc_krw_bid")) { // Exactly same only!
-                        if(hope < 50000)  // at least..
-                            mind.type = "bid";
-                    }
-                }
-                if (_.contains(propensity, "DYNAMIC_DECRAVING_KRW_BY_TIME_BID")) {
-                    // lastTradedAt - now
-                    let old = new Date() - this.get("lastTradedAt");
-
-                    if (old < 1000 * 60 * 5) {
-                        if (thePrice <= this.get("last_traded_price") - 1000)
-                            mind.type = "bid";
-                    } else if (old < 1000 * 60 * 20) {
-                        if (thePrice <= this.get("last_traded_price") - 2000)
-                            mind.type = "bid";
-                    } else if (old < 1000 * 60 * 30) {
-                        if (thePrice <= this.get("last_traded_price") - 3000)
-                            mind.type = "bid";
-                    } else if (old < 1000 * 60 * 60 * 2) {
-                        if (thePrice <= this.get("last_traded_price") - 10000)
-                            mind.type = "bid";
-                    } else if (old < 1000 * 60 * 60 * 24) {
-                        if (thePrice <= this.get("last_traded_price") - 30000)
-                            mind.type = "bid";
-                    } else if (old < 1000 * 60 * 60 * 24 * 14) {
-                        if (thePrice <= this.get("last_traded_price") - 40000)
-                            mind.type = "bid";
-                    } else {
-                        if (thePrice <= this.get("last_traded_price") - 1000)
-                            mind.type = "bid";
-                    }
-                }
-                if (_.contains(propensity, "DYNAMIC_CRAVINGRATIO_BY_HOPE_BID")) {
-                    // if (hope <= negativeHope) {
-                    //     mind.type = "bid";
-                    // }
-                }
-            } else if (this.get("status") == "COIN") {
-                if (_.contains(propensity, "CRAVING_KRW_ASK")) {
-                    if (thePrice >= this.get("last_traded_price") + this.get("craving_krw")) {
-                        mind.type = "ask";
-                    }
-                }
-                if (_.contains(propensity, "CRAVING_KRW_AND_NEGATIVE_HOPE_ASK")) {
-                    if (thePrice >= this.get("last_traded_price") + this.get("craving_krw")) {
-                        if (hope > this.get('negativeHope')) // at least..
-                            mind.type = "ask";
-                    }
-                }
-                if (_.contains(propensity, "POSITIVE_HOPE_ASK")) {
-                    if (thePrice >= this.get("last_traded_price") + this.get("craving_krw")) {
-                        if (hope >= this.get('positiveHope'))
-                            mind.type = "ask";
-                    }
-                }
-                if (_.contains(propensity, "DYNAMIC_CRAVING_KRW_BY_TIME_ASK")) {
-                    // lastTradedAt - now
-                    let old = new Date() - this.get("lastTradedAt");
-
-                    if (old < 1000 * 60 * 5) {
-                        // 5 mins
-                        if (thePrice >= this.get("last_traded_price") + 1000)
-                            mind.type = "ask";
-                    } else if (old < 1000 * 60 * 60 * 2) {
-                        //  2 hours
-                        if (thePrice >= this.get("last_traded_price") + 2000)
-                            mind.type = "ask";
-                    } else if (old < 1000 * 60 * 60 * 5) {
-                        // 5 hours
-                        if (thePrice >= this.get("last_traded_price") + 3000)
-                            mind.type = "ask";
-                    } else if (old < 1000 * 60 * 60 * 24) {
-                        if (thePrice >= this.get("last_traded_price") + 10000)
-                            mind.type = "ask";
-                    } else if (old < 1000 * 60 * 60 * 24 * 30) {
-                        if (thePrice >= this.get("last_traded_price") + 30000)
-                            mind.type = "ask";
-                    } else if (old < 1000 * 60 * 60 * 24 * 30 * 6) {
-                        if (thePrice >= this.get("last_traded_price") + 50000)
-                            mind.type = "ask";
-                    } else {
-                        if (thePrice >= this.get("last_traded_price") + 20000)
-                            mind.type = "ask";
-                    }
-                }
-            }
-        } else if (this.get("traded_count") == 0) {
-            if (this.get("status") == "KRW") {
-                if (_.isNumber(this.get("neverHope"))) {
-                    if (hope < this.get("neverHope"))
-                        mind.type = "bid";
-                }
-                if (_.isNumber(this.get('maxHope')) ){
-                    if(hope > this.get('maxHope'))
-                        mind.type = "bid";
-                }
-                if (_.contains(propensity, "BTC_KRW_BID")) {
-                    if (thePrice == this.get("btc_krw_bid"))
-                        mind.type = "bid";
-                }
-            }
-        }
-
-        if (_.contains(propensity, "BTC_KRW_RATE_OF_24H_AND_HOPE_BID")) {
-            if (this.get("status") == "KRW") {
-                if(btc_krw_rate_of_24h < this.get("negativeRate"))
-                    if(hope < this.get("negativeHope"))
-                        mind.type = "bid";
-            }else if(this.get("status") == "COIN"){
-                if(btc_krw_rate_of_24h > this.get("positiveRate"))
-                    if(hope > this.get("positiveHope"))
-                        if (thePrice >= this.get("last_traded_price") + 2000)
-                            mind.type = "ask";
-            }
-        }
-
-        this.set({
-            mind: mind
-        });
-        // To avoid RangeError: Maximum call stack size exceeded
-        process.nextTick(success);  // call `success` as next tick!
-    },*/
     // The order is submitted
     pend: function(){
       return new Promise(resolve => {
@@ -252,37 +96,57 @@ exports.Machine = Backbone.Model.extend({
         })
       })
     },
+    rollback: function(){
+      return new Promise(resolve => {
+        const prevStatus = (this.get("mind").type == "ASK") ? "COIN" : "KRW"
+        this.save({
+          // mind: {},
+          status: prevStatus
+        }, {
+          success: function(){
+            resolve()
+          }
+        })
+      })
+    },
     // YES
     accomplish: function(order) {
+      // Use order.get("price") than this.get("mind").price cuz of the internal trade
       return new Promise(resolve => {
-        const tradedPrice = order.get("price")
         const changed = {
             traded_count: this.get("traded_count") + 1,
-            last_traded_price: tradedPrice,
+            last_traded_price: order.get("price"),
             last_traded_at: new Date(),
             mind: {}  // Empty your mind
           }
 
+        // Don't check with order.get("type") Think about a case of internal trade
         if (this.get("mind").type == "ASK"){
+          const thisProfit = order.get("price") - this.get("last_traded_price")
           _.extend(changed, {
             status: "KRW",
-            profit_krw: this.get("profit_krw") + (tradedPrice - this.get("last_traded_price")) * this.get("capacity"),
-            profit_rate: this.get("profit_rate") + (tradedPrice - this.get("last_traded_price"))
+            profit_krw: this.get("profit_krw") + thisProfit * this.get("capacity"),
+            profit_rate: this.get("profit_rate") + thisProfit
           })
-
-          // GO BIGGIE
+          // FOR BIGGIE PROFIT KRW
+          if (this.get("craving_krw") == 5000)
+            changed.capacity = 0.01
           if (this.get("craving_krw") == 6000)
-            changed.capacity = 0.02
+            changed.capacity = 0.01
           else if (this.get("craving_krw") == 7000)
             changed.capacity = 0.02
           else if (this.get("craving_krw") == 8000)
-            changed.capacity = 0.04
+            changed.capacity = 0.02
           else if (this.get("craving_krw") == 9000)
-            changed.capacity = 0.02
+            changed.capacity = 0.03
           else if (this.get("craving_krw") == 10000)
-            changed.capacity = 0.02
+            changed.capacity = 0.05
+
+          console.log("[machine.js] A machine accomplish with profit", thisProfit * this.get("capacity"),
+            "krw. My craving_krw is", this.get("craving_krw"))
         }else if (this.get("mind").type == "BID"){
           changed.status = "COIN"
+          console.log("[machine.js] A machine accomplish the bid at", order.get("price"), "I'm usually buy_at", this.get("buy_at"), "craving_krw", this.get("craving_krw"))
         }
 
         // console.log("[machine.js] save with changed:", changed)
@@ -369,23 +233,51 @@ exports.Machines = Backbone.Collection.extend({
     url: "mongodb://localhost:27017/rabbit/machines",
     sync: backsync.mongodb(),
     model: exports.Machine,
-    presentation: function(){
+    presentation: function(orderbook){
+      const maxBidPrice = orderbook.bid[0].price
+
       let profit_krw_sum = 0,
         total_traded = 0,
-        coin_sum = 0
+        coin_sum = 0,
+        krw_damage = 0,
+        profit_rate_each_craving = [0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0],
+        profit_rate_each_craving2,
+        traded_count_each_craving = [0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0],
+        traded_count_each_craving2
 
       this.each(m => {
         profit_krw_sum += m.get("profit_krw")
         total_traded += m.get("traded_count")
-        coin_sum += (m.get("status")=="COIN")? m.get("capacity"):0
+        coin_sum += m.get("status") == "COIN" ? m.get("capacity") : 0
         if (m.get("status") == "PENDING" && m.get("mind").type == "ASK")
           coin_sum += m.get("capacity")
+
+        krw_damage += m.get("status") == "COIN" ?
+          (m.get("last_traded_price") - maxBidPrice) * m.get("capacity") : 0
+
+        const pIndex = m.get("craving_krw")/1000 - 1  //
+        profit_rate_each_craving[pIndex] += m.get("profit_rate")
+        // profit_rate_each_craving[pIndex] -= m.get("status") == "COIN" ? m.get("last_traded_price") - maxBidPrice : 0
+
+        traded_count_each_craving[pIndex] += m.get("traded_count")
       })
 
-      console.log("Profit: \u20A9 " + new Intl.NumberFormat().format(profit_krw_sum),
-        "(" + (profit_krw_sum/((new Date() - global.rabbit.STARTED)/ 86400000)).toFixed(0) + " per day)",
+      profit_rate_each_craving = profit_rate_each_craving.map(el => (el/3000).toFixed(0)*1) // 3000 machines each craving
+      profit_rate_each_craving2 = profit_rate_each_craving.splice(10, 10) // 11,000 ~ 20,000
+      traded_count_each_craving2 = traded_count_each_craving.splice(10, 10) // 11,000 ~ 20,000
+
+      console.log("-- machines presentation --------------------------------")
+      console.log("Rabbit made \u20A9", new Intl.NumberFormat().format(profit_krw_sum),
+        ":", new Intl.NumberFormat().format((profit_krw_sum/((new Date() - global.rabbit.STARTED)/ 86400000)).toFixed(0)), "per day; ",
+        "damage:", new Intl.NumberFormat().format(krw_damage),
+        "so \u20A9", new Intl.NumberFormat().format(profit_krw_sum - krw_damage),
+        ":", new Intl.NumberFormat().format(((profit_krw_sum - krw_damage)/((new Date() - global.rabbit.STARTED)/ 86400000)).toFixed(0)), "per day")
+      console.log("Total Traded:", new Intl.NumberFormat().format(total_traded),
         ", Bought Coin:", coin_sum.toFixed(2))
-      console.log("Total Traded:", new Intl.NumberFormat().format(total_traded))
+      console.log("profit_rate_each_craving ~1:", JSON.stringify(profit_rate_each_craving))
+      console.log("profit_rate_each_craving ~2:", JSON.stringify(profit_rate_each_craving2))
+      console.log("traded_count_each_craving ~1:", JSON.stringify(traded_count_each_craving))
+      console.log("traded_count_each_craving ~2:", JSON.stringify(traded_count_each_craving2))
     },
     presentation_old: function(attrs) {
         attrs = attrs || {};
@@ -497,6 +389,7 @@ exports.Machines = Backbone.Collection.extend({
         internalTradedUnits = 0
 
       this.each(function(m) {
+// IF STATUS IS COIN, THAN CHOOSE MORE EXPENSIVE MARKET TO HAVE ADVANTAGE
         let mind = m.mind({
           minAskPrice: minAskPrice,
           maxBidPrice: maxBidPrice
