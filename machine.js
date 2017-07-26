@@ -113,7 +113,7 @@ exports.Machine = Backbone.Model.extend({
     accomplish: function(order) {
       // Use order.get("price") than this.get("mind").price cuz of the internal trade
       return new Promise(resolve => {
-        console.log("  accomplish() called!! id:", this.id)
+        // console.log("  accomplish() called!! id:", this.id)
 
         const changed = {
             traded_count: this.get("traded_count") + 1,
@@ -199,7 +199,7 @@ exports.Arbitrage = exports.Machine.extend({
     })
   },
   rollback: function(order){
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       console.log("[machine.js] Rollback arbitrage: ", this.attributes)
       const changed = {
         rollback_count: this.get("rollback_count") + 1
@@ -212,19 +212,22 @@ exports.Arbitrage = exports.Machine.extend({
       }
  
       this.save(changed, {
-        success: () => {
+        success: () => {  // DON'T PASS THE SYNC FUNCTION!!
           if (this.get("rollback_count") == 1 && this.get("traded_count") == 0 && this.get("status") == "PENDING"){
             console.log("[machine.js] one of an order of arbitrage was canceled. so cancel the other")
-            this.orders.map(async o => {
+            for(let o of this.orders){
               if (o.get("orderId") != order.get("orderId"))
-                await o.cancel()
-            })
+                o.cancel().then(() => { resolve() })
+            }
+          } else if (this.get("rollback_count") == 2) {
+            resolve()
+          } else {
+            reject()
           }
-          resolve()
         }
       })
     })
-  },  
+  },
   accomplish: function(order) {
     return new Promise(resolve => {
       console.log("  accomplish() called! id:", this.id)
@@ -244,7 +247,7 @@ exports.Arbitrage = exports.Machine.extend({
       this.save(changed, {
         success: () => {
           console.log("[machine.js] Arbitrage saved with the changed:", changed)
-          console.log(this.attributes)
+          // console.log(this.attributes)
           resolve()
         }
       })
@@ -487,7 +490,7 @@ exports.Arbitrages = exports.Machines.extend({
         case "COMPLETED":
         case "CANCELED":
         // case "FAILED":
-          console.log("The arbitrage will be removed from the arbitrages. remain in db")
+          console.log("The arbitrage", a.get("status") ," and will be removed from the arbitrages. remain in db")
           this.remove(a)
           // delete o
           break
@@ -518,8 +521,8 @@ exports.Arbitrages = exports.Machines.extend({
   },
   // Make new arbitrage machine!
   mind: function(options) {
-    if (this.length > 2){
-      console.log("[machine.js] arbitrages have more than 2. so just pass")
+    if (this.length > 5){
+      console.log("[machine.js] arbitrages have more than 5. so just pass")
       return []
     }
     console.log("arbitrages.length:", this.length)
@@ -552,7 +555,7 @@ exports.Arbitrages = exports.Machines.extend({
     quantity = (lowMarket.orderbook.ask[0].qty < highMarket.orderbook.bid[0].qty) ?
       lowMarket.orderbook.ask[0].qty : highMarket.orderbook.bid[0].qty
     quantity = quantity - 0.01  // Kind of flooring
-    quantity = (quantity > 1.0) ? 1.0 : quantity  // Litmit
+    quantity = (quantity > 5.0) ? 5.0 : quantity  // Litmit
     quantity = quantity.toFixed(2) * 1
     // quantity = 0.02 // for test
 

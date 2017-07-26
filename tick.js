@@ -101,7 +101,7 @@ module.exports = async function(){
 
   // Summary
   machines.presentation(coinoneEthOrderbook)
-  await global.rabbit.arbitrages.presentation()
+  // await global.rabbit.arbitrages.presentation()
 }
 
 // For error handling in a Promise.all like flow in async/await syntax

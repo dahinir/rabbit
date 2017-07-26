@@ -29,19 +29,17 @@ exports.Order = Backbone.Model.extend({
     },
     completed: async function(){
       const that = this
-      // for (let machine of this.participants){
-      this.participants.map(async (machine) => {
+      for (let machine of this.participants){
         // console.log("machine id:", machine.id)
         await machine.accomplish(this)
-      })
+      }
       console.log("[order.js] machine accomplish end. time to save order COMPLETED")
 
 
       // Wait to save this order
       await new Promise(resolve => {
-        setTimeout(() => {
           // IDK why but sometimes when save this will override machine instance that is one of accomplished
-          console.log(" SET TIME OUT 50ms")
+          console.log(" SET TIME OUT 100ms")
           
           that.save({  
             status: "COMPLETED",
@@ -52,7 +50,6 @@ exports.Order = Backbone.Model.extend({
               resolve()
             }
           })
-        }, 50);
       })
       console.log("[order.js] end of order.completed() ")
     },
@@ -263,7 +260,7 @@ exports.Orders = Backbone.Collection.extend({
     },
     // Refresh All of this orders. no matter what marketName or coinType. All of them.
     refresh: async function(options) {
-      console.log("[order.js] Will refresh", this.length, "the orders")
+      console.log("100 [order.js] Will refresh", this.length, "the orders")
       if (this.length == 0)
         return
 
@@ -284,33 +281,32 @@ exports.Orders = Backbone.Collection.extend({
         uncompletedOrderIds = coinoneUncompletedOrderIds.concat(korbitUncompletedOrderIds)
         // console.log(uncompletedOrderIds)
       } catch (e) {
-        console.log("[order.js] One or two of uncompleted orders fetch is failed. Skip this refresh.")
+        console.log("101 [order.js] One or two of uncompleted orders fetch is failed. Skip this refresh.")
         throw new Error(e)
       }
 
-      console.log("[order.js] orders.length:", this.length, "models.length:", this.models.length)
+      console.log("102 [order.js] orders.length:", this.length, "models.length:", this.models.length)
       // Check all of new completed order in Korbit and Coinone
-      // for(let order of this.models){  // this.models is an array
-      this.each(async (order) => {
-        console.log("[oder.js] now refreshing orderId: ", order.get("orderId"))
+      for(let order of this.models){  // this.models is an array
+        console.log("103 [oder.js] now refreshing orderId: ", order.get("orderId"))
         if (_.contains(uncompletedOrderIds, order.get("orderId") + "") ){ // korbit orderId is number so add ""
           // It's uncompleted order. Don't do anything.
-          console.log("[order.js] Uncompleted orderId:", order.get("orderId"),
+          console.log("104 [order.js] Uncompleted orderId:", order.get("orderId"),
             order.get("price"), order.get("quantity"), order.get("type"),
             ((new Date() - order.get("created_at")) / 3600000).toFixed(2), "hours ago\t",
             order.get("internalTradeQuantity") )
         }else{
           if (order.get("status") == "OPEN"){
-            console.log("[order.js] Detect new completed order! id:", order.get("orderId"), order.get("type"), order.get("price"))
+            console.log("104 [order.js] Detect new completed order. id:", order.get("orderId"), order.get("type"), order.get("price"))
             // New complete order!
             await order.completed()
           }else{
-            console.log("[order.js] Why this order is here? orderId:", order.get("orderId") ,order.get("status"))
+            console.log("104 [order.js] Why this order is here? orderId:", order.get("orderId") ,order.get("status"))
             throw new Error("KILL_ME")
           }
         }
-      }) // End of for loop
-      console.log("[order.js] refresh loop end")
+      } // End of for loop
+      console.log("105 [order.js] refresh loop end")
 
       // Time to cancel the old orders
       // Array.filter() return [] if there is no order. not undefined
