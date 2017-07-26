@@ -55,6 +55,8 @@ module.exports = function (options) {
         price: options.price,
         currency:  (options.coinType || options.currency).toLowerCase()
       })
+    }else if (options.type == "BALANCE"){
+      url += "v2/account/balance"
     }
     // else if (!options.type){
 		// 	url += options.url

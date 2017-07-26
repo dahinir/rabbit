@@ -85,7 +85,8 @@ module.exports = function (options) {
 		return refreshToken()
 
   return new Promise((resolve, reject) => {
-    const headers = {"Authorization": "Bearer " + cookie.access_token}
+    const headers = {"Authorization": "Bearer " + cookie.access_token},
+      currency_pair = (options.coinType == "ETH")?"eth_krw":"eth_krw"  // Only eth..
     let opts
 
 		if (options.type == "BID"){
@@ -96,7 +97,7 @@ module.exports = function (options) {
         form: {
           price: options.price,
   				coin_amount: options.qty,
-  				currency_pair: (options.coinType == "ETH")?"eth_krw":"eth_krw",  // Only eth..
+  				currency_pair: currency_pair,
           type: "limit",
           nonce: Date.now()
         }
@@ -109,14 +110,13 @@ module.exports = function (options) {
         form: {
           price: options.price,
   				coin_amount: options.qty,
-  				currency_pair: (options.coinType == "ETH")?"eth_krw":"eth_krw",  // Only eth..
+  				currency_pair: currency_pair,
           type: "limit",
           nonce: Date.now()
         }
       }
 		}else if (options.type == "UNCOMPLETED_ORDERS"){
-      const	currency_pair = (options.coinType == "ETH")?"eth_krw":"eth_krw",  // Only eth..
-        offset = 0, // default 0
+      const  offset = 0, // default 0
         limit = 10   // default 10; korbit's max order is 10.. lol
       opts = {
         method: "GET",
@@ -124,15 +124,27 @@ module.exports = function (options) {
         url: ROOT_URL + "v1/user/orders/open?currency_pair=" + currency_pair +
           "&offset=" + offset + "&limit=" + limit
       }
-		}else if (options.type == "COMPLETED_ORDERS"){
-      url += "v1/user/transactions"
-      _.extend(params, {
-        // order_id: ,
-        category: "fills",
-				currency_pair: (options.coinType == "ETH")?"eth_krw":"eth_krw",  // Only eth..
-        offset: 0,
-        limit: 2
-			})
+		}else if (options.type == "CANCEL_ORDER"){
+      opts = {
+        method: "POST",
+        headers: headers,
+        url: ROOT_URL + "v1/user/orders/cancel",
+        form: {
+          currency_pair: currency_pair,
+          id: options.orderId,
+          nonce: Date.now()
+        }
+      }
+    }else if (options.type == "BALANCE"){
+      opts = {
+        method: "GET",
+        headers: headers,
+        url: ROOT_URL + "v1/user/wallet?currency_pair=" + currency_pair
+      }
+    }else if (options.type == "GIVE_ME_AN_ERROR"){
+      opts = {
+        url: ROOT_URL + "g"
+      }
     }
     // else if (!options.type){
 		// 	url += options.url
@@ -149,15 +161,17 @@ module.exports = function (options) {
         result = JSON.parse(body)
       } catch (e) {
         console.log("[korbit.js] korbit's answer can't parse for JSON. maybe not a problem")
-        reject()
+        reject(e)
         return
       }
 
-      if (result.status == "success" || _.isArray(result)){
+      if (result.status == "success" || // BID, ASK
+        _.isArray(result) || // UNCOMPLETED_ORDERS, CANCEL_ORDER
+        _.isArray(result.balance)){ // BALANCE
         resolve(result)
       }else{
         console.log("[korbit.js] result is funny:", result)
-        reject()
+        reject(result)
       }
     })
 

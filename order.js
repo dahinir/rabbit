@@ -12,12 +12,12 @@ exports.Order = Backbone.Model.extend({
     sync: backsync.mongodb(),
     idAttribute: "id",
     defaults: {
-        isDone: false,  // even done adjust
+        status: "OPEN",
         machineIds: [],
         internalTradeQuantity: 0,
         adjustedQuantity: 0, // adjusted with machines
         coinType: 'ETH', // 'btc' or 'eth'
-        marketName: "COINONE"
+        marketName: ""
     },
     initialize: function(attributes, options) {
       if (!this.id){
@@ -28,22 +28,33 @@ exports.Order = Backbone.Model.extend({
       }
     },
     completed: async function(){
-      console.log("[order.js] Completed order with", this.participants.length, "machines")
-
-      for (let machine of this.participants){
+      const that = this
+      // for (let machine of this.participants){
+      this.participants.map(async (machine) => {
         // console.log("machine id:", machine.id)
         await machine.accomplish(this)
-      }
-
-      // Wait to destroy this order
-      await new Promise(resolve => {
-        this.destroy({
-          success: function() {
-            console.log("[order.js] Completed order destroyed from db.")
-            resolve()
-          }
-        })
       })
+      console.log("[order.js] machine accomplish end. time to save order COMPLETED")
+
+
+      // Wait to save this order
+      await new Promise(resolve => {
+        setTimeout(() => {
+          // IDK why but sometimes when save this will override machine instance that is one of accomplished
+          console.log(" SET TIME OUT 50ms")
+          
+          that.save({  
+            status: "COMPLETED",
+            completed_at: new Date()
+          }, {
+            success: () => {
+              console.log("[order.js] Order saved as completed.", this.attributes)
+              resolve()
+            }
+          })
+        }, 50);
+      })
+      console.log("[order.js] end of order.completed() ")
     },
     cancel: async function(){
       console.log("[order.js] Cancel orderId:", this.get("orderId"), "at", this.get("marketName"),
@@ -51,6 +62,7 @@ exports.Order = Backbone.Model.extend({
 
       try {
         if (this.get("marketName") == "COINONE"){
+          // Get order info first
           const remainQuantity = (await coinoneAPI({
             type: "ORDER_INFO",
             orderId: this.get("orderId"),
@@ -68,36 +80,34 @@ exports.Order = Backbone.Model.extend({
             coinType: this.get("coinType")
           })
         } else if (this.get("marketName") == "KORBIT"){
-
+          // Real cancel here
+          const korbitResult = await korbitAPI({
+            type: "CANCEL_ORDER",
+            orderId: this.get("orderId"),
+            coinType: this.get("coinType")
+          })[0] // kobitAPI returns Array
+          // korbitAPI won't reject even if there is an error
+          // Just act like the order was canceled successfully. Most of cast It's okay or little mistake of old order shit
         }
       } catch (e) {
-        console.log("[order.js] Fail to cancel order. maybe not a problem.")
-        // Set this order Done. so this can't be completed
-        await new Promise(resolve => {
-          this.save({
-            isDone: true
-          }, {
-            success: function(){
-              console.log("[order.js] Failed to cancel order in coinone, so order is saved as isDone:true")
-              resolve()
-            }
-          })
-        })
-        reject(e)
-        return
+        console.log("[order.js] Fail to cancel order. I'll just ignore")
+        // Don't return here. continue this canceling.
       }
 
       // Roll back the machines
       for (let machine of this.participants){
-        await machine.rollback()
+        await machine.rollback(this)
         console.log("[order.js] Roll backed. machine id:", machine.id)
       }
 
-      // Wait to destroy this order from db
+      // Wait to save. and this order will removed from the orders
       await new Promise(resolve => {
-        this.destroy({
-          success: function() {
-            console.log("[order.js] Canceled order destroyed from db")
+        this.save({
+          status: "CANCELED",
+          canceled_at: new Date()
+        }, {
+          success: () => {
+            console.log("[order.js] Canceled order saved.")
             resolve()
           }
         })
@@ -112,24 +122,45 @@ exports.Orders = Backbone.Collection.extend({
       return order.get("created_at")
     },
     model: exports.Order,
-    // machines.mind()'s return object will be this options
-    placeTest: async function(options){
-      // console.log(options)
-      return new Promise(resolve => {
-        let aa = options.a
-
-        const ms = (options.a == 1)?5000:3000
-        console.log("ms:",ms)
-
-        setTimeout(() => {
-          console.log(options.a)
-          resolve();
-        }, ms);
-      });
+    initialize: function(attributes, options) {
+      console.log("orders init")
+      this.on("change:status", o => {
+        switch (o.get("status")) {
+          case "COMPLETED":
+          case "CANCELED":
+            console.log("The order will be removed from the orders. remain in db")
+            this.remove(o)
+            // delete o
+            break
+        }
+      })
+    },
+    createOrder: function(options){
+      console.log("createOrder")
+      const newOrder = new exports.Order();
+      // newOrder.on("change:status", o => {
+        // console.log("event!", o.get("status"))
+        // console.log(arguments)
+        // if (o.get("status"))
+        //   this.remove(o)
+        // else {
+        //   console.log("wwwwww")
+        // }
+      // })
+      this.push(newOrder)
+      return newOrder
     },
     placeOrder: async function(options){
       if (!_.isObject(options))
         throw new Error("[order.placeOrder()] options needed")
+      
+      options.askQuantity = _.isUndefined(options.askQuantity) ? 0 : options.askQuantity
+      options.bidQuantity = _.isUndefined(options.bidQuantity) ? 0 : options.bidQuantity
+
+      if ((options.bidQuantity == 0) && (options.askQuantity == 0)){
+        console.log("[order.js] It's zero quantity order. won't place order")
+        return
+      }
 
       let marketAPI
       switch (options.marketName) {
@@ -139,7 +170,17 @@ exports.Orders = Backbone.Collection.extend({
         case "KORBIT":
           marketAPI = korbitAPI
           break
+        case undefined:
+          throw new Error("Trying place order without marketName")
       }
+
+      // NEW ORDER ONLY HERE
+      const newOrder = new exports.Order({
+        machineIds: options.machineIds,
+        coinType: options.coinType
+      })
+      newOrder.participants = options.participants  // machines array. not as attributes
+
 
       let type, price, quantity, internalTradeQuantity
       if (options.bidQuantity > options.askQuantity){
@@ -153,22 +194,15 @@ exports.Orders = Backbone.Collection.extend({
         quantity = options.askQuantity - options.bidQuantity
         internalTradeQuantity = options.bidQuantity * 2
       }else if (options.bidQuantity == options.askQuantity){
-        if (options.bidQuantity == 0){
-          console.log("[order.js] Won't place order")
-        }else{
-          console.log("[order.js] Perpect internal trade! Can you believe it?")
-          // console.log(options)
-          // This order won't save in db. only runtime
-          const newOrder = new exports.Order({
-            machineIds: options.machineIds,
-            coinType: options.coinType,
-            price: options.bidPrice, // It can be askPrice but I prefer
-            quantity: 0,
-            internalTradeQuantity: options.bidQuantity * 2
-          })
-          newOrder.participants = options.participants  // machines array. not as attributes
-          await newOrder.completed()
-        }
+        console.log("[order.js] Perpect internal trade! Can you believe it?")
+        // console.log(options)
+        newOrder.set({
+          marketName: "INTERNAL_TRADE",
+          price: options.bidPrice, // It can be askPrice but I prefer
+          quantity: 0,
+          internalTradeQuantity: options.bidQuantity * 2
+        })
+        await newOrder.completed()
         return  // doesn't need deal with real market like Coinone
       }
       quantity = quantity.toFixed(2) * 1
@@ -187,42 +221,43 @@ exports.Orders = Backbone.Collection.extend({
       console.log("[order.js] The order is placed", options.marketName, type, price, quantity, marketResult)
       // console.log(marketResult.orderId)
 
-      // NEW ORDER ONLY HERE ..and when a perpect internal occur
+      // Only success to place order
       if (marketResult.orderId){
-        const newOrder = new exports.Order({
-          orderId: marketResult.orderId,
-          machineIds: options.machineIds,
+        newOrder.set({
           marketName: options.marketName,
-          coinType: options.coinType,
+          orderId: marketResult.orderId,
           type: type,
           price: price,
           quantity: quantity,
-          internalTradeQuantity: internalTradeQuantity
+          internalTradeQuantity: internalTradeQuantity,
+          placed_at: new Date()
         });
 
         // Pend the machines
         for(let m of options.participants)
-          await m.pend()
+          await m.pend(newOrder)
         console.log("[order.js] All participants are successfully pended.")
 
-        // awiat: orders.placeOrder() won't be ended befor newOrder is save in db completly
+        // awiat to save this order at db
         await new Promise(resolve => {
           newOrder.save({},{
-            success: function(){
+            success: () => {
               console.log("[order.js] New order successfully saved.")
+              console.log(newOrder.attributes)
               resolve()
             }
           })
         })
 
-        newOrder.participants = options.participants  // machines array. not as attributes
+        // Only succeeded to place order in this collection
         this.push(newOrder)
 
         console.log("[order.js] End of order.placeOrder() with new order")
         return newOrder
       }else {
         console.log("[order.js] Placed order but didn't receive orderId. It needed to check")
-        console.log(newOrder)
+        console.log(newOrder.attributes)
+        console.log(marketResult)
         throw new Error("KILL_ME")
       }
     },
@@ -232,7 +267,7 @@ exports.Orders = Backbone.Collection.extend({
       if (this.length == 0)
         return
 
-      // Fetch uncompleted orders from Coinone with Ethereum
+      // Fetch uncompleted orders from markets
       let uncompletedOrderIds
       try {
         let korbitPromise = korbitAPI({
@@ -240,9 +275,9 @@ exports.Orders = Backbone.Collection.extend({
           coinType: "ETH"
         })
         let coinonePromise = coinoneAPI({
-            type: "UNCOMPLETED_ORDERS",
-            coinType: "ETH"
-          })
+          type: "UNCOMPLETED_ORDERS",
+          coinType: "ETH"
+        })
         let coinoneUncompletedOrderIds = (await coinonePromise).limitOrders.map(o => o.orderId)
         let korbitUncompletedOrderIds = (await korbitPromise).map(o => o.id)
 
@@ -250,30 +285,32 @@ exports.Orders = Backbone.Collection.extend({
         // console.log(uncompletedOrderIds)
       } catch (e) {
         console.log("[order.js] One or two of uncompleted orders fetch is failed. Skip this refresh.")
-        reject(e)
-        return
+        throw new Error(e)
       }
 
-      // Complete All of New completed order korbit and coinone
-      for(let order of this.models){  // this.models is an array
-        if (order.get("isDone")){
-          // Maybe It's fail to cancel from market. and nothing to do
-          console.log("[order.js] It's Done order. check this orderId:", order.get("orderId"))
-          break
-        }
-        if (_.contains(uncompletedOrderIds, order.get("orderId")) ){
+      console.log("[order.js] orders.length:", this.length, "models.length:", this.models.length)
+      // Check all of new completed order in Korbit and Coinone
+      // for(let order of this.models){  // this.models is an array
+      this.each(async (order) => {
+        console.log("[oder.js] now refreshing orderId: ", order.get("orderId"))
+        if (_.contains(uncompletedOrderIds, order.get("orderId") + "") ){ // korbit orderId is number so add ""
           // It's uncompleted order. Don't do anything.
           console.log("[order.js] Uncompleted orderId:", order.get("orderId"),
             order.get("price"), order.get("quantity"), order.get("type"),
-            ((new Date() - order.get("created_at")) / 60000).toFixed(2), "min ago\t",
+            ((new Date() - order.get("created_at")) / 3600000).toFixed(2), "hours ago\t",
             order.get("internalTradeQuantity") )
         }else{
-          console.log("[order.js] New completed order! id:", order.get("orderId"), order.get("type"), order.get("price"))
-
-          // New complete order!
-          await order.completed()
+          if (order.get("status") == "OPEN"){
+            console.log("[order.js] Detect new completed order! id:", order.get("orderId"), order.get("type"), order.get("price"))
+            // New complete order!
+            await order.completed()
+          }else{
+            console.log("[order.js] Why this order is here? orderId:", order.get("orderId") ,order.get("status"))
+            throw new Error("KILL_ME")
+          }
         }
-      }
+      }) // End of for loop
+      console.log("[order.js] refresh loop end")
 
       // Time to cancel the old orders
       // Array.filter() return [] if there is no order. not undefined

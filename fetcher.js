@@ -9,7 +9,9 @@ const coinBaseClient = new CoinBaseClient({
     apiKey: KEYS.COINBASE.API_KEY,
     apiSecret: KEYS.COINBASE.SECRET_KEY
 });
-const coinoneAPI = require("./coinone.js");
+
+const coinoneAPI = require("./coinone.js"),
+  korbitAPI = require("./korbit.js")
 
 exports.getBtc_usd = function() {
   return new Promise((resolve, reject) => {
@@ -84,6 +86,8 @@ exports.getRecentTransactions = function(){
   });
 };
 
+
+
 exports.getKorbitInfo = function(){
   return new Promise((resolve, reject) => {
     request({
@@ -143,6 +147,23 @@ exports.getKorbitEthOrderbook = function() {
         });
   })
 }
+exports.getKorbitBalance = async function(){
+  const result = await korbitAPI({
+    type: "BALANCE",
+    coinType: "ETH"
+  })
+
+  return {
+    eth: {
+      available: result.tradable.find(({currency}) => currency == "eth").value * 1,
+      balance: result.balance.find(({currency}) => currency == "eth").value * 1
+    },
+    krw: {
+      available: result.tradable.find(({currency}) => currency == "krw").value * 1,
+      balance: result.balance.find(({currency}) => currency == "krw").value * 1
+    }
+  }
+}
 
 exports.getCoinoneInfo = function(){
   return new Promise((resolve, reject) => {
@@ -170,7 +191,6 @@ exports.getCoinoneInfo = function(){
       })
   })
 }
-
 exports.getCoinoneEthOrderbook = function() {
   return new Promise((resolve, reject) => {
     request({
@@ -191,6 +211,7 @@ exports.getCoinoneEthOrderbook = function() {
               }
             } catch (e) {
               reject("[fetcher.js] Maybe market's problem. not me")
+              // resolve() // resolve() with undefined than reject()
               return
             }
 
@@ -200,4 +221,19 @@ exports.getCoinoneEthOrderbook = function() {
               reject("[fetcher.js] idk what wrong?")
         });
   })
+}
+exports.getCoinoneBalance = async function(){
+  const result = await coinoneAPI({
+    type: "BALANCE"
+  })
+  return {
+    eth: {
+      available: result.eth.avail * 1,
+      balance: result.eth.balance * 1
+    },
+    krw: {
+      available: result.krw.avail * 1,
+      balance: result.krw.balance * 1
+    }
+  }
 }
