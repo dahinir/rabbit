@@ -134,7 +134,7 @@ async function run() {
 
     if (e && e.message == "KILL_ME")
       killSign = true
-    killSign = true
+    // killSign = true
   } finally {
 
     if (killSign){

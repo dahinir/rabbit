@@ -35,18 +35,16 @@ exports.Order = Backbone.Model.extend({
       }
       console.log("[order.js] machine accomplish end. time to save order COMPLETED")
 
-
       // Wait to save this order
       await new Promise(resolve => {
           // IDK why but sometimes when save this will override machine instance that is one of accomplished
-          console.log(" SET TIME OUT 100ms")
           
           that.save({  
             status: "COMPLETED",
             completed_at: new Date()
           }, {
             success: () => {
-              console.log("[order.js] Order saved as completed.", this.attributes)
+              console.log("[order.js] Order saved as completed.", this.get("orderId"))
               resolve()
             }
           })
@@ -167,7 +165,7 @@ exports.Orders = Backbone.Collection.extend({
         case "KORBIT":
           marketAPI = korbitAPI
           break
-        case undefined:
+        default:
           throw new Error("Trying place order without marketName")
       }
 
@@ -210,12 +208,11 @@ exports.Orders = Backbone.Collection.extend({
       // Actual order here
       const marketResult = await marketAPI({
         type: type,
-        // price: price -100000,
         price: price,
         qty: quantity,
         coinType: options.coinType
       })
-      console.log("[order.js] The order is placed", options.marketName, type, price, quantity, marketResult)
+      console.log("[order.js] The order is placed", options.marketName, type, price, quantity, marketResult.orderId)
       // console.log(marketResult.orderId)
 
       // Only success to place order
@@ -231,7 +228,7 @@ exports.Orders = Backbone.Collection.extend({
         });
 
         // Pend the machines
-        for(let m of options.participants)
+        for (let m of options.participants)
           await m.pend(newOrder)
         console.log("[order.js] All participants are successfully pended.")
 
@@ -239,8 +236,8 @@ exports.Orders = Backbone.Collection.extend({
         await new Promise(resolve => {
           newOrder.save({},{
             success: () => {
-              console.log("[order.js] New order successfully saved.")
-              console.log(newOrder.attributes)
+              console.log("[order.js] New order successfully saved. orderId:", newOrder.get("orderId"))
+              // console.log(newOrder.attributes)
               resolve()
             }
           })
@@ -252,7 +249,7 @@ exports.Orders = Backbone.Collection.extend({
         console.log("[order.js] End of order.placeOrder() with new order")
         return newOrder
       }else {
-        console.log("[order.js] Placed order but didn't receive orderId. It needed to check")
+        console.log("[order.js] Placed order but didn't receive orderId. It needed to check. maybe more than 10 orders at korbit?")
         console.log(newOrder.attributes)
         console.log(marketResult)
         throw new Error("KILL_ME")
@@ -276,7 +273,7 @@ exports.Orders = Backbone.Collection.extend({
           coinType: "ETH"
         })
         let coinoneUncompletedOrderIds = (await coinonePromise).limitOrders.map(o => o.orderId)
-        let korbitUncompletedOrderIds = (await korbitPromise).map(o => o.id)
+        let korbitUncompletedOrderIds = (await korbitPromise).map(o => o.id + "")
 
         uncompletedOrderIds = coinoneUncompletedOrderIds.concat(korbitUncompletedOrderIds)
         // console.log(uncompletedOrderIds)
@@ -287,8 +284,7 @@ exports.Orders = Backbone.Collection.extend({
 
       console.log("102 [order.js] orders.length:", this.length, "models.length:", this.models.length)
       // Check all of new completed order in Korbit and Coinone
-      for(let order of this.models){  // this.models is an array
-        console.log("103 [oder.js] now refreshing orderId: ", order.get("orderId"))
+      for (let order of this.where() ){  // DO NOT USE `this.models` that would be changed by remove event
         if (_.contains(uncompletedOrderIds, order.get("orderId") + "") ){ // korbit orderId is number so add ""
           // It's uncompleted order. Don't do anything.
           console.log("104 [order.js] Uncompleted orderId:", order.get("orderId"),
@@ -314,10 +310,12 @@ exports.Orders = Backbone.Collection.extend({
       const korbitOrders = this.models.filter(order => order.get("marketName") == "KORBIT")
 
       for (let orders of [coinoneOrders, korbitOrders]){
-        if (orders.length > 5){
+        console.log("[order.js] orders.length", orders.length)
+        if (orders.length > 5 && orders[0].get("marketName") == "KORBIT"){
             // The most far from current price
             const uselessOrder = _.sortBy(orders, order => -Math.abs(global.rabbit.coinoneInfo.last - order.get("price")))[0]
 
+            console.log("[order.js] Cancel order:", uselessOrder.id)
             // Cancel useless order!
             await uselessOrder.cancel()
         }

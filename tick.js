@@ -18,7 +18,7 @@ const arbitrages = global.rabbit.arbitrages
 
 module.exports = async function(){
   let startTime = new Date()
-  console.log("--Tick no.", ++count, "with", machines.length, "machines. ",
+  console.log("\n--Tick no.", ++count, "with", machines.length, "machines. ",
     startTime.toLocaleString(), "It's been", Math.floor((new Date() - global.rabbit.STARTED)/ 86400000),
       "days.  Now refresh orders..")
 
@@ -65,6 +65,7 @@ module.exports = async function(){
   console.log("--In 24hrs at Coinone:", coinoneInfo.low, "~", coinoneInfo.high, ":",coinoneInfo.last,"(",
       ((coinoneInfo.last- coinoneInfo.low)/(coinoneInfo.high- coinoneInfo.low)*100).toFixed(2),"% )----" )
   console.log("All fetchers've take", fetchingTime, "sec")
+  console.log("KRW:", new Intl.NumberFormat().format(korbit.balance.krw.balance + coinone.balance.krw.balance), "Coin:", (korbit.balance.eth.balance + coinone.balance.eth.balance).toFixed(2) )
   console.log("Balance:", new Intl.NumberFormat().format(korbitBalance.krw.balance + korbitBalance.eth.balance * korbitEthOrderbook.bid[0].price
     + coinoneBalance.krw.balance + coinoneBalance.eth.balance * coinoneEthOrderbook.bid[0].price), "krw")
   console.log("--(coinone eth)-----max bid:", coinone.orderbook.bid[0], "min ask:", coinone.orderbook.ask[0])
@@ -83,6 +84,7 @@ module.exports = async function(){
   })  // It's Array
 
   if (results.length != 2){
+    console.log("-- No arbitrages so just mind machines --")
     results = machines.mind({
       korbit: korbit,
       coinone: coinone
@@ -94,7 +96,7 @@ module.exports = async function(){
 
   ///////  TIME TO ORDER //////
   const placeOrderPromises = results.map(result => orders.placeOrder(result))
-  for(let o of placeOrderPromises)
+  for (let o of placeOrderPromises)
     await o
 
 

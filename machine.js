@@ -34,8 +34,9 @@ exports.Machine = Backbone.Model.extend({
       //   throw new Error("a")
       // }
       this.on("change:orderId", function(e){
+        console.log("fuck.. orderId is setting at machine..")
         console.log(e.attributes)
-        throw new Error("fuck.. orderId:")
+        throw new Error("KILL_ME")
       });
       if (!this.id)
         this.set({
@@ -130,7 +131,10 @@ exports.Machine = Backbone.Model.extend({
             profit_krw: this.get("profit_krw") + thisProfit * this.get("capacity"),
             profit_rate: this.get("profit_rate") + thisProfit
           })
+
           // FOR BIGGIE PROFIT KRW
+          // db.machines.updateMany({craving_krw: 13000, status:"KRW"}, {$set:{capacity: 0.01}})
+          // db.machines.findOne({craving_krw: 9000, status:"KRW", capacity: {$ne: 0.02}})
           if (this.get("craving_krw") == 5000)
             changed.capacity = 0.01
           if (this.get("craving_krw") == 6000)
@@ -140,15 +144,20 @@ exports.Machine = Backbone.Model.extend({
           else if (this.get("craving_krw") == 8000)
             changed.capacity = 0.02
           else if (this.get("craving_krw") == 9000)
-            changed.capacity = 0.03
+            changed.capacity = 0.02
           else if (this.get("craving_krw") == 10000)
-            changed.capacity = 0.05
+            changed.capacity = 0.03
+          else if (this.get("craving_krw") == 11000)
+            changed.capacity = 0.03
+          else if (this.get("craving_krw") == 12000)
+            changed.capacity = 0.02
+          else if (this.get("craving_krw") == 13000)
+            changed.capacity = 0.01
 
-          console.log("[machine.js] A machine accomplish with profit", thisProfit * this.get("capacity"),
-            "krw. My craving_krw is", this.get("craving_krw"))
+          console.log("[machine.js] A machine", this.id ,"accomplish with profit", thisProfit * this.get("capacity"), "krw. My craving_krw is", this.get("craving_krw"))
         }else if (this.get("mind").type == "BID"){
           changed.status = "COIN"
-          console.log("[machine.js] A machine accomplish the bid at", order.get("price"), "I'm usually buy_at", this.get("buy_at"), "craving_krw", this.get("craving_krw"))
+          console.log("[machine.js] A machine accomplish", this.id ,"bid at", order.get("price"), "I'm usually buy_at", this.get("buy_at"), "craving_krw", this.get("craving_krw"))
         }
 
         // console.log("[machine.js] save with changed:", changed)
@@ -215,14 +224,15 @@ exports.Arbitrage = exports.Machine.extend({
         success: () => {  // DON'T PASS THE SYNC FUNCTION!!
           if (this.get("rollback_count") == 1 && this.get("traded_count") == 0 && this.get("status") == "PENDING"){
             console.log("[machine.js] one of an order of arbitrage was canceled. so cancel the other")
-            for(let o of this.orders){
+            for (let o of this.orders){
               if (o.get("orderId") != order.get("orderId"))
                 o.cancel().then(() => { resolve() })
             }
-          } else if (this.get("rollback_count") == 2) {
+          } else if (this.get("status") == "CANCELED" || this.get("status") == "FAILED") {
             resolve()
           } else {
-            reject()
+            console.log("now attributes:", this.attributes)
+            reject("rollback result is funny")
           }
         }
       })
@@ -322,12 +332,6 @@ exports.Machines = Backbone.Collection.extend({
             $limit: AMOUNT
           },
           success: function(machines) {
-            // machines.each(function(m) {
-            //     console.log(m.attributes.id);
-            //     console.log(m.attributes.craving_krw);
-            //     console.log(m.attributes.negativeHope);
-            //     console.log(m.attributes.positiveHope);
-            // });
             loaded = loaded.concat(machines.models);
             // console.log(loaded.length, machines.length, machines.models.length);
             if (machines.length == AMOUNT) {
@@ -485,11 +489,11 @@ exports.Arbitrages = exports.Machines.extend({
   initialize: function(attributes, options) {
     console.log("arbitrages init")
     this.on("change:status", a => {
-      console.log("event", a.get("a"), a.get("status"))
+      console.log("event", a.id, a.get("status"))
       switch (a.get("status")) {
         case "COMPLETED":
         case "CANCELED":
-        // case "FAILED":
+        case "FAILED":
           console.log("The arbitrage", a.get("status") ," and will be removed from the arbitrages. remain in db")
           this.remove(a)
           // delete o
@@ -521,8 +525,8 @@ exports.Arbitrages = exports.Machines.extend({
   },
   // Make new arbitrage machine!
   mind: function(options) {
-    if (this.length > 5){
-      console.log("[machine.js] arbitrages have more than 5. so just pass")
+    if (this.length > 6){
+      console.log("[machine.js] arbitrages have more than 6. so just pass")
       return []
     }
     console.log("arbitrages.length:", this.length)
@@ -555,11 +559,11 @@ exports.Arbitrages = exports.Machines.extend({
     quantity = (lowMarket.orderbook.ask[0].qty < highMarket.orderbook.bid[0].qty) ?
       lowMarket.orderbook.ask[0].qty : highMarket.orderbook.bid[0].qty
     quantity = quantity - 0.01  // Kind of flooring
-    quantity = (quantity > 5.0) ? 5.0 : quantity  // Litmit
+    quantity = (quantity > 1.0) ? 1.0 : quantity  // Limit
     quantity = quantity.toFixed(2) * 1
     // quantity = 0.02 // for test
 
-    if (profitRate < 900 || quantity < 0.01){
+    if (profitRate < 1200 || quantity < 0.01){
       console.log("Pass arbitrage. profitRate:", profitRate, "quantity:", quantity)
       return []
     }
@@ -600,11 +604,11 @@ exports.Arbitrages = exports.Machines.extend({
       lowMarketName: lowMarket.name,
       highMarketName: highMarket.name,
       // just for log below
-      profit_krw: quantity * profitRate,
+      profit_krw: quantity * (profitRate - 100),  // Note that -100
       quantity: quantity,
-      profitRate: profitRate,
-      bidPrice: lowMarket.orderbook.ask[0].price,
-      askPrice: highMarket.orderbook.bid[0].price
+      profitRate: profitRate - 100,
+      bidPrice: lowMarket.orderbook.ask[0].price + 50,  // Buy at minAskPrice
+      askPrice: highMarket.orderbook.bid[0].price - 50  // Ask at maxBidPrice
     })
 
     this.push(newArbitrage)
@@ -614,7 +618,7 @@ exports.Arbitrages = exports.Machines.extend({
         coinType: "ETH",
         bidQuantity: quantity,
         askQuantity: 0,
-        bidPrice: lowMarket.orderbook.ask[0].price, // Buy at minAskPrice
+        bidPrice: newArbitrage.get("bidPrice"), 
         // askPrice: maxBidPrice,
         participants: [newArbitrage],
         machineIds: [newArbitrage.id + ""]  // attached "" to avoid ObjectId("asoweugbalskug")
@@ -625,7 +629,7 @@ exports.Arbitrages = exports.Machines.extend({
         bidQuantity: 0,
         askQuantity: quantity,
         // bidPrice: minAskPrice,
-        askPrice: highMarket.orderbook.bid[0].price, // Ask at maxBidPrice
+        askPrice: newArbitrage.get("askPrice"),
         participants: [newArbitrage],
         machineIds: [newArbitrage.id + ""] // attached "" to avoid ObjectId("asoweugbalskug")
       }
