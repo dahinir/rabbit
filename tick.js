@@ -28,21 +28,25 @@ module.exports = async function(){
 
 
   /////// FETCHING //////////
-  let coinoneInfo, korbitEthOrderbook, coinoneEthOrderbook, korbitBalance, coinoneBalance
-  // Act like Promise.all()
-  const coinoneInfoPromise = fetcher.getCoinoneInfo(),
-    korbitEthOrderbookPromise = fetcher.getKorbitEthOrderbook(),
-    coinoneEthOrderbookPromise = fetcher.getCoinoneEthOrderbook(),
-    korbitBalancePromise = fetcher.getKorbitBalance(),
-    coinoneBalancePromise = fetcher.getCoinoneBalance()
-
+  let coinoneInfo, coinoneEthOrderbook, coinoneBalance
+  let korbitInfo, korbitEthOrderbook, korbitBalance
   try {
+    // Act like Promise.all() 
+    const coinoneInfoPromise = fetcher.getCoinoneInfo(),
+      coinoneEthOrderbookPromise = fetcher.getCoinoneEthOrderbook(),
+      coinoneBalancePromise = fetcher.getCoinoneBalance()
+    const  korbitEthOrderbookPromise = fetcher.getKorbitEthOrderbook(),
+      korbitBalancePromise = fetcher.getKorbitBalance(),
+      korbitInfoPromise = fetcher.getKorbitInfo()
+
     coinoneInfo = await coinoneInfoPromise
-    korbitEthOrderbook = await korbitEthOrderbookPromise
+    korbitInfo = await korbitInfoPromise
     coinoneEthOrderbook = await coinoneEthOrderbookPromise
-    korbitBalance = await korbitBalancePromise
+    korbitEthOrderbook = await korbitEthOrderbookPromise
     coinoneBalance = await coinoneBalancePromise
+    korbitBalance = await korbitBalancePromise
     global.rabbit.coinoneInfo = coinoneInfo
+    global.rabbit.korbitInfo = korbitInfo
   } catch (e) {
     ignoreMoreRejectsFrom(coinoneInfoPromise,
       korbitEthOrderbookPromise, coinoneEthOrderbookPromise,
@@ -53,41 +57,77 @@ module.exports = async function(){
   const fetchingTime = ((new Date() - startTime) / 1000).toFixed(2) // sec
   const korbit = {
         name: "KORBIT",
+        info: korbitInfo,
         orderbook: korbitEthOrderbook,
         balance: korbitBalance
       }
   const coinone = {
         name: "COINONE",
+        info: coinoneInfo,
         orderbook: coinoneEthOrderbook,
         balance: coinoneBalance
       }
-
-  console.log("--In 24hrs at Coinone:", coinoneInfo.low, "~", coinoneInfo.high, ":",coinoneInfo.last,"(",
-      ((coinoneInfo.last- coinoneInfo.low)/(coinoneInfo.high- coinoneInfo.low)*100).toFixed(2),"% )----" )
+  
+  console.log("--In 24hrs at Coinone:", coinone.info.low, "~", coinone.info.high, ":",coinone.info.last,"(",
+      ((coinone.info.last- coinone.info.low)/(coinone.info.high- coinone.info.low)*100).toFixed(2),"% )----" )
   console.log("All fetchers've take", fetchingTime, "sec")
   console.log("KRW:", new Intl.NumberFormat().format(korbit.balance.krw.balance + coinone.balance.krw.balance), "Coin:", (korbit.balance.eth.balance + coinone.balance.eth.balance).toFixed(2) )
-  console.log("Balance:", new Intl.NumberFormat().format(korbitBalance.krw.balance + korbitBalance.eth.balance * korbitEthOrderbook.bid[0].price
-    + coinoneBalance.krw.balance + coinoneBalance.eth.balance * coinoneEthOrderbook.bid[0].price), "krw")
+  console.log("Balance:", new Intl.NumberFormat().format(korbit.balance.krw.balance + korbit.balance.eth.balance * korbit.orderbook.bid[0].price
+    + coinone.balance.krw.balance + coinone.balance.eth.balance * coinone.orderbook.bid[0].price), "krw")
+  console.log("Coinone eth:", coinone.balance.eth.available.toFixed(2), "\tkrw:", new Intl.NumberFormat().format(coinone.balance.krw.available))
+  console.log("Korbit  eth:", korbit.balance.eth.available.toFixed(2), "\tkrw:", new Intl.NumberFormat().format(korbit.balance.krw.available))
   console.log("--(coinone eth)-----max bid:", coinone.orderbook.bid[0], "min ask:", coinone.orderbook.ask[0])
   console.log("--(korbit eth)------max bid:", korbit.orderbook.bid[0], "min ask:", korbit.orderbook.ask[0])
+  console.log("coinone eth volume:", coinone.info.volume, "korbit eth volume:", korbit.info.volume)
 
-  if (fetchingTime > 70.0 ){
-    console.log("Fetched too late, pass this tic")
-    return
-  }
 
 
   /////// TIME TO MIND ////////
-  let results = arbitrages.mind({
+  let results = []
+  if (fetchingTime > 30) {
+    console.log("Fetched too late. Don't buy when the market is busy. pass this tic. fetchingTime:", fetchingTime)
+    return
+  }
+  results = arbitrages.mind({
     korbit: korbit,
     coinone: coinone
   })  // It's Array
 
   if (results.length != 2){
-    console.log("-- No arbitrages so just mind machines --")
+    console.log("-- No arbitrages so mind machines --")
+    if (fetchingTime > 1.7 ){
+      console.log("Fetched too late. Don't buy when the market is busy. pass this tic. fetchingTime:", fetchingTime)
+      return
+    }
+
+    let altKorbit = korbit,
+      altCoinone = coinone
+    if (coinone.balance.krw.available < 1000000){
+      console.log("not enough krw at coinone.")
+      altCoinone = (korbit.orderbook.bid[0].price < coinone.orderbook.bid[0].price) ? coinone : korbit
+    }
+    if (coinone.balance.eth.available < 1.0){
+      console.log("not enough eth at coinone.")
+      altCoinone = (korbit.orderbook.ask[0].price > coinone.orderbook.ask[0].price) ? coinone : korbit
+    }
+    if (korbit.balance.krw.available < 1000000){
+      console.log("not enough krw at korbit.")
+      altKorbit = (coinone.orderbook.bid[0].price < korbit.orderbook.bid[0].price) ? korbit : coinone
+    }
+    if (korbit.balance.eth.available < 1.0){
+      console.log("not enough eth at korbit.")
+      altKorbit = (coinone.orderbook.ask[0].price > korbit.orderbook.ask[0].price) ? korbit : coinone
+    }
+    console.log("altCoinone:", altCoinone.name, "\taltKorbit:", altKorbit.name)
+    if (altCoinone.name != altKorbit.name && altCoinone.name == "KORBIT"){
+      console.log("I think it's not gonna happen. altCoinone is korbit, altKorbit is coinone", altCoinone, altKorbit)
+      throw new Error("KILL_ME")
+      return
+    }
+
     results = machines.mind({
-      korbit: korbit,
-      coinone: coinone
+      korbit: altKorbit,
+      coinone: altCoinone
     })
   }
   // console.log("[tick.js]", machinesResult.participants.length, "machinesResult want to deal")

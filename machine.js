@@ -133,25 +133,35 @@ exports.Machine = Backbone.Model.extend({
           })
 
           // FOR BIGGIE PROFIT KRW
-          // db.machines.updateMany({craving_krw: 13000, status:"KRW"}, {$set:{capacity: 0.01}})
-          // db.machines.findOne({craving_krw: 9000, status:"KRW", capacity: {$ne: 0.02}})
+          // db.machines.updateMany({craving_krw: 11000, status:"KRW"}, {$set:{capacity: 0.03}})
+          // db.machines.findOne({craving_krw: 6000, status:"KRW", capacity: {$ne: 0.01}})
           if (this.get("craving_krw") == 5000)
             changed.capacity = 0.01
           if (this.get("craving_krw") == 6000)
             changed.capacity = 0.01
           else if (this.get("craving_krw") == 7000)
-            changed.capacity = 0.02
+            changed.capacity = 0.01
           else if (this.get("craving_krw") == 8000)
-            changed.capacity = 0.02
+            changed.capacity = 0.01
           else if (this.get("craving_krw") == 9000)
             changed.capacity = 0.02
           else if (this.get("craving_krw") == 10000)
-            changed.capacity = 0.03
+            changed.capacity = 0.02
           else if (this.get("craving_krw") == 11000)
             changed.capacity = 0.03
           else if (this.get("craving_krw") == 12000)
-            changed.capacity = 0.02
+            changed.capacity = 0.04
           else if (this.get("craving_krw") == 13000)
+            changed.capacity = 0.04
+          else if (this.get("craving_krw") == 14000)
+            changed.capacity = 0.04
+          else if (this.get("craving_krw") == 15000)
+            changed.capacity = 0.04
+          else if (this.get("craving_krw") == 16000)
+            changed.capacity = 0.03
+          else if (this.get("craving_krw") == 17000)
+            changed.capacity = 0.02
+          else if (this.get("craving_krw") == 18000)
             changed.capacity = 0.01
 
           console.log("[machine.js] A machine", this.id ,"accomplish with profit", thisProfit * this.get("capacity"), "krw. My craving_krw is", this.get("craving_krw"))
@@ -371,7 +381,7 @@ exports.Machines = Backbone.Collection.extend({
         bid: highBidMarket.orderbook.bid,
         ask: lowAskMarket.orderbook.ask
       }
-      console.log("high bid market:", highBidMarket.name, " low ask market:", lowAskMarket.name)
+      console.log("[machine.js] Low ask market:", lowAskMarket.name, "\tHigh bid market:", highBidMarket.name)
 
 
 
@@ -423,21 +433,22 @@ exports.Machines = Backbone.Collection.extend({
             return []
           }
         }else{
-          if (totalAsk - totalBid < highBidMarket.balance.eth.available - 1.0){ // 1.0 is buffer for fee
+          if (totalAsk - totalBid < highBidMarket.balance.eth.available - 0.1){ // 0.1 is buffer for fee
             console.log("[machine.js] I have coin to ask at", highBidMarket.name)
           }else{
             console.log("[machine.js] Not enough coin at", highBidMarket.name, "hurry up!!!!!")
             return []
           }
         }
+        const marketName = (totalBid > totalAsk) ? lowAskMarket.name : highBidMarket.name
         // Make result as one so that can be internal trade
         result = [{
-          marketName: (totalBid > totalAsk) ? lowAskMarket.name : highBidMarket.name,
+          marketName: marketName,
           coinType: this.at(0).get("coinType"),
           bidQuantity: totalBid,
           askQuantity: totalAsk,
-          bidPrice: bestOrderbook.ask[0].price,  // Buy at minAskPrice
-          askPrice: bestOrderbook.bid[0].price,
+          bidPrice: (marketName == "KORBIT") ? bestOrderbook.ask[0].price - 50: bestOrderbook.ask[0].price,  // Buy at minAskPrice
+          askPrice: (marketName == "KORBIT") ? bestOrderbook.bid[0].price + 50 : bestOrderbook.bid[0].price,
           participants: bidParticipants.concat(askParticipants),
           machineIds: bidMachineIds.concat(askMachineIds)
         }]
@@ -449,7 +460,7 @@ exports.Machines = Backbone.Collection.extend({
           console.log("[machine.js] Put money at", lowAskMarket.name, "hurry up!!!!!!")
           totalBid = 0, bidMachineIds = [], bidParticipants = []
         }
-        if (totalAsk < highBidMarket.balance.eth.available - 1.0){
+        if (totalAsk < highBidMarket.balance.eth.available - 0.1){
           console.log("[machine.js] Enough Ethereum at", highBidMarket.name)
         }else {
           console.log("[machine.js] Put Ethereum at", highBidMarket.name, "hurry up!!!!!!")
@@ -461,7 +472,7 @@ exports.Machines = Backbone.Collection.extend({
           coinType: this.at(0).get("coinType"),
           bidQuantity: totalBid,
           askQuantity: 0,
-          bidPrice: bestOrderbook.ask[0].price,  // Buy at minAskPrice
+          bidPrice: (lowAskMarket.name == "KORBIT") ? bestOrderbook.ask[0].price - 50: bestOrderbook.ask[0].price,  // Buy at minAskPrice
           // askPrice: bestOrderbook.bid[0].price,
           participants: bidParticipants,
           machineIds: bidMachineIds
@@ -471,7 +482,7 @@ exports.Machines = Backbone.Collection.extend({
           bidQuantity: 0,
           askQuantity: totalAsk,
           // bidPrice: bestOrderbook.ask[0].price,  // Buy at minAskPrice
-          askPrice: bestOrderbook.bid[0].price,
+          askPrice: (highBidMarket.name == "KORBIT") ? bestOrderbook.bid[0].price + 50 : bestOrderbook.bid[0].price,
           participants: askParticipants,
           machineIds: askMachineIds
         }]
@@ -556,14 +567,15 @@ exports.Arbitrages = exports.Machines.extend({
     } else if (korbit2coinone == coinone2korbit) {  // It happens
       return []
     }
+    const LIMIT = (profitRate > 3500) ? 2.0 : 0.7
     quantity = (lowMarket.orderbook.ask[0].qty < highMarket.orderbook.bid[0].qty) ?
       lowMarket.orderbook.ask[0].qty : highMarket.orderbook.bid[0].qty
     quantity = quantity - 0.01  // Kind of flooring
-    quantity = (quantity > 1.0) ? 1.0 : quantity  // Limit
+    quantity = (quantity > LIMIT) ? LIMIT : quantity  // Limit
     quantity = quantity.toFixed(2) * 1
     // quantity = 0.02 // for test
 
-    if (profitRate < 1200 || quantity < 0.01){
+    if (profitRate < 1600 || quantity < 0.01){
       console.log("Pass arbitrage. profitRate:", profitRate, "quantity:", quantity)
       return []
     }
