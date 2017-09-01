@@ -26,24 +26,37 @@ let machine_count = 0;
 
 setting = {
   coinType: "ETH",
-  marketName: "COINONE",
   name: "SCATTERER",
   capacity: 0.01,
   buy_at: 0,
   craving_krw: 0
 }
 
-for (let buy_at = 100000; buy_at < 400000; buy_at += 100) {
+for (let buy_at = 100000; buy_at < 500000; buy_at += 100) {
     setting.buy_at = buy_at;
 
-    for (let craving_krw = 1000; craving_krw <= 20000; craving_krw += 1000) {
-        setting.craving_krw = craving_krw;
+    for (let craving_percentage = 5; craving_percentage <= 100; craving_percentage += 5) {
+        setting.craving_percentage = craving_percentage;
+        setting.craving_krw = Math.round(setting.buy_at * setting.craving_percentage / 100)
         settings.push(_.extend({}, setting));
         machine_count++;
-        // console.log(setting.buy_at, setting.craving_krw);
+        // console.log(setting.buy_at, craving_percentage, setting.craving_krw);
     }
 }
-console.log(settings.length); // 60000
+console.log(settings.length);
+
+// for (let buy_at = 100000; buy_at < 500000; buy_at += 100) {
+//     setting.buy_at = buy_at;
+
+//     for (let craving_krw = 1000; craving_krw <= 40000; craving_krw += 1000) {
+//         setting.craving_krw = craving_krw;
+//         settings.push(_.extend({}, setting));
+//         machine_count++;
+//         // console.log(setting.buy_at, setting.craving_krw);
+//     }
+// }
+// console.log(settings.length);
+
 
 
 /*

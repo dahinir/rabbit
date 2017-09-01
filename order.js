@@ -26,6 +26,11 @@ exports.Order = Backbone.Model.extend({
           created_at: new Date()
         })
       }
+      this.on("change:buy_at", function (e) {
+        console.log("fuck.. buy_at is setting at order..")
+        console.log(e.attributes)
+        throw new Error("KILL_ME")
+      });
     },
     completed: async function(){
       if (this.get("marketName") == "KORBIT" && new Date() - this.get("placed_at") < 5200) {
@@ -90,7 +95,10 @@ exports.Order = Backbone.Model.extend({
         }
       } catch (e) {
         console.log("[order.js] Fail to cancel order. I'll just ignore")
+        require('fs').appendFileSync("./error.json", JSON.stringify(e))
         // Don't return here. continue this canceling.
+        // No..Coinone will return 104 not exist order when it busy. so don't continue this canceling
+        return
       }
 
       // Roll back the machines
@@ -268,16 +276,17 @@ exports.Orders = Backbone.Collection.extend({
       // Fetch uncompleted orders from markets
       let uncompletedOrderIds
       try {
-        let korbitPromise = korbitAPI({
+        let coinonePromise = coinoneAPI({
           type: "UNCOMPLETED_ORDERS",
           coinType: "ETH"
         })
-        let coinonePromise = coinoneAPI({
+        let korbitPromise = korbitAPI({
           type: "UNCOMPLETED_ORDERS",
           coinType: "ETH"
         })
         let coinoneUncompletedOrderIds = (await coinonePromise).limitOrders.map(o => o.orderId) // string
         let korbitUncompletedOrderIds = (await korbitPromise).map(o => o.id + "")  // string.. unbelievable.. so I add "" to 
+        // let korbitUncompletedOrderIds = []
         uncompletedOrderIds = coinoneUncompletedOrderIds.concat(korbitUncompletedOrderIds)
 
         // console.log("101 [order.js] korbitUncompletedOrderIds:", korbitUncompletedOrderIds)
@@ -290,7 +299,6 @@ exports.Orders = Backbone.Collection.extend({
       // Check all of new completed order in Korbit and Coinone
       for (let order of this.where() ){  // DO NOT USE `this.models` that would be changed by remove event
         if (_.contains(uncompletedOrderIds, order.get("orderId") + "") ){
-        // if (_.contains(korbitUncompletedOrderIds, order.get("orderId") + "") ){ 
           // It's uncompleted order. Don't do anything.
           console.log("104 [order.js] Uncompleted orderId:", order.get("orderId"),
             order.get("price"), order.get("quantity"), order.get("type"),
@@ -303,6 +311,7 @@ exports.Orders = Backbone.Collection.extend({
             await order.completed()
           }else{
             console.log("104 [order.js] Why this order is here? orderId:", order.get("orderId") ,order.get("status"))
+            console.log(order.attributes)
             throw new Error("KILL_ME")
           }
         }
@@ -317,11 +326,11 @@ exports.Orders = Backbone.Collection.extend({
       for (let orders of [coinoneOrders, korbitOrders]){
         console.log("[order.js] orders.length", orders.length)
         // if (orders.length > 5 && orders[0].get("marketName") == "KORBIT"){
-        // if (orders.length > 5 && global.rabbit.coinoneInfo){
-        if (orders.length > 5 && global.rabbit.korbitInfo){
+        if (orders.length > 5 && global.rabbit.coinone.info){
+        // if (orders.length > 5 && global.rabbit.korbit.info){
             // The most far from current price
-            // const uselessOrder = _.sortBy(orders, order => -Math.abs(global.rabbit.coinoneInfo.last - order.get("price")))[0]
-            const uselessOrder = _.sortBy(orders, order => -Math.abs(global.rabbit.korbitInfo.last - order.get("price")))[0]
+            const uselessOrder = _.sortBy(orders, order => -Math.abs(global.rabbit.coinone.info.last - order.get("price")))[0]
+            // const uselessOrder = _.sortBy(orders, order => -Math.abs(global.rabbit.korbit.info.last - order.get("price")))[0]
 
             console.log("[order.js] Cancel order:", uselessOrder.id)
             // Cancel useless order!

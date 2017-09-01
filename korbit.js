@@ -135,12 +135,27 @@ module.exports = function (options) {
           nonce: Date.now()
         }
       }
-    }else if (options.type == "BALANCE"){
+    } else if (options.type == "BALANCE") {
+      opts = {
+        method: "GET",
+        headers: headers,
+        url: ROOT_URL + "v1/user/balances"
+      }
+    } else if (options.type == "BALANCE_OLD"){
       opts = {
         method: "GET",
         headers: headers,
         url: ROOT_URL + "v1/user/wallet?currency_pair=" + currency_pair
       }
+    } else if (options.type == "ORDER_INFO") {
+      console.log("[korbit.js] ORDER_INIFO didn't implemented")
+      throw new Error("KILL_ME")
+      // opts = {
+      //   method: "GET",
+      //   headers: headers,
+      //   url: ROOT_URL + "v1/user/transactions?currency_pair=" + currency_pair +
+      //     "&order_id=" + options.orderId
+      // }
     }else if (options.type == "GIVE_ME_AN_ERROR"){
       opts = {
         url: ROOT_URL + "g"
@@ -167,7 +182,7 @@ module.exports = function (options) {
 
       if (result.status == "success" || // BID, ASK
         _.isArray(result) || // UNCOMPLETED_ORDERS, CANCEL_ORDER
-        _.isArray(result.balance)){ // BALANCE
+        _.isObject(result.krw)){ // BALANCE
         resolve(result)
       }else{
         console.log("[korbit.js] result is funny:", result)

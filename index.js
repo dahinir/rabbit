@@ -51,7 +51,7 @@ global.rabbit.machines.fetchAll({
               console.log("[index.js] ", global.rabbit.orders.length, "OPEN orders are loaded.");
               console.log("===start======================")
 
-              if (global.rabbit.machines.length != 60000)
+              if (global.rabbit.machines.length != 120000)
                 throw new Error("How many machines do you have?")
 
               // Attach machines as participants
@@ -106,8 +106,36 @@ global.rabbit.machines.fetchAll({
                 }
               })
 
-              // Run rabbit, Don't look back.
-              run();
+              // Rollback machine that is PENDING but not belongs to any order
+              async function rollbackMachines() {
+                const realPendingMachineIds = global.rabbit.orders.models.reduce((acc, o) => {
+                  // console.log(acc, o)
+                  return acc.concat(o.get("machineIds"))
+                }, [])
+                console.log("pended machine ids:", realPendingMachineIds)
+                let rollbackedMachineIds = [], realPendingMachineCount = 0
+
+                for (let m of global.rabbit.machines.models){
+                  if (m.get("status") == "PENDING"){
+                    if (realPendingMachineIds.includes(m.id)){
+                      realPendingMachineCount++
+                    }else{
+                      await m.rollback()
+                      rollbackedMachineIds.push(m.id)
+                    }
+                  }
+                }
+                return rollbackedMachineIds
+              }
+              rollbackMachines().then(mIds => {
+                if (mIds.length > 0){
+                  console.log("machine was pended but don't have order. check it out", mIds.length, mIds)
+                  return
+                }else{
+                  // Run rabbit. Don't look back.
+                  run()
+                }
+              })
           }
         })  // End of orders.fetch()
       }
@@ -115,7 +143,7 @@ global.rabbit.machines.fetchAll({
   }
 })
 
-const MIN_TERM = 2700,  // ms
+const MIN_TERM = 3600,  // ms ..minimum I think 2700~2900 ms
   ERROR_BUFFER = 60000  // A minute
 async function run() {
   const startTime = new Date()

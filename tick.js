@@ -9,15 +9,17 @@ const _ = require('underscore'),
 console.log("[tick.js] Loaded!")
 
 let count = 0
-const machines = new Machines(global.rabbit.machines.where({
-    coinType: "ETH",
-    marketName: "COINONE"
-  }))
+const machines = new Machines(global.rabbit.machines.filter(m => {
+  if (m.get("buy_at") >= 350000 && m.get("buy_at") < 450000)
+    return true
+  else
+    return false
+}))
 const orders = global.rabbit.orders
 const arbitrages = global.rabbit.arbitrages
 
 module.exports = async function(){
-  let startTime = new Date()
+  const startTime = new Date()
   console.log("\n--Tick no.", ++count, "with", machines.length, "machines. ",
     startTime.toLocaleString(), "It's been", Math.floor((new Date() - global.rabbit.STARTED)/ 86400000),
       "days.  Now refresh orders..")
@@ -40,13 +42,11 @@ module.exports = async function(){
       korbitInfoPromise = fetcher.getKorbitInfo()
 
     coinoneInfo = await coinoneInfoPromise
-    korbitInfo = await korbitInfoPromise
     coinoneEthOrderbook = await coinoneEthOrderbookPromise
-    korbitEthOrderbook = await korbitEthOrderbookPromise
     coinoneBalance = await coinoneBalancePromise
+    korbitInfo = await korbitInfoPromise
+    korbitEthOrderbook = await korbitEthOrderbookPromise
     korbitBalance = await korbitBalancePromise
-    global.rabbit.coinoneInfo = coinoneInfo
-    global.rabbit.korbitInfo = korbitInfo
   } catch (e) {
     ignoreMoreRejectsFrom(coinoneInfoPromise,
       korbitEthOrderbookPromise, coinoneEthOrderbookPromise,
@@ -67,11 +67,14 @@ module.exports = async function(){
         orderbook: coinoneEthOrderbook,
         balance: coinoneBalance
       }
+  global.rabbit.coinone = coinone
+  global.rabbit.korbit = korbit
   
   console.log("--In 24hrs at Coinone:", coinone.info.low, "~", coinone.info.high, ":",coinone.info.last,"(",
       ((coinone.info.last- coinone.info.low)/(coinone.info.high- coinone.info.low)*100).toFixed(2),"% )----" )
   console.log("All fetchers've take", fetchingTime, "sec")
-  console.log("KRW:", new Intl.NumberFormat().format(korbit.balance.krw.balance + coinone.balance.krw.balance), "Coin:", (korbit.balance.eth.balance + coinone.balance.eth.balance).toFixed(2) )
+  console.log("Invested krw:", new Intl.NumberFormat().format(120000000))
+  console.log("KRW:", new Intl.NumberFormat().format(korbit.balance.krw.balance + coinone.balance.krw.balance), "\tCoin:", (korbit.balance.eth.balance + coinone.balance.eth.balance).toFixed(2) )
   console.log("Balance:", new Intl.NumberFormat().format(korbit.balance.krw.balance + korbit.balance.eth.balance * korbit.orderbook.bid[0].price
     + coinone.balance.krw.balance + coinone.balance.eth.balance * coinone.orderbook.bid[0].price), "krw")
   console.log("Coinone eth:", coinone.balance.eth.available.toFixed(2), "\tkrw:", new Intl.NumberFormat().format(coinone.balance.krw.available))
@@ -84,7 +87,7 @@ module.exports = async function(){
 
   /////// TIME TO MIND ////////
   let results = []
-  if (fetchingTime > 30) {
+  if (fetchingTime > 2.8) {
     console.log("Fetched too late. Don't buy when the market is busy. pass this tic. fetchingTime:", fetchingTime)
     return
   }
@@ -95,39 +98,41 @@ module.exports = async function(){
 
   if (results.length != 2){
     console.log("-- No arbitrages so mind machines --")
-    if (fetchingTime > 1.7 ){
+    if (fetchingTime > 1.2 ){
       console.log("Fetched too late. Don't buy when the market is busy. pass this tic. fetchingTime:", fetchingTime)
       return
     }
 
     let altKorbit = korbit,
       altCoinone = coinone
-    if (coinone.balance.krw.available < 1000000){
-      console.log("not enough krw at coinone.")
+    if (coinone.balance.krw.available < 600000){
+      console.log("[tick.js] not enough krw at coinone.")
       altCoinone = (korbit.orderbook.bid[0].price < coinone.orderbook.bid[0].price) ? coinone : korbit
     }
-    if (coinone.balance.eth.available < 1.0){
-      console.log("not enough eth at coinone.")
+    if (coinone.balance.eth.available < 2.0){
+      console.log("[tick.js] not enough eth at coinone.")
       altCoinone = (korbit.orderbook.ask[0].price > coinone.orderbook.ask[0].price) ? coinone : korbit
     }
-    if (korbit.balance.krw.available < 1000000){
-      console.log("not enough krw at korbit.")
+    if (korbit.balance.krw.available < 600000){
+      console.log("[tick.js] not enough krw at korbit.")
       altKorbit = (coinone.orderbook.bid[0].price < korbit.orderbook.bid[0].price) ? korbit : coinone
     }
-    if (korbit.balance.eth.available < 1.0){
-      console.log("not enough eth at korbit.")
+    if (korbit.balance.eth.available < 2.0){
+      console.log("[tick.js] not enough eth at korbit.")
       altKorbit = (coinone.orderbook.ask[0].price > korbit.orderbook.ask[0].price) ? korbit : coinone
     }
     console.log("altCoinone:", altCoinone.name, "\taltKorbit:", altKorbit.name)
-    if (altCoinone.name != altKorbit.name && altCoinone.name == "KORBIT"){
-      console.log("I think it's not gonna happen. altCoinone is korbit, altKorbit is coinone", altCoinone, altKorbit)
-      throw new Error("KILL_ME")
+    if (altKorbit.name == "COINONE" && altCoinone.name == "KORBIT"){
+      console.log("altCoinone is korbit, altKorbit is coinone. so pass this tick")
+      // throw new Error("KILL_ME")
       return
     }
 
     results = machines.mind({
       korbit: altKorbit,
       coinone: altCoinone
+      // korbit: coinone,
+      // coinone: coinone
     })
   }
   // console.log("[tick.js]", machinesResult.participants.length, "machinesResult want to deal")
@@ -135,14 +140,17 @@ module.exports = async function(){
 
 
   ///////  TIME TO ORDER //////
-  const placeOrderPromises = results.map(result => orders.placeOrder(result))
-  for (let o of placeOrderPromises)
-    await o
+  for (let r of results)
+    await orders.placeOrder(r)
+  // idk why.. but Below code cause error..  set order on machine 
+  // const placeOrderPromises = results.map(result => orders.placeOrder(result))
+  // for (let o of placeOrderPromises)
+  //   await o
 
 
 
   // Summary
-  machines.presentation(coinoneEthOrderbook)
+  global.rabbit.machines.presentation(coinoneEthOrderbook)
   // await global.rabbit.arbitrages.presentation()
 }
 

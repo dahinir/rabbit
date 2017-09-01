@@ -19,7 +19,7 @@ exports.Machine = Backbone.Model.extend({
         // maxHope: 0,
         status: "KRW", // "KRW" or "COIN" or "PENDING"
         coinType: "",  // "ETH" or "BTC"
-        marketName: "",  // "COINONE" etcs..
+        // marketName: "",  // "COINONE" etcs..
 
         // profit_btc: 0,
         profit_krw: 0,
@@ -133,7 +133,7 @@ exports.Machine = Backbone.Model.extend({
           })
 
           // FOR BIGGIE PROFIT KRW
-          // db.machines.updateMany({craving_krw: 11000, status:"KRW"}, {$set:{capacity: 0.03}})
+          // db.machines.updateMany({craving_krw: 20000, status:"KRW"}, {$set:{capacity: 0.07}})
           // db.machines.findOne({craving_krw: 6000, status:"KRW", capacity: {$ne: 0.01}})
           if (this.get("craving_krw") == 5000)
             changed.capacity = 0.01
@@ -148,20 +148,44 @@ exports.Machine = Backbone.Model.extend({
           else if (this.get("craving_krw") == 10000)
             changed.capacity = 0.02
           else if (this.get("craving_krw") == 11000)
-            changed.capacity = 0.03
-          else if (this.get("craving_krw") == 12000)
-            changed.capacity = 0.04
-          else if (this.get("craving_krw") == 13000)
-            changed.capacity = 0.04
-          else if (this.get("craving_krw") == 14000)
-            changed.capacity = 0.04
-          else if (this.get("craving_krw") == 15000)
-            changed.capacity = 0.04
-          else if (this.get("craving_krw") == 16000)
-            changed.capacity = 0.03
-          else if (this.get("craving_krw") == 17000)
             changed.capacity = 0.02
+          else if (this.get("craving_krw") == 12000)
+            changed.capacity = 0.02
+          else if (this.get("craving_krw") == 13000)
+            changed.capacity = 0.03
+          else if (this.get("craving_krw") == 14000)
+            changed.capacity = 0.03
+          else if (this.get("craving_krw") == 15000)
+            changed.capacity = 0.03
+          else if (this.get("craving_krw") == 16000)
+            changed.capacity = 0.04
+          else if (this.get("craving_krw") == 17000)
+            changed.capacity = 0.04
           else if (this.get("craving_krw") == 18000)
+            changed.capacity = 0.05
+          else if (this.get("craving_krw") == 19000)
+            changed.capacity = 0.06
+          else if (this.get("craving_krw") == 20000)
+            changed.capacity = 0.07
+          else if (this.get("craving_krw") == 21000)
+            changed.capacity = 0.06
+          else if (this.get("craving_krw") == 22000)
+            changed.capacity = 0.05
+          else if (this.get("craving_krw") == 23000)
+            changed.capacity = 0.04
+          else if (this.get("craving_krw") == 24000)
+            changed.capacity = 0.03
+          else if (this.get("craving_krw") == 25000)
+            changed.capacity = 0.02
+          else if (this.get("craving_krw") == 26000)
+            changed.capacity = 0.02
+          else if (this.get("craving_krw") == 27000)
+            changed.capacity = 0.01
+          else if (this.get("craving_krw") == 28000)
+            changed.capacity = 0.01
+          else if (this.get("craving_krw") == 29000)
+            changed.capacity = 0.01
+          else if (this.get("craving_krw") == 30000)
             changed.capacity = 0.01
 
           console.log("[machine.js] A machine", this.id ,"accomplish with profit", thisProfit * this.get("capacity"), "krw. My craving_krw is", this.get("craving_krw"))
@@ -289,10 +313,12 @@ exports.Machines = Backbone.Collection.extend({
         total_traded = 0,
         coin_sum = 0,
         krw_damage = 0,
-        profit_rate_each_craving = [0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0],
+        profit_rate_each_craving = [0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0],
         profit_rate_each_craving2,
-        traded_count_each_craving = [0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0],
-        traded_count_each_craving2
+        profit_rate_each_craving3,
+        traded_count_each_craving = [0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0],
+        traded_count_each_craving2,
+        traded_count_each_craving3
 
       this.each(m => {
         profit_krw_sum += m.get("profit_krw")
@@ -306,16 +332,16 @@ exports.Machines = Backbone.Collection.extend({
 
         const pIndex = m.get("craving_krw")/1000 - 1  //
         profit_rate_each_craving[pIndex] += m.get("profit_rate")
-        // profit_rate_each_craving[pIndex] -= m.get("status") == "COIN" ? m.get("last_traded_price") - maxBidPrice : 0
-
         traded_count_each_craving[pIndex] += m.get("traded_count")
       })
 
       profit_rate_each_craving = profit_rate_each_craving.map(el => (el/3000).toFixed(0)*1) // 3000 machines each craving
-      profit_rate_each_craving2 = profit_rate_each_craving.splice(10, 10) // 11,000 ~ 20,000
-      traded_count_each_craving2 = traded_count_each_craving.splice(10, 10) // 11,000 ~ 20,000
+      profit_rate_each_craving2 = profit_rate_each_craving.splice(10, 20) // 11,000 ~ 20,000
+      profit_rate_each_craving3 = profit_rate_each_craving2.splice(10, 10) // 21,000 ~ 30,000
+      traded_count_each_craving2 = traded_count_each_craving.splice(10, 20) // 11,000 ~ 20,000
+      traded_count_each_craving3 = traded_count_each_craving2.splice(10, 10) // 11,000 ~ 20,000
 
-      console.log("-- machines presentation ----")
+      console.log("--", this.length, "machines presentation ----")
       console.log("Rabbit made \u20A9", new Intl.NumberFormat().format(profit_krw_sum),
         ":", new Intl.NumberFormat().format((profit_krw_sum/((new Date() - global.rabbit.STARTED)/ 86400000)).toFixed(0)), "per day; ",
         "damage:", new Intl.NumberFormat().format(krw_damage),
@@ -325,8 +351,10 @@ exports.Machines = Backbone.Collection.extend({
         ", Bought Coin:", coin_sum.toFixed(2))
       console.log("profit_rate_each_craving ~1:", JSON.stringify(profit_rate_each_craving))
       console.log("profit_rate_each_craving ~2:", JSON.stringify(profit_rate_each_craving2))
+      console.log("profit_rate_each_craving ~3:", JSON.stringify(profit_rate_each_craving3))
       console.log("traded_count_each_craving ~1:", JSON.stringify(traded_count_each_craving))
       console.log("traded_count_each_craving ~2:", JSON.stringify(traded_count_each_craving2))
+      console.log("traded_count_each_craving ~3:", JSON.stringify(traded_count_each_craving3))
     },
     fetchAll: function(options) {
       options = options || {};
@@ -567,7 +595,7 @@ exports.Arbitrages = exports.Machines.extend({
     } else if (korbit2coinone == coinone2korbit) {  // It happens
       return []
     }
-    const LIMIT = (profitRate > 3500) ? 2.0 : 0.7
+    const LIMIT = (profitRate > 4000) ? 2.0 : 0.1
     quantity = (lowMarket.orderbook.ask[0].qty < highMarket.orderbook.bid[0].qty) ?
       lowMarket.orderbook.ask[0].qty : highMarket.orderbook.bid[0].qty
     quantity = quantity - 0.01  // Kind of flooring
@@ -575,7 +603,7 @@ exports.Arbitrages = exports.Machines.extend({
     quantity = quantity.toFixed(2) * 1
     // quantity = 0.02 // for test
 
-    if (profitRate < 1600 || quantity < 0.01){
+    if (profitRate < 2000 || quantity < 0.01){
       console.log("Pass arbitrage. profitRate:", profitRate, "quantity:", quantity)
       return []
     }

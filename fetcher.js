@@ -149,22 +149,58 @@ exports.getKorbitEthOrderbook = function() {
 }
 exports.getKorbitBalance = async function(){
   const result = await korbitAPI({
-    type: "BALANCE",
-    coinType: "ETH"
+    type: "BALANCE"
   })
 
   return {
     eth: {
-      available: result.tradable.find(({currency}) => currency == "eth").value * 1,
-      balance: result.balance.find(({currency}) => currency == "eth").value * 1
+      available: result.eth.available * 1,
+      balance: result.eth.available * 1 + result.eth.trade_in_use * 1
     },
     krw: {
-      available: result.tradable.find(({currency}) => currency == "krw").value * 1,
-      balance: result.balance.find(({currency}) => currency == "krw").value * 1
+      available: result.krw.available * 1,
+      balance: result.krw.available * 1 + result.krw.trade_in_use * 1
     }
   }
+  // return {
+  //   eth: {
+  //     available: result.tradable.find(({currency}) => currency == "eth").value * 1,
+  //     balance: result.balance.find(({currency}) => currency == "eth").value * 1
+  //   },
+  //   krw: {
+  //     available: result.tradable.find(({currency}) => currency == "krw").value * 1,
+  //     balance: result.balance.find(({currency}) => currency == "krw").value * 1
+  //   }
+  // }
 }
 
+exports.getCoinoneRecentCompleteOrders = function () {
+  return new Promise((resolve, reject) => {
+    request({
+        method: "GET",
+        uri: "https://api.coinone.co.kr/trades/",
+        qs: {
+          currency: 'eth',
+          period: 'hour'
+        }
+      },
+      function (error, response, body) {
+        let result
+        try {
+          result = JSON.parse(body)
+        } catch (e) {
+          // throw new Error("[fetcher.js] Maybe not a problem")
+          reject()
+          return
+        }
+
+        if (result.result == 'success')
+          resolve(result.completeOrders)
+        else
+          reject(result)
+      })
+  })
+}
 exports.getCoinoneInfo = function(){
   return new Promise((resolve, reject) => {
     request({
