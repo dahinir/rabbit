@@ -40,15 +40,33 @@ module.exports = function (options) {
 		}else if (options.type == "UNCOMPLETED_ORDERS"){
 			url += "v2/order/limit_orders/"
 			params.currency = (options.coinType || options.currency).toLowerCase()
-		}else if (!options.type){
-			url += options.url
-			delete options.url
-			_.extend(params, options)
-		}
+		}else if (options.type == "ORDER_INFO"){
+      url += "v2/order/order_info/"
+      _.extend(params, {
+        order_id: options.orderId,
+        currency: (options.coinType || options.currency).toLowerCase()
+      })
+    }else if (options.type == "CANCEL_ORDER"){
+      url += "v2/order/cancel/"
+      _.extend(params, {
+        order_id: options.orderId,
+        is_ask: options.isAsk,
+        qty: options.qty,
+        price: options.price,
+        currency:  (options.coinType || options.currency).toLowerCase()
+      })
+    }else if (options.type == "BALANCE"){
+      url += "v2/account/balance"
+    }
+    // else if (!options.type){
+		// 	url += options.url
+		// 	delete options.url
+		// 	_.extend(params, options)
+		// }
 
-		let payload = new Buffer(JSON.stringify(params)).toString('base64')
+		const payload = new Buffer(JSON.stringify(params)).toString('base64')
 
-		let opts = {
+		const opts = {
 			method: "POST",
 		  url: url,
 		  headers: {
@@ -61,14 +79,23 @@ module.exports = function (options) {
 			},
 		  body: payload
 		}
-
+    // console.log("coinone called!")
     request(opts, function(error, response, body) {
-			let result = JSON.parse(body)
-			if (result.result == "success")
-    		resolve(result)
-			else {
-				reject(result.errorCode)
-			}
+      // console.log("coinone got answer")
+      let result
+      try {
+        result = JSON.parse(body)
+      } catch (e) {
+        reject(e)
+        return
+      }
+
+      if (result.result == "success"){
+        resolve(result)
+      } else{
+        console.log("[coinone.js] result is funny:", result)
+        reject(result)
+      }
     })
   })	// end of new Promise()
 }

@@ -9,7 +9,9 @@ const coinBaseClient = new CoinBaseClient({
     apiKey: KEYS.COINBASE.API_KEY,
     apiSecret: KEYS.COINBASE.SECRET_KEY
 });
-const coinoneAPI = require("./coinone.js");
+
+const coinoneAPI = require("./coinone.js"),
+  korbitAPI = require("./korbit.js")
 
 exports.getBtc_usd = function() {
   return new Promise((resolve, reject) => {
@@ -84,6 +86,8 @@ exports.getRecentTransactions = function(){
   });
 };
 
+
+
 exports.getKorbitInfo = function(){
   return new Promise((resolve, reject) => {
     request({
@@ -94,13 +98,109 @@ exports.getKorbitInfo = function(){
         }
       },
       function(error, response, body) {
-        let result = JSON.parse(body);
-        if (result.result == 'success')
-          resolve(result);
+        let result
+        try {
+          result = JSON.parse(body)
+        } catch (e) {
+          // throw new Error("[fetcher.js] Maybe not a problem")
+          reject()
+          return
+        }
+
+        if (result.timestamp > 0)
+          resolve(result)
+        else
+          reject(result)
       })
   })
 }
+exports.getKorbitEthOrderbook = function() {
+  return new Promise((resolve, reject) => {
+    // this is public api
+    request({
+            method: "GET",
+            uri: "https://api.korbit.co.kr/v1/orderbook",
+            qs: {
+                currency_pair: 'eth_krw'
+            }
+        },
+        function(error, response, body) {
+            let data
+            try {
+              data = JSON.parse(body)
+            } catch (e) {
+              // throw new Error("[fetcher.js] Maybe not a problem")
+              reject()
+              return
+            }
 
+            const result = {
+              timestamp: data.timestamp * 1,
+              bid: data.bids.map(([price, qty]) => {return {price: price*1, qty: qty*1}}),
+              ask: data.asks.map(([price, qty]) => {return {price: price*1, qty: qty*1}})
+            }
+
+            if (result.timestamp > 0)
+              resolve(result)
+            else
+              reject(result)
+        });
+  })
+}
+exports.getKorbitBalance = async function(){
+  const result = await korbitAPI({
+    type: "BALANCE"
+  })
+
+  return {
+    eth: {
+      available: result.eth.available * 1,
+      balance: result.eth.available * 1 + result.eth.trade_in_use * 1
+    },
+    krw: {
+      available: result.krw.available * 1,
+      balance: result.krw.available * 1 + result.krw.trade_in_use * 1
+    }
+  }
+  // return {
+  //   eth: {
+  //     available: result.tradable.find(({currency}) => currency == "eth").value * 1,
+  //     balance: result.balance.find(({currency}) => currency == "eth").value * 1
+  //   },
+  //   krw: {
+  //     available: result.tradable.find(({currency}) => currency == "krw").value * 1,
+  //     balance: result.balance.find(({currency}) => currency == "krw").value * 1
+  //   }
+  // }
+}
+
+exports.getCoinoneRecentCompleteOrders = function () {
+  return new Promise((resolve, reject) => {
+    request({
+        method: "GET",
+        uri: "https://api.coinone.co.kr/trades/",
+        qs: {
+          currency: 'eth',
+          period: 'hour'
+        }
+      },
+      function (error, response, body) {
+        let result
+        try {
+          result = JSON.parse(body)
+        } catch (e) {
+          // throw new Error("[fetcher.js] Maybe not a problem")
+          reject()
+          return
+        }
+
+        if (result.result == 'success')
+          resolve(result.completeOrders)
+        else
+          reject(result)
+      })
+  })
+}
 exports.getCoinoneInfo = function(){
   return new Promise((resolve, reject) => {
     request({
@@ -111,15 +211,24 @@ exports.getCoinoneInfo = function(){
         }
       },
       function(error, response, body) {
-        let result = JSON.parse(body);
+        let result
+        try {
+          result = JSON.parse(body)
+        } catch (e) {
+          // throw new Error("[fetcher.js] Maybe not a problem")
+          reject()
+          return
+        }
+
         if (result.result == 'success')
-          resolve(result);
+          resolve(result)
+        else
+          reject(result)
       })
   })
 }
 exports.getCoinoneEthOrderbook = function() {
   return new Promise((resolve, reject) => {
-    // this is public api
     request({
             method: "GET",
             uri: "https://api.coinone.co.kr/orderbook/",
@@ -128,11 +237,39 @@ exports.getCoinoneEthOrderbook = function() {
             }
         },
         function(error, response, body) {
-            let result = JSON.parse(body);
-            // console.log(result)
-            if( result.result == 'success')
-                resolve(result);
-                // return result;
+            let data, result
+            try {
+              data = JSON.parse(body)
+              result = {
+                timestamp: data.timestamp * 1,
+                bid: data.bid.map(({price, qty}) => {return {price: price*1, qty: qty*1}}),
+                ask: data.ask.map(({price, qty}) => {return {price: price*1, qty: qty*1}})
+              }
+            } catch (e) {
+              reject("[fetcher.js] Maybe market's problem. not me")
+              // resolve() // resolve() with undefined than reject()
+              return
+            }
+
+            if( data.result == 'success')
+              resolve(result)
+            else
+              reject("[fetcher.js] idk what wrong?")
         });
   })
+}
+exports.getCoinoneBalance = async function(){
+  const result = await coinoneAPI({
+    type: "BALANCE"
+  })
+  return {
+    eth: {
+      available: result.eth.avail * 1,
+      balance: result.eth.balance * 1
+    },
+    krw: {
+      available: result.krw.avail * 1,
+      balance: result.krw.balance * 1
+    }
+  }
 }

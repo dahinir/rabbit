@@ -3,19 +3,21 @@
 const Backbone = require('backbone'),
     _ = require('underscore'),
     backsync = require('backsync'),
-    coinoneAPI = require("./coinone.js");
+    coinoneAPI = require("./coinone.js"),
+    korbitAPI = require("./korbit.js")
+
 
 exports.Order = Backbone.Model.extend({
     urlRoot: "mongodb://localhost:27017/rabbit/orders", // not url. cuz of backsync
     sync: backsync.mongodb(),
     idAttribute: "id",
     defaults: {
-        isDone: false,  // even done adjust
+        status: "OPEN",
         machineIds: [],
         internalTradeQuantity: 0,
         adjustedQuantity: 0, // adjusted with machines
         coinType: 'ETH', // 'btc' or 'eth'
-        marketName: "COINONE"
+        marketName: ""
     },
     initialize: function(attributes, options) {
       if (!this.id){
@@ -24,310 +26,316 @@ exports.Order = Backbone.Model.extend({
           created_at: new Date()
         })
       }
+      this.on("change:buy_at", function (e) {
+        console.log("fuck.. buy_at is setting at order..")
+        console.log(e.attributes)
+        throw new Error("KILL_ME")
+      });
     },
     completed: async function(){
-      console.log("[order.js] Completed order with", this.participants.length, "machines")
-
-      for (let machine of this.participants){
-        console.log("machine id:", machine.id)
-        await machine.accomplish(this.get("price"))
+      if (this.get("marketName") == "KORBIT" && new Date() - this.get("placed_at") < 5200) {
+        console.log("[order.js] Younger than 5200ms old Korbit order. so just ignore this complete()")
+        return
       }
-      // for (let mId of this.get("machineIds")){
-      //   await global.rabbit.machines.get(mId).accomplish(this.get("price"))
-      // }
-      // let that = this
-      // that.save({
-      //   haha: true,
-      //   isDone: true
-      // })
-      this.destroy()
-    }
+
+      const that = this
+      for (let machine of this.participants){
+        // console.log("machine id:", machine.id)
+        await machine.accomplish(this)
+      }
+      console.log("[order.js] machine accomplish end. time to save order COMPLETED")
+
+      // Wait to save this order
+      await new Promise(resolve => {
+          // IDK why but sometimes when save this will override machine instance that is one of accomplished
+          that.save({  
+            status: "COMPLETED",
+            completed_at: new Date()
+          }, {
+            success: () => {
+              console.log("[order.js] Order saved as completed.", this.get("orderId"))
+              resolve()
+            }
+          })
+      })
+      console.log("[order.js] end of order.completed() ")
+    },
+    cancel: async function(){
+      console.log("[order.js] Cancel orderId:", this.get("orderId"), "at", this.get("marketName"),
+        this.get("price"), this.get("quantity"), this.get("type") )
+
+      try {
+        if (this.get("marketName") == "COINONE"){
+          // Get order info first
+          const remainQuantity = (await coinoneAPI({
+            type: "ORDER_INFO",
+            orderId: this.get("orderId"),
+            coinType: this.get("coinType")
+          })).info.remainQty * 1
+          console.log("[order.js] useless order's remain quantity:", remainQuantity, "and It will be canceled")
+
+          // Real cancel here
+          await coinoneAPI({
+            type: "CANCEL_ORDER",
+            orderId: this.get("orderId"),
+            isAsk: (this.get("type") == "ASK") ? 1 : 0,
+            qty: remainQuantity,
+            price: this.get("price"),
+            coinType: this.get("coinType")
+          })
+        } else if (this.get("marketName") == "KORBIT"){
+          // Real cancel here
+          const korbitResult = await korbitAPI({
+            type: "CANCEL_ORDER",
+            orderId: this.get("orderId"),
+            coinType: this.get("coinType")
+          })[0] // kobitAPI returns Array
+          // korbitAPI won't reject even if there is an error
+          // Just act like the order was canceled successfully. Most of cast It's okay or little mistake of old order shit
+        }
+      } catch (e) {
+        console.log("[order.js] Fail to cancel order. I'll just ignore")
+        require('fs').appendFileSync("./error.json", JSON.stringify(e))
+        // Don't return here. continue this canceling.
+        // No..Coinone will return 104 not exist order when it busy. so don't continue this canceling
+        return
+      }
+
+      // Roll back the machines
+      for (let machine of this.participants){
+        await machine.rollback(this)
+        console.log("[order.js] Roll backed. machine id:", machine.id)
+      }
+
+      // Wait to save. and this order will removed from the orders
+      await new Promise(resolve => {
+        this.save({
+          status: "CANCELED",
+          canceled_at: new Date()
+        }, {
+          success: () => {
+            console.log("[order.js] Canceled order saved.")
+            resolve()
+          }
+        })
+      })
+    } // End of cancel
 })
 
 exports.Orders = Backbone.Collection.extend({
     url: "mongodb://localhost:27017/rabbit/orders",
     sync: backsync.mongodb(),
+    comparator: function(order){
+      return order.get("created_at")
+    },
     model: exports.Order,
-    // machines.mind()'s return object will be this options
+    initialize: function(attributes, options) {
+      console.log("orders init")
+      this.on("change:status", o => {
+        switch (o.get("status")) {
+          case "COMPLETED":
+          case "CANCELED":
+            console.log("The order will be removed from the orders. remain in db")
+            this.remove(o)
+            // delete o
+            break
+        }
+      })
+    },
+    createOrder: function(options){
+      console.log("createOrder")
+      const newOrder = new exports.Order();
+      // newOrder.on("change:status", o => {
+        // console.log("event!", o.get("status"))
+        // console.log(arguments)
+        // if (o.get("status"))
+        //   this.remove(o)
+        // else {
+        //   console.log("wwwwww")
+        // }
+      // })
+      this.push(newOrder)
+      return newOrder
+    },
     placeOrder: async function(options){
       if (!_.isObject(options))
         throw new Error("[order.placeOrder()] options needed")
+      
+      options.askQuantity = _.isUndefined(options.askQuantity) ? 0 : options.askQuantity
+      options.bidQuantity = _.isUndefined(options.bidQuantity) ? 0 : options.bidQuantity
+
+      if ((options.bidQuantity == 0) && (options.askQuantity == 0)){
+        console.log("[order.js] It's zero quantity order. won't place order")
+        return
+      }
 
       let marketAPI
       switch (options.marketName) {
         case "COINONE":
           marketAPI = coinoneAPI
           break
+        case "KORBIT":
+          marketAPI = korbitAPI
+          break
+        default:
+          throw new Error("Trying place order without marketName")
       }
+
+      // NEW ORDER ONLY HERE
+      const newOrder = new exports.Order({
+        machineIds: options.machineIds,
+        coinType: options.coinType
+      })
+      newOrder.participants = options.participants  // machines array. not as attributes
+
 
       let type, price, quantity, internalTradeQuantity
       if (options.bidQuantity > options.askQuantity){
         type = "BID"
         price = options.bidPrice
         quantity = options.bidQuantity - options.askQuantity
-        internalTradeQuantity = options.askQuantity // Smaller one
+        internalTradeQuantity = options.askQuantity * 2 // Smaller one
       }else if (options.bidQuantity < options.askQuantity){
         type = "ASK"
         price = options.askPrice
         quantity = options.askQuantity - options.bidQuantity
-        internalTradeQuantity = options.bidQuantity
+        internalTradeQuantity = options.bidQuantity * 2
       }else if (options.bidQuantity == options.askQuantity){
-        if (options.bidQuantity == 0){
-          console.log("[order.js] Won't place order")
-        }else{
-          console.log("[order.js] Perpect internal trade! Can you believe it?")
-          new exports.Order({
-            machineIds: options.machineIds,
-            price: options.bidPrice // It can be askPrice but I prefer
-          }).completed()
-        }
-////!!!!!! THIS IS async func! code below return may be excuted .. i dont know
+        console.log("[order.js] Perpect internal trade! Can you believe it?")
+        // console.log(options)
+        newOrder.set({
+          marketName: "INTERNAL_TRADE",
+          price: options.bidPrice, // It can be askPrice but I prefer
+          quantity: 0,
+          internalTradeQuantity: options.bidQuantity * 2
+        })
+        await newOrder.completed()
         return  // doesn't need deal with real market like Coinone
       }
+      quantity = quantity.toFixed(2) * 1
+
+      if (internalTradeQuantity > 0)
+        console.log("Whoa! internalTradeQuantity:", internalTradeQuantity)
 
       // Actual order here
-      let marketResult = await marketAPI({
+      const marketResult = await marketAPI({
         type: type,
-        // price: price -100000,
         price: price,
         qty: quantity,
-        coinType: options.coinType.toLowerCase()
+        coinType: options.coinType
       })
-      console.log("[order.js] order is placed:", marketResult)
+      console.log("[order.js] The order is placed", options.marketName, type, price, quantity, marketResult.orderId)
+      // console.log(marketResult.orderId)
 
-      // NEW ORDER ONLY HERE!
-      if (_.isString(marketResult.orderId)){
-        let newOrder = new exports.Order({
-          orderId: marketResult.orderId,
-          machineIds: options.machineIds,
+      // Only success to place order
+      if (marketResult.orderId){
+        newOrder.set({
           marketName: options.marketName,
-          coinType: options.coinType,
+          orderId: marketResult.orderId,
           type: type,
           price: price,
           quantity: quantity,
-          internalTradeQuantity: internalTradeQuantity
+          internalTradeQuantity: internalTradeQuantity,
+          placed_at: new Date()
         });
 
-        newOrder.save({},{
-          success: function(){
-            console.log("[order.js] Successfully saved new order")
-            // _.each(options.participants, machine => {
-            //   machine.save({
-            //     status: "PENDING"
-            //   })
-            // })
-            // Save all participants machines PENDING
-            // console.log("befor savePending")
-            savePending(0)  // saving start
-            // console.log("after savePending:", options.participants.length)
-            function savePending(index){
-              options.participants[index].save({
-                status: "PENDING"
-              },{
-                success: function (){
-                  // console.log("[order.js] Participant saved as PENDING, index:", index)
-                  if (options.participants.length > index+1)
-                    savePending(index + 1)
-                }
-              })
+        // Pend the machines
+        for (let m of options.participants)
+          await m.pend(newOrder)
+        console.log("[order.js] All participants are successfully pended.")
+
+        // awiat to save this order at db
+        await new Promise(resolve => {
+          newOrder.save({},{
+            success: () => {
+              console.log("[order.js] New order successfully saved. orderId:", newOrder.get("orderId"))
+              // console.log(newOrder.attributes)
+              resolve()
             }
-          }
+          })
         })
 
-        newOrder.participants = options.participants  // machines array. not as attributes
-        this.push(newOrder);
-        // console.log("end of order.placeOrder()")
+        // Only succeeded to place order in this collection
+        this.push(newOrder)
+
+        console.log("[order.js] End of order.placeOrder() with new order")
+        return newOrder
+      }else {
+        console.log("[order.js] Placed order but didn't receive orderId. It needed to check. maybe more than 10 orders at korbit?")
+        console.log(newOrder.attributes)
+        console.log(marketResult)
+        throw new Error("KILL_ME")
       }
     },
     // Refresh All of this orders. no matter what marketName or coinType. All of them.
     refresh: async function(options) {
-      // Fetch from Coinone with Ethereum
-      let uncompletedOrderIds = _.pluck((await coinoneAPI({
-        type: "UNCOMPLETED_ORDERS",
-        coinType: "ETH"
-      })).limitOrders, "orderId")
+      console.log("100 [order.js] Will refresh", this.length, "the orders")
+      if (this.length == 0)
+        return
 
-      for(let order of this.models){  // this.models returns array so can use for...of
-        if (_.contains(uncompletedOrderIds, order.get("orderId")) ){
-          // It's uncompleted order. Doesn't do anything.
-          console.log("[order.js] Uncompleted order id:", order.get("orderId"), ((new Date() - order.get("created_at")) / 60000).toFixed(2), "min ago", order.get("price"), order.get("type"))
+      // Fetch uncompleted orders from markets
+      let uncompletedOrderIds
+      try {
+        let coinonePromise = coinoneAPI({
+          type: "UNCOMPLETED_ORDERS",
+          coinType: "ETH"
+        })
+        let korbitPromise = korbitAPI({
+          type: "UNCOMPLETED_ORDERS",
+          coinType: "ETH"
+        })
+        let coinoneUncompletedOrderIds = (await coinonePromise).limitOrders.map(o => o.orderId) // string
+        let korbitUncompletedOrderIds = (await korbitPromise).map(o => o.id + "")  // string.. unbelievable.. so I add "" to 
+        // let korbitUncompletedOrderIds = []
+        uncompletedOrderIds = coinoneUncompletedOrderIds.concat(korbitUncompletedOrderIds)
+
+        // console.log("101 [order.js] korbitUncompletedOrderIds:", korbitUncompletedOrderIds)
+        console.log("101 [order.js] uncompletedOrderIds:\n", uncompletedOrderIds)
+      } catch (e) {
+        console.log("101 [order.js] One or two of uncompleted orders fetch is failed. Skip this refresh.")
+        throw new Error(e)
+      }
+
+      // Check all of new completed order in Korbit and Coinone
+      for (let order of this.where() ){  // DO NOT USE `this.models` that would be changed by remove event
+        if (_.contains(uncompletedOrderIds, order.get("orderId") + "") ){
+          // It's uncompleted order. Don't do anything.
+          console.log("104 [order.js] Uncompleted orderId:", order.get("orderId"),
+            order.get("price"), order.get("quantity"), order.get("type"),
+            ((new Date() - order.get("created_at")) / 3600000).toFixed(2), "hours ago\t",
+            order.get("internalTradeQuantity") )
         }else{
-          console.log("[order.js] New completed order! id:", order.get("orderId"), order.get("price"), order.get("type"))
-          // New complete order!
-          await order.completed()
-        }
-      }
-    }
-/*    refresh_old: function(resolve, reject){
-        if(this.length == 0){
-            resolve && resolve();
-            return;
-        }
-        let thisOrders = this;
-        coinoneAPI.call("/v2/order/limit_orders", {"currency": this.coinType}, function(result){
-            let uncompletedOrderIds = [];
-
-            if(_.isObject(result) && result.result == 'success' ){
-                // console.log(result.limitOrders);
-                uncompletedOrderIds = _.pluck(result.limitOrders, "orderId");
-
-                one(0);
-            }else{
-                console.log("[order.js] coinone refresh error. not a big deal maybe.");
-                console.log(result);
-                reject && reject();
-                return;
-            }
-
-            function one(index){
-                if( index >= thisOrders.length){
-                    // finally
-                    resolve && resolve();
-                    return;
-                }
-                let o = thisOrders.at(index);
-                if (_.contains(uncompletedOrderIds, o.get("orderId")) ){
-                    console.log("[order.js] uncompleted order id: ", o.get("orderId"));
-                    one(index+1);
-                }else{
-                    // new complete order
-                    o.adjust(function(){
-                        one(index+1);
-                    });
-                }
-
-            }
-        });
-    }  */
-})
-
-/*
-// depressed
-exports.BithumbOrder = Order.extend({
-  adjust: function(resolve, reject) {
-      if (this.get("isDone")) {
-          resolve();
-          return;
-      }
-
-      const machines = this.machines,
-          internalTradedUnits = this.get("internalTradedUnits"),
-          data = this.get("data") || []; // bithumb results
-      // type = this.get("btParams").type;
-      const that = this;
-      // let totalDuty = internalTradedUnits * 2 + this.get("btParams").units;
-
-      let dealedUnits = 0; // dealed with bithumb
-      if (this.get('status') == '0000') {
-          _.each(this.get("data"), function(c) {
-              dealedUnits += (c.units || c.units_traded) * 1;
-          });
-      }
-
-      let pendingMachines = new Backbone.Collection(); // just container for runtime
-      function one(index) {
-          if (machines.length > index) {
-              let m = machines.at(index);
-
-              // successfully trade machines
-              // if ((internalTradedUnits * 2 + dealedUnits - that.get('adjustedUnits')) >= (m.get("capacity") - 0.00001)) {  // 0.00001 is for mistake of javascript
-              if ( (internalTradedUnits * 2 + dealedUnits - that.get('adjustedUnits') - m.get('capacity') ).toFixed(3) * 1 >= 0) {
-
-                  m.trade(function() {
-                      that.set({
-                          adjustedUnits: (that.get('adjustedUnits') + m.get("capacity")).toFixed(3) * 1
-                      });
-                      one(index + 1);
-                  });
-              } else {
-                  // penging machines..
-                  pendingMachines.push(m);
-                  m.save({
-                      status: "PENDING"
-                  }, {
-                      success: function() {
-                          one(index + 1);
-                      }
-                  });
-              }
-          } else {
-              // console.log("[order.js] end with", pendingMachines.length, "pendingMachines");
-              that.machines = pendingMachines; // Backbone collections for runtime
-              that.save({
-                  machineIds: pendingMachines.pluck('id'), // Array of machine's IDs
-                  isDone: (pendingMachines.length == 0) ? true : false
-              }, {
-                  success: function() {
-                      console.log("[order.js] saved with", that.get('machineIds').length, "pending machines");
-                      resolve && resolve();
-                      if (that.get('isDone'))
-                          that.destroy();
-                      return;
-                  },
-                  error: function(e) {
-                      console.log("[order.js] error when save to db", e);
-                  }
-              });
+          if (order.get("status") == "OPEN"){
+            console.log("104 [order.js] Detect new completed order. id:", order.get("orderId"), order.get("type"), order.get("price"))
+            // New complete order!
+            await order.completed()
+          }else{
+            console.log("104 [order.js] Why this order is here? orderId:", order.get("orderId") ,order.get("status"))
+            console.log(order.attributes)
+            throw new Error("KILL_ME")
           }
-      }
-      one(0);
-  } // adjust
-});
-//
-// exports.BithumbOrders = Orders.extend({
-// });
-
-// depressed
-exports.CoinoneOrder = Order.extend({
-    defaults: _.extend({
-        marketName: "COINONE"
-        // coinType: "ETH" // or "BTC"
-    }, Order.defaults)
-});
-
-// depressed
-exports.CoinoneOrders = Orders.extend({
-    coinType: "ETH",  // or "BTC"
-    refresh: function(resolve, reject){
-        if(this.length == 0){
-            resolve && resolve();
-            return;
         }
-        let thisOrders = this;
-        coinoneAPI.call("/v2/order/limit_orders", {"currency": this.coinType}, function(result){
-            let uncompletedOrderIds = [];
+      } // End of for loop
+      console.log("105 [order.js] refresh loop end")
 
-            if(_.isObject(result) && result.result == 'success' ){
-                // console.log(result.limitOrders);
-                uncompletedOrderIds = _.pluck(result.limitOrders, "orderId");
+      // Time to cancel the old orders
+      // Array.filter() return [] if there is no order. not undefined
+      const coinoneOrders = this.models.filter(order => order.get("marketName") == "COINONE")
+      const korbitOrders = this.models.filter(order => order.get("marketName") == "KORBIT")
 
-                one(0);
-            }else{
-                console.log("[order.js] coinone refresh error. not a big deal maybe.");
-                console.log(result);
-                reject && reject();
-                return;
-            }
+      for (let orders of [coinoneOrders, korbitOrders]){
+        console.log("[order.js] orders.length", orders.length)
+        // if (orders.length > 5 && orders[0].get("marketName") == "KORBIT"){
+        if (orders.length > 5 && global.rabbit.coinone.info){
+        // if (orders.length > 5 && global.rabbit.korbit.info){
+            // The most far from current price
+            const uselessOrder = _.sortBy(orders, order => -Math.abs(global.rabbit.coinone.info.last - order.get("price")))[0]
+            // const uselessOrder = _.sortBy(orders, order => -Math.abs(global.rabbit.korbit.info.last - order.get("price")))[0]
 
-            function one(index){
-                if( index >= thisOrders.length){
-                    // finally
-                    resolve && resolve();
-                    return;
-                }
-                let o = thisOrders.at(index);
-                if (_.contains(uncompletedOrderIds, o.get("orderId")) ){
-                    console.log("[order.js] uncompleted order id: ", o.get("orderId"));
-                    one(index+1);
-                }else{
-                    // new complete order
-                    o.adjust(function(){
-                        one(index+1);
-                    });
-                }
-
-            }
-        });
-    }
-});
-*/
+            console.log("[order.js] Cancel order:", uselessOrder.id)
+            // Cancel useless order!
+            await uselessOrder.cancel()
+        }
+      }
+    } // end of refresh
+})

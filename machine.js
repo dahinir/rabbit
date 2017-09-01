@@ -17,9 +17,9 @@ exports.Machine = Backbone.Model.extend({
         // positiveHope: -3000,
         // neverHope: -10000,
         // maxHope: 0,
-        status: "KRW", // "KRW" or "COIN"
+        status: "KRW", // "KRW" or "COIN" or "PENDING"
         coinType: "",  // "ETH" or "BTC"
-        marketName: "",  // "COINONE" etcs..
+        // marketName: "",  // "COINONE" etcs..
 
         // profit_btc: 0,
         profit_krw: 0,
@@ -34,8 +34,9 @@ exports.Machine = Backbone.Model.extend({
       //   throw new Error("a")
       // }
       this.on("change:orderId", function(e){
+        console.log("fuck.. orderId is setting at machine..")
         console.log(e.attributes)
-        throw new Error("fuck.. orderId:")
+        throw new Error("KILL_ME")
       });
       if (!this.id)
         this.set({
@@ -43,12 +44,17 @@ exports.Machine = Backbone.Model.extend({
           created_at: new Date()
         })
     },
-    // Set new mind! won't deal with databases
+    // Set new mind in runtime instance only. won't deal with databases
     mind: function(options) {
       if (this.get("status") == "PENDING")
         return {
           type: "PENDING"
         }
+      // Fee is mo expensive.. depressed until Lv5
+      // if (this.get("craving_krw") < 7000)
+      //   return {
+      //     type: "DEPRESSED"
+      //   }
 
       options = options || {}
       let mind = {} //  will be new mind of this machine
@@ -62,6 +68,7 @@ exports.Machine = Backbone.Model.extend({
                 price: options.minAskPrice
               }
           } else if (this.get("status") == "COIN") {
+            // Used this.get("last_traded_price") not this.get("buy_at") cuz I wanna know what craving_krw is best for profit per unit time
             if (options.maxBidPrice >= this.get("craving_krw") + this.get("last_traded_price"))
               mind = {
                 type: "ASK",
@@ -77,296 +84,278 @@ exports.Machine = Backbone.Model.extend({
       })
       return mind
     },
-/*    mind_old: function(attr, options) {
-        const success = options.success;
-
-        let hope = attr.hope * 1,
-            thePrice,
-            btc_krw_rate_of_24h = attr.btc_krw_rate_of_24h * 1;
-
-        if (this.get("status") == "KRW") {
-            thePrice = attr.minAskPrice * 1;
-        } else if (this.get("status" == "COIN")) {
-            thePrice = attr.maxBidPrice * 1;
-        } else {
-            // `status` maybe `pending`
-            success();
-            return;
-        }
-
-        let negativeHope = this.get('negativeHope'),
-            positiveHope = this.get('positiveHope'),
-            propensity = this.get('propensity'); // it's an Array
-
-        let mind = {
-            type: "none",
-            thePrice: thePrice,
-            at: new Date()
-        };
-
-        if (this.get("traded_count") > 0) {
-            if (this.get("status") == "KRW") {
-                if (_.contains(propensity, "DECRAVING_KRW_BID")) {
-                    if (thePrice <= this.get("last_traded_price") - this.get("decraving_krw")) {
-                        mind.type = "bid";
-                    }
-                }
-                if (_.contains(propensity, "NEGATIVE_HOPE_BID")) {
-                    if (hope <= negativeHope) {
-                        mind.type = "bid";
-                    }
-                }
-                if (_.contains(propensity, "BTC_KRW_BID")) {
-                    if (thePrice == this.get("btc_krw_bid")) { // Exactly same only!
-                        if(hope < 50000)  // at least..
-                            mind.type = "bid";
-                    }
-                }
-                if (_.contains(propensity, "DYNAMIC_DECRAVING_KRW_BY_TIME_BID")) {
-                    // lastTradedAt - now
-                    let old = new Date() - this.get("lastTradedAt");
-
-                    if (old < 1000 * 60 * 5) {
-                        if (thePrice <= this.get("last_traded_price") - 1000)
-                            mind.type = "bid";
-                    } else if (old < 1000 * 60 * 20) {
-                        if (thePrice <= this.get("last_traded_price") - 2000)
-                            mind.type = "bid";
-                    } else if (old < 1000 * 60 * 30) {
-                        if (thePrice <= this.get("last_traded_price") - 3000)
-                            mind.type = "bid";
-                    } else if (old < 1000 * 60 * 60 * 2) {
-                        if (thePrice <= this.get("last_traded_price") - 10000)
-                            mind.type = "bid";
-                    } else if (old < 1000 * 60 * 60 * 24) {
-                        if (thePrice <= this.get("last_traded_price") - 30000)
-                            mind.type = "bid";
-                    } else if (old < 1000 * 60 * 60 * 24 * 14) {
-                        if (thePrice <= this.get("last_traded_price") - 40000)
-                            mind.type = "bid";
-                    } else {
-                        if (thePrice <= this.get("last_traded_price") - 1000)
-                            mind.type = "bid";
-                    }
-                }
-                if (_.contains(propensity, "DYNAMIC_CRAVINGRATIO_BY_HOPE_BID")) {
-                    // if (hope <= negativeHope) {
-                    //     mind.type = "bid";
-                    // }
-                }
-            } else if (this.get("status") == "COIN") {
-                if (_.contains(propensity, "CRAVING_KRW_ASK")) {
-                    if (thePrice >= this.get("last_traded_price") + this.get("craving_krw")) {
-                        mind.type = "ask";
-                    }
-                }
-                if (_.contains(propensity, "CRAVING_KRW_AND_NEGATIVE_HOPE_ASK")) {
-                    if (thePrice >= this.get("last_traded_price") + this.get("craving_krw")) {
-                        if (hope > this.get('negativeHope')) // at least..
-                            mind.type = "ask";
-                    }
-                }
-                if (_.contains(propensity, "POSITIVE_HOPE_ASK")) {
-                    if (thePrice >= this.get("last_traded_price") + this.get("craving_krw")) {
-                        if (hope >= this.get('positiveHope'))
-                            mind.type = "ask";
-                    }
-                }
-                if (_.contains(propensity, "DYNAMIC_CRAVING_KRW_BY_TIME_ASK")) {
-                    // lastTradedAt - now
-                    let old = new Date() - this.get("lastTradedAt");
-
-                    if (old < 1000 * 60 * 5) {
-                        // 5 mins
-                        if (thePrice >= this.get("last_traded_price") + 1000)
-                            mind.type = "ask";
-                    } else if (old < 1000 * 60 * 60 * 2) {
-                        //  2 hours
-                        if (thePrice >= this.get("last_traded_price") + 2000)
-                            mind.type = "ask";
-                    } else if (old < 1000 * 60 * 60 * 5) {
-                        // 5 hours
-                        if (thePrice >= this.get("last_traded_price") + 3000)
-                            mind.type = "ask";
-                    } else if (old < 1000 * 60 * 60 * 24) {
-                        if (thePrice >= this.get("last_traded_price") + 10000)
-                            mind.type = "ask";
-                    } else if (old < 1000 * 60 * 60 * 24 * 30) {
-                        if (thePrice >= this.get("last_traded_price") + 30000)
-                            mind.type = "ask";
-                    } else if (old < 1000 * 60 * 60 * 24 * 30 * 6) {
-                        if (thePrice >= this.get("last_traded_price") + 50000)
-                            mind.type = "ask";
-                    } else {
-                        if (thePrice >= this.get("last_traded_price") + 20000)
-                            mind.type = "ask";
-                    }
-                }
-            }
-        } else if (this.get("traded_count") == 0) {
-            if (this.get("status") == "KRW") {
-                if (_.isNumber(this.get("neverHope"))) {
-                    if (hope < this.get("neverHope"))
-                        mind.type = "bid";
-                }
-                if (_.isNumber(this.get('maxHope')) ){
-                    if(hope > this.get('maxHope'))
-                        mind.type = "bid";
-                }
-                if (_.contains(propensity, "BTC_KRW_BID")) {
-                    if (thePrice == this.get("btc_krw_bid"))
-                        mind.type = "bid";
-                }
-            }
-        }
-
-        if (_.contains(propensity, "BTC_KRW_RATE_OF_24H_AND_HOPE_BID")) {
-            if (this.get("status") == "KRW") {
-                if(btc_krw_rate_of_24h < this.get("negativeRate"))
-                    if(hope < this.get("negativeHope"))
-                        mind.type = "bid";
-            }else if(this.get("status") == "COIN"){
-                if(btc_krw_rate_of_24h > this.get("positiveRate"))
-                    if(hope > this.get("positiveHope"))
-                        if (thePrice >= this.get("last_traded_price") + 2000)
-                            mind.type = "ask";
-            }
-        }
-
-        this.set({
-            mind: mind
-        });
-        // To avoid RangeError: Maximum call stack size exceeded
-        process.nextTick(success);  // call `success` as next tick!
-    },*/
-    accomplish: function(tradedPrice) {
-      let changed = {
-          traded_count: this.get("traded_count") + 1,
-          last_traded_price: tradedPrice,
-          last_traded_at: new Date()
-        }
-      if (this.get("mind").type == "ASK"){
-        _.extend(changed, {
-          status: "KRW",
-          profit_krw: this.get("profit_krw") + (tradedPrice - this.get("last_traded_price")) * this.get("capacity"),
-          profit_rate: this.get("profit_rate") + (tradedPrice - this.get("last_traded_price"))
-        })
-      }else if (this.get("mind").type == "BID"){
-        changed.status = "COIN"
-      }
-
+    // The order is submitted
+    pend: function(){
       return new Promise(resolve => {
-        // console.log("[machine.js] save with changed:", changed)
-        // console.log(this.attributes)
-        this.save(changed, {
-          success: function(){
+        this.save({
+          status: "PENDING"
+        }, {
+          success: () => {
+            // console.log("[machine.js] pending successfully. id:", this.id)
             resolve()
           }
         })
       })
     },
-    // depressed
-    trade_old: function(resolve, reject) { // machine always trade completly with its mind..
-        let mind = this.get("mind");
+    rollback: function(){
+      return new Promise(resolve => {
+        const prevStatus = (this.get("mind").type == "ASK") ? "COIN" : "KRW"
+        this.save({
+          // mind: {},
+          status: prevStatus
+        }, {
+          success: () => {
+            resolve()
+          }
+        })
+      })
+    },
+    // YES
+    accomplish: function(order) {
+      // Use order.get("price") than this.get("mind").price cuz of the internal trade
+      return new Promise(resolve => {
+        // console.log("  accomplish() called!! id:", this.id)
 
-        let changed = {
+        const changed = {
             traded_count: this.get("traded_count") + 1,
-            last_traded_price: mind.thePrice,
-            last_traded_at: new Date()
-        };
-        if (mind.type == "ASK") {
-            changed.status = "KRW";
-            changed.profit_krw =
-                this.get("profit_krw") + (mind.thePrice - this.get("last_traded_price")) * this.get('capacity'); // there is no float in this line
-            // changed.profit_rate = changed.profit_krw / this.get('capacity');
-            changed.profit_rate = this.get('profit_rate') + (mind.thePrice - this.get("last_traded_price"));
-        } else if (mind.type == "BID") {
-            changed.status = "COIN";
+            last_traded_price: order.get("price"),
+            last_traded_at: new Date(),
+            mind: {}  // Empty your mind
+          }
+
+        // Don't check with order.get("type") Think about a case of internal trade
+        if (this.get("mind").type == "ASK"){
+          const thisProfit = order.get("price") - this.get("last_traded_price")
+          _.extend(changed, {
+            status: "KRW",
+            profit_krw: this.get("profit_krw") + thisProfit * this.get("capacity"),
+            profit_rate: this.get("profit_rate") + thisProfit
+          })
+
+          // FOR BIGGIE PROFIT KRW
+          // db.machines.updateMany({craving_krw: 20000, status:"KRW"}, {$set:{capacity: 0.07}})
+          // db.machines.findOne({craving_krw: 6000, status:"KRW", capacity: {$ne: 0.01}})
+          if (this.get("craving_krw") == 5000)
+            changed.capacity = 0.01
+          if (this.get("craving_krw") == 6000)
+            changed.capacity = 0.01
+          else if (this.get("craving_krw") == 7000)
+            changed.capacity = 0.01
+          else if (this.get("craving_krw") == 8000)
+            changed.capacity = 0.01
+          else if (this.get("craving_krw") == 9000)
+            changed.capacity = 0.02
+          else if (this.get("craving_krw") == 10000)
+            changed.capacity = 0.02
+          else if (this.get("craving_krw") == 11000)
+            changed.capacity = 0.02
+          else if (this.get("craving_krw") == 12000)
+            changed.capacity = 0.02
+          else if (this.get("craving_krw") == 13000)
+            changed.capacity = 0.03
+          else if (this.get("craving_krw") == 14000)
+            changed.capacity = 0.03
+          else if (this.get("craving_krw") == 15000)
+            changed.capacity = 0.03
+          else if (this.get("craving_krw") == 16000)
+            changed.capacity = 0.04
+          else if (this.get("craving_krw") == 17000)
+            changed.capacity = 0.04
+          else if (this.get("craving_krw") == 18000)
+            changed.capacity = 0.05
+          else if (this.get("craving_krw") == 19000)
+            changed.capacity = 0.06
+          else if (this.get("craving_krw") == 20000)
+            changed.capacity = 0.07
+          else if (this.get("craving_krw") == 21000)
+            changed.capacity = 0.06
+          else if (this.get("craving_krw") == 22000)
+            changed.capacity = 0.05
+          else if (this.get("craving_krw") == 23000)
+            changed.capacity = 0.04
+          else if (this.get("craving_krw") == 24000)
+            changed.capacity = 0.03
+          else if (this.get("craving_krw") == 25000)
+            changed.capacity = 0.02
+          else if (this.get("craving_krw") == 26000)
+            changed.capacity = 0.02
+          else if (this.get("craving_krw") == 27000)
+            changed.capacity = 0.01
+          else if (this.get("craving_krw") == 28000)
+            changed.capacity = 0.01
+          else if (this.get("craving_krw") == 29000)
+            changed.capacity = 0.01
+          else if (this.get("craving_krw") == 30000)
+            changed.capacity = 0.01
+
+          console.log("[machine.js] A machine", this.id ,"accomplish with profit", thisProfit * this.get("capacity"), "krw. My craving_krw is", this.get("craving_krw"))
+        }else if (this.get("mind").type == "BID"){
+          changed.status = "COIN"
+          console.log("[machine.js] A machine accomplish", this.id ,"bid at", order.get("price"), "I'm usually buy_at", this.get("buy_at"), "craving_krw", this.get("craving_krw"))
         }
-        // console.log("[machines.js] changed:", changed);
-        // this.set(changed);
+
+        // console.log("[machine.js] save with changed:", changed)
+        // console.log(this.attributes)
         this.save(changed, {
-            success: function() {
-                resolve && process.nextTick(resolve);
-            }
-        });
+          success: () => {
+            resolve()
+          }
+        })
+      })
     }
-});
+})
+
+exports.Arbitrage = exports.Machine.extend({
+  urlRoot: "mongodb://localhost:27017/rabbit/arbitrages",
+  sync: backsync.mongodb(),
+  idAttribute: "id", // cuz of Backsync
+  defaults: {
+    coinType: "ETH", // "ETH" or "BTC"
+    // status: "PENDING", // don't need
+    profit_krw: 0,
+    traded_count: 0,
+    pend_count: 0,
+    rollback_count: 0,
+    orderIds: []
+  },
+  mind: function(options) {
+    console.log("[machine.js] Don't ask Arbitrage's mind")
+  },
+  // The order is submitted
+  pend: function(order){
+    return new Promise(resolve => {
+      _.isUndefined(this.orders)
+        this.orders = []
+      this.orders.push(order) // for runtime
+
+      // this.get("orderIds").push(order.get("orderId"))
+
+      this.save({
+        status: "PENDING",
+        pend_count: this.get("pend_count") + 1,
+        orderIds: this.get("orderIds").concat([order.get("orderId")])
+      }, {
+        success: () => {
+          resolve()
+        }
+      })
+    })
+  },
+  rollback: function(order){
+    return new Promise((resolve, reject) => {
+      console.log("[machine.js] Rollback arbitrage: ", this.attributes)
+      const changed = {
+        rollback_count: this.get("rollback_count") + 1
+      }
+      if (changed.rollback_count >= 2 || this.get("pend_count") == 1){
+        changed.status = "CANCELED"
+      }
+      if (this.get("traded_count") == 1){
+        changed.status = "FAILED"
+      }
+ 
+      this.save(changed, {
+        success: () => {  // DON'T PASS THE SYNC FUNCTION!!
+          if (this.get("rollback_count") == 1 && this.get("traded_count") == 0 && this.get("status") == "PENDING"){
+            console.log("[machine.js] one of an order of arbitrage was canceled. so cancel the other")
+            for (let o of this.orders){
+              if (o.get("orderId") != order.get("orderId"))
+                o.cancel().then(() => { resolve() })
+            }
+          } else if (this.get("status") == "CANCELED" || this.get("status") == "FAILED") {
+            resolve()
+          } else {
+            console.log("now attributes:", this.attributes)
+            reject("rollback result is funny")
+          }
+        }
+      })
+    })
+  },
+  accomplish: function(order) {
+    return new Promise(resolve => {
+      console.log("  accomplish() called! id:", this.id)
+      console.log("  args:order.get(machineIds):", order.get("machineIds"))
+      if (this.id != order.get("machineIds")[0])
+        throw new Error("KILL_ME")
+
+      const changed = {
+          traded_count: this.get("traded_count") + 1,
+          last_traded_at: new Date()
+        }
+
+      if (changed.traded_count >= 2){
+        changed.status = "COMPLETED"
+      }
+
+      this.save(changed, {
+        success: () => {
+          console.log("[machine.js] Arbitrage saved with the changed:", changed)
+          // console.log(this.attributes)
+          resolve()
+        }
+      })
+    })
+  }
+})  // End of exports.Arbitrage
 
 exports.Machines = Backbone.Collection.extend({
     url: "mongodb://localhost:27017/rabbit/machines",
     sync: backsync.mongodb(),
     model: exports.Machine,
-    presentation: function(){
+    initialize: function(attributes, options) {
+      console.log("machines init")
+    },
+    presentation: function(orderbook){
+      const maxBidPrice = orderbook.bid[0].price
+
       let profit_krw_sum = 0,
-      total_traded = 0
+        total_traded = 0,
+        coin_sum = 0,
+        krw_damage = 0,
+        profit_rate_each_craving = [0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0],
+        profit_rate_each_craving2,
+        profit_rate_each_craving3,
+        traded_count_each_craving = [0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0],
+        traded_count_each_craving2,
+        traded_count_each_craving3
 
       this.each(m => {
         profit_krw_sum += m.get("profit_krw")
         total_traded += m.get("traded_count")
+        coin_sum += m.get("status") == "COIN" ? m.get("capacity") : 0
+        if (m.get("status") == "PENDING" && m.get("mind").type == "ASK")
+          coin_sum += m.get("capacity")
+
+        krw_damage += m.get("status") == "COIN" ?
+          (m.get("last_traded_price") - maxBidPrice) * m.get("capacity") : 0
+
+        const pIndex = m.get("craving_krw")/1000 - 1  //
+        profit_rate_each_craving[pIndex] += m.get("profit_rate")
+        traded_count_each_craving[pIndex] += m.get("traded_count")
       })
 
-      console.log("PROFIT:", "\u20A9 " + new Intl.NumberFormat().format(profit_krw_sum))
-      console.log("TOTAL TRADED:", new Intl.NumberFormat().format(total_traded))
+      profit_rate_each_craving = profit_rate_each_craving.map(el => (el/3000).toFixed(0)*1) // 3000 machines each craving
+      profit_rate_each_craving2 = profit_rate_each_craving.splice(10, 20) // 11,000 ~ 20,000
+      profit_rate_each_craving3 = profit_rate_each_craving2.splice(10, 10) // 21,000 ~ 30,000
+      traded_count_each_craving2 = traded_count_each_craving.splice(10, 20) // 11,000 ~ 20,000
+      traded_count_each_craving3 = traded_count_each_craving2.splice(10, 10) // 11,000 ~ 20,000
+
+      console.log("--", this.length, "machines presentation ----")
+      console.log("Rabbit made \u20A9", new Intl.NumberFormat().format(profit_krw_sum),
+        ":", new Intl.NumberFormat().format((profit_krw_sum/((new Date() - global.rabbit.STARTED)/ 86400000)).toFixed(0)), "per day; ",
+        "damage:", new Intl.NumberFormat().format(krw_damage),
+        "so \u20A9", new Intl.NumberFormat().format(profit_krw_sum - krw_damage),
+        ":", new Intl.NumberFormat().format(((profit_krw_sum - krw_damage)/((new Date() - global.rabbit.STARTED)/ 86400000)).toFixed(0)), "per day")
+      console.log("Total Traded:", new Intl.NumberFormat().format(total_traded),
+        ", Bought Coin:", coin_sum.toFixed(2))
+      console.log("profit_rate_each_craving ~1:", JSON.stringify(profit_rate_each_craving))
+      console.log("profit_rate_each_craving ~2:", JSON.stringify(profit_rate_each_craving2))
+      console.log("profit_rate_each_craving ~3:", JSON.stringify(profit_rate_each_craving3))
+      console.log("traded_count_each_craving ~1:", JSON.stringify(traded_count_each_craving))
+      console.log("traded_count_each_craving ~2:", JSON.stringify(traded_count_each_craving2))
+      console.log("traded_count_each_craving ~3:", JSON.stringify(traded_count_each_craving3))
     },
-/*    presentation_old: function(attrs) {
-        attrs = attrs || {};
-        let btc_krw_b = attrs.btc_krw_b,
-            btc_krw = attrs.btc_krw;
-
-        let profit_krw_sum = 0,
-            profit_rate_sum = 0,
-            total_traded = 0,
-            estimated_damage = 0,
-            wanna_buy_btc = 0,
-            bought_btc = 0,
-            pending_btc = 0,
-            wanna_btc_for_netting = 0,
-            bought_btc_for_netting = 0,
-            profit_krw_sum_for_netting = 0;
-
-
-        this.each(function(m) {
-            if (_.contains(m.get("propensity"), "BTC_KRW_BID"))
-                profit_krw_sum_for_netting += m.get("profit_krw");
-            else
-                profit_krw_sum += m.get("profit_krw");
-            profit_rate_sum += m.get("profit_rate");
-            total_traded += m.get('traded_count');
-            if (m.get("status") == "KRW") {
-                if (_.contains(m.get("propensity"), "BTC_KRW_BID"))
-                    wanna_btc_for_netting += m.get("capacity");
-                else
-                    wanna_buy_btc += m.get("capacity");
-            } else if (m.get("status") == "COIN") {
-                if (_.contains(m.get("propensity"), "BTC_KRW_BID"))
-                    bought_btc_for_netting += m.get("capacity");
-                else
-                    bought_btc += m.get("capacity");
-
-                if (m.get('last_traded_price') * 1 > 0)
-                    estimated_damage += (m.get('last_traded_price') - btc_krw_b) * m.get('capacity');
-            } else {
-                pending_btc += m.get("capacity");
-            }
-        });
-        return {
-            so: this.length + " machines work",
-            total_traded: new Intl.NumberFormat().format(total_traded),
-            profit_krw_sum: "\u20A9 " + new Intl.NumberFormat().format(profit_krw_sum),
-            profit_krw_sum_for_netting: "\u20A9 " + new Intl.NumberFormat().format(profit_krw_sum_for_netting),
-            total_profit_krw: "\u20A9 " + new Intl.NumberFormat().format(profit_krw_sum+ profit_krw_sum_for_netting),
-            estimated_damage: "\u20A9 " + new Intl.NumberFormat().format(estimated_damage),
-            estimated_profit_krw: "\u20A9 " + new Intl.NumberFormat().format(profit_krw_sum+ profit_krw_sum_for_netting - estimated_damage),
-            // average_profit_krw: profit_krw_sum / this.length,
-            // average_profit_rate: profit_rate_sum / this.length,
-            need_krw: "\u20A9 " + new Intl.NumberFormat().format(wanna_buy_btc * btc_krw),
-            bought_btc: bought_btc.toFixed(3),
-            need_krw_for_netting: "\u20A9 " + new Intl.NumberFormat().format(wanna_btc_for_netting*btc_krw),
-            bought_btc_for_netting: bought_btc_for_netting.toFixed(3),
-            pending_btc: pending_btc
-        };
-    }, */
     fetchAll: function(options) {
       options = options || {};
       const success = options.success;
@@ -381,12 +370,6 @@ exports.Machines = Backbone.Collection.extend({
             $limit: AMOUNT
           },
           success: function(machines) {
-            // machines.each(function(m) {
-            //     console.log(m.attributes.id);
-            //     console.log(m.attributes.craving_krw);
-            //     console.log(m.attributes.negativeHope);
-            //     console.log(m.attributes.positiveHope);
-            // });
             loaded = loaded.concat(machines.models);
             // console.log(loaded.length, machines.length, machines.models.length);
             if (machines.length == AMOUNT) {
@@ -406,233 +389,302 @@ exports.Machines = Backbone.Collection.extend({
       chunk(0);
     },
     mind: function(options) {
-      let startTime = new Date()
-      let minAskPrice = options.orderBook.ask[0].price * 1,
-          maxBidPrice = options.orderBook.bid[0].price * 1
+      const startTime = new Date()
+      const korbit = options.korbit,
+        coinone = options.coinone
 
-      let participants = [],
-        machineIds = [],
-        totalBid = 0,
-        totalAsk = 0,
-        internalTradedUnits = 0
+      let highBidMarket, lowAskMarket
+      if (coinone.orderbook.bid[0].price >= korbit.orderbook.bid[0].price){
+        // if (coinoneBalance.eth.available > MIN_ETH)
+        highBidMarket = coinone
+      }else {
+        highBidMarket = korbit
+      }
+      if (coinone.orderbook.ask[0].price <= korbit.orderbook.ask[0].price){
+        lowAskMarket = coinone
+      }else {
+        lowAskMarket = korbit
+      }
+      const bestOrderbook = {
+        bid: highBidMarket.orderbook.bid,
+        ask: lowAskMarket.orderbook.ask
+      }
+      console.log("[machine.js] Low ask market:", lowAskMarket.name, "\tHigh bid market:", highBidMarket.name)
 
-      this.each(function(m) {
-        let mind = m.mind({
+
+
+      // Make decision which orderbook to use
+      const minAskPrice = bestOrderbook.ask[0].price,
+          maxBidPrice = bestOrderbook.bid[0].price
+
+      console.log("[machine.js] maxBid:", maxBidPrice, " minAsk:", minAskPrice)
+
+
+      ///// Mind
+      let bidParticipants = [], askParticipants = [],
+        bidMachineIds = [], askMachineIds = [],
+        totalBid = 0.0, totalAsk = 0.0,
+        internalTradedUnits = 0.0
+
+      this.each(m => {
+        const mind = m.mind({
           minAskPrice: minAskPrice,
           maxBidPrice: maxBidPrice
         })
         if (mind.type == "BID"){
           totalBid += m.get('capacity')
-          participants.push(m)
-          machineIds.push(m.id)
+
+          bidParticipants.push(m)
+          bidMachineIds.push(m.id + "") // attached "" to avoid ObjectId("asoweugbalskug")
           // DONT USE `_.pluck(options.participants, "id")` It will push ObjectID("adf0oqh3t")
         }else if (mind.type == "ASK"){
           totalAsk += m.get('capacity')
-          participants.push(m)
-          machineIds.push(m.id)
+
+          askParticipants.push(m)
+          askMachineIds.push(m.id + "") // attached "" to avoid ObjectId("asoweugbalskug")
         }
-
-        if(m.get("orderId"))
-          throw new Error("[machine.js] FUCK!! machine got orderId:", m.get("orderId"))
       })
+      totalBid = totalBid.toFixed(2) * 1
+      totalAsk = totalAsk.toFixed(2) * 1
 
-      let result = {
-        marketName: this.at(0).get("marketName"),
-        coinType: this.at(0).get("coinType"),
-        bidQuantity: totalBid.toFixed(2) * 1,
-        askQuantity: totalAsk.toFixed(2) * 1,
-        bidPrice: minAskPrice,  // buy at minAskPrice
-        askPrice: maxBidPrice,
-        participants: participants,
-        machineIds: machineIds
+      ///// Validate and Make a result
+      let result  // will return this result
+      if (totalAsk == 0 && totalBid == 0)
+        return []
+      if (bestOrderbook.bid[0].price <= bestOrderbook.ask[0].price){  // internal trade recommended
+        // Validate the balance
+        if (totalBid > totalAsk){
+          if ((totalBid - totalAsk) * bestOrderbook.ask[0].price < lowAskMarket.balance.krw.available - 10000){
+            console.log("[machine.js] I have money to buy coin at", lowAskMarket.name )
+          }else{
+            console.log("[machine.js] Not enough money at", lowAskMarket.name, "hurry up!!!!!")
+            return []
+          }
+        }else{
+          if (totalAsk - totalBid < highBidMarket.balance.eth.available - 0.1){ // 0.1 is buffer for fee
+            console.log("[machine.js] I have coin to ask at", highBidMarket.name)
+          }else{
+            console.log("[machine.js] Not enough coin at", highBidMarket.name, "hurry up!!!!!")
+            return []
+          }
+        }
+        const marketName = (totalBid > totalAsk) ? lowAskMarket.name : highBidMarket.name
+        // Make result as one so that can be internal trade
+        result = [{
+          marketName: marketName,
+          coinType: this.at(0).get("coinType"),
+          bidQuantity: totalBid,
+          askQuantity: totalAsk,
+          bidPrice: (marketName == "KORBIT") ? bestOrderbook.ask[0].price - 50: bestOrderbook.ask[0].price,  // Buy at minAskPrice
+          askPrice: (marketName == "KORBIT") ? bestOrderbook.bid[0].price + 50 : bestOrderbook.bid[0].price,
+          participants: bidParticipants.concat(askParticipants),
+          machineIds: bidMachineIds.concat(askMachineIds)
+        }]
+      } else {  // Don't make internal trade in this case.
+        // Validate the balances
+        if (totalBid * bestOrderbook.ask[0].price < lowAskMarket.balance.krw.available - 10000){
+          console.log("[machine.js] Enough money at", lowAskMarket.name)
+        }else {
+          console.log("[machine.js] Put money at", lowAskMarket.name, "hurry up!!!!!!")
+          totalBid = 0, bidMachineIds = [], bidParticipants = []
+        }
+        if (totalAsk < highBidMarket.balance.eth.available - 0.1){
+          console.log("[machine.js] Enough Ethereum at", highBidMarket.name)
+        }else {
+          console.log("[machine.js] Put Ethereum at", highBidMarket.name, "hurry up!!!!!!")
+          totalAsk = 0, askMachineIds = [], askParticipants = []
+        }
+        // Make two result to make order seprarately
+        result = [{
+          marketName: lowAskMarket.name,
+          coinType: this.at(0).get("coinType"),
+          bidQuantity: totalBid,
+          askQuantity: 0,
+          bidPrice: (lowAskMarket.name == "KORBIT") ? bestOrderbook.ask[0].price - 50: bestOrderbook.ask[0].price,  // Buy at minAskPrice
+          // askPrice: bestOrderbook.bid[0].price,
+          participants: bidParticipants,
+          machineIds: bidMachineIds
+        }, {
+          marketName: highBidMarket.name,
+          coinType: this.at(0).get("coinType"),
+          bidQuantity: 0,
+          askQuantity: totalAsk,
+          // bidPrice: bestOrderbook.ask[0].price,  // Buy at minAskPrice
+          askPrice: (highBidMarket.name == "KORBIT") ? bestOrderbook.bid[0].price + 50 : bestOrderbook.bid[0].price,
+          participants: askParticipants,
+          machineIds: askMachineIds
+        }]
       }
-
-      console.log("[machine.js] bidPrice:", minAskPrice, "askPrice:", maxBidPrice)
+      
       console.log("[machine.js] machines.mind() takes", ((new Date() - startTime) / 1000).toFixed(2), "sec")
       return result
     }
-/*    mind_old: function(options) {
-        let startTime = new Date();
-
-        let hope = options.hope,
-            minAskPrice = options.minAskPrice,
-            maxBidPrice = options.maxBidPrice,
-            success = options.success;
-        let index = 0, totalBid = 0, totalAsk = 0;
-        let participants = []; // array of participants
-        const that = this;
-
-        function one(index) {
-            if (that.length > index) {
-                let m = that.at(index);
-
-                m.mind({
-                    hope: hope,
-                    minAskPrice: minAskPrice,
-                    maxBidPrice: maxBidPrice
-                }, {
-                    success: () => {
-                        // maybe machine's status is `pending` or something else
-                        if (_.contains(['COIN', 'KRW'], m.get('status'))) {
-                            switch (m.get('mind').type) {
-                                case "bid":
-                                    participants.push(m);
-                                    totalBid += m.get('capacity') * 1;
-                                    break;
-                                case "ask":
-                                    participants.push(m);
-                                    totalAsk += m.get('capacity') * 1;
-                                    break;
-                                default:
-                                    // does not participate this tic()
-                            }
-                        }
-                        one(index + 1);
-                    }
-                });
-            } else {
-                console.log("[machine.js] machines.mind() takes", ((new Date() - startTime) / 1000).toFixed(2), "sec");
-                // if(totalBid > 0 && totalAsk > 0){
-                //     // Internal trading! Yeah!
-                //     let internalTradedUnits = (totalBid > totalAsk)? totalAsk:totalBid;
-                //     _.each();
-                // }
-                success({
-                    total: that.length || 0,
-                    totalBid: totalBid.toFixed(3) * 1,
-                    totalAsk: totalAsk.toFixed(3) * 1,
-                    participants: participants // just Array, not Machines
-                });
-                return;
-            }
-        }
-        one(0);
-    },
-    makeRealPlayer_old: function(attr) {
-        attr = attr || {};
-        let btc_krw_b = attr.btc_krw_b,
-            hope = attr.hope;
-
-        // let SEED_BTC_AMOUNT = 10; // 10 btc
-        let that = this;
-        let goodMachines = this.filter(function(m) {
-            // if (m.get('status') != "KRW") {
-            // return false;
-            // } else {
-            // return (m.get('profit_rate') >= 1000) ? true : false;
-            // }
-            return (m.get('profit_rate') >= 1000) ? true : false;
-        });
-        console.log("[machine.js] goodMachines.length: ", goodMachines.length);
-
-        let rank = _.sortBy(goodMachines, function(m) {
-            let profit_rate = m.get('profit_rate');
-            if(m.get('status') == 'COIN')
-                profit_rate = profit_rate - (m.get('last_traded_price') - btc_krw_b);
-            return -profit_rate;
-        });
-
-        let totalCapacity = 0;
-        function one(index) {
-            if (rank.length <= index) {
-                console.log("[machine.js] New machines are created. End index:", index);
-                return;
-            }
-
-            // 33.116 btc
-            let c = 0.004;
-            if (index < 63) {
-                c = 0.256;
-            } else if (index < 210) {
-                c = 0.064;
-            } else if (index < 467) {  // 20 % of 2334 machines
-                c = 0.016;
-            }
-            // rank[index].save({
-            //     capacity: c
-            // }, {
-            //     success: function() {
-            //         one(index + 1);
-            //     }
-            // });
-            let setting = {
-              kind: "REAL"
-            };
-            if (_.contains(rank[index].get('propensity'), "DECRAVING_KRW_BID")) {
-                setting = {
-                    capacity: c,
-                    propensity: ["DECRAVING_KRW_BID", "CRAVING_KRW_ASK"],
-                    neverHope: -50000,
-                    craving_krw: rank[index].get('craving_krw'),
-                    decraving_krw: rank[index].get('decraving_krw')
-                };
-            } else if (_.contains(rank[index].get('propensity'), "NEGATIVE_HOPE_BID")) {
-                setting = {
-                    capacity: c,
-                    propensity: ["NEGATIVE_HOPE_BID", "CRAVING_KRW_ASK"],
-                    neverHope: rank[index].get('neverHope'),
-                    negativeHope: rank[index].get('negativeHope'),
-                    craving_krw: rank[index].get('craving_krw')
-                };
-            } else if (_.contains(rank[index].get('propensity'), "CRAVING_KRW_AND_NEGATIVE_HOPE_ASK")) {
-                setting = {
-                    capacity: c,
-                    propensity: ["NEGATIVE_HOPE_BID", "CRAVING_KRW_AND_NEGATIVE_HOPE_ASK"],
-                    neverHope: rank[index].get('neverHope'),
-                    negativeHope: rank[index].get('negativeHope'),
-                    craving_krw: rank[index].get('craving_krw')
-                };
-            } else if (_.contains(rank[index].get('propensity'), "DYNAMIC_DECRAVING_KRW_BY_TIME_BID")) {
-                setting = {
-                    capacity: c,
-                    propensity: ["DYNAMIC_DECRAVING_KRW_BY_TIME_BID", "DYNAMIC_CRAVING_KRW_BY_TIME_ASK"],
-                    neverHope: rank[index].get('nerverHope')
-                };
-            } else if (_.contains(rank[index].get('propensity'), "POSITIVE_HOPE_ASK")) {
-                setting = {
-                    capacity: c,
-                    propensity: ["NEGATIVE_HOPE_BID", "POSITIVE_HOPE_ASK"],
-                    neverHope: rank[index].get('neverHope'),
-                    negativeHope: rank[index].get('negativeHope'),
-                    craving_krw: rank[index].get('craving_krw'),
-                    positiveHope: rank[index].get('positiveHope')
-                };
-            } else if(_.contains(rank[index].get('propensity'),  "BTC_KRW_RATE_OF_24H_AND_HOPE_BID")){
-                setting = {
-                    capacity: c,
-                    propensity: rank[index].get('propensity'),
-                    negativeHope: rank[index].get('negativeHope'),
-                    positiveHope: rank[index].get('positiveHope'),
-                    craving_krw: rank[index].get('craving_krw'),
-                    negativeRate: rank[index].get('negativeRate'),
-                    positiveRate: rank[index].get('positiveRate')
-                };
-            // } else if(_.contains(rank[index].get('propensity'), "BTC_KRW_BID")) {
-            //     setting = {
-            //         capacity: c,
-            //         propensity: ["BTC_KRW_BID", "CRAVING_KRW_ASK"],
-            //         btc_krw_bid: ,
-            //         craving_krw: rank[index].get('craving_krw')
-            //     };
-            } else {
-                one(index + 1);
-                return;
-            }
-            let newMachine = new exports.Machine();
-            newMachine.save(setting, {
-                success: function() {
-                    totalCapacity += c;
-                    that.add(newMachine);
-                    one(index + 1);
-                }
-            });
-        }
-        one(0);
-        console.log("[machine.js] New REAL type machines have ", totalCapacity, "capacity");
-        // console.log(rank.length);
-        // console.log(rank[0].attributes);
-    } */
 });
+
+exports.Arbitrages = exports.Machines.extend({
+  url: "mongodb://localhost:27017/rabbit/arbitrages",
+  sync: backsync.mongodb(),
+  model: exports.Arbitrage,
+  initialize: function(attributes, options) {
+    console.log("arbitrages init")
+    this.on("change:status", a => {
+      console.log("event", a.id, a.get("status"))
+      switch (a.get("status")) {
+        case "COMPLETED":
+        case "CANCELED":
+        case "FAILED":
+          console.log("The arbitrage", a.get("status") ," and will be removed from the arbitrages. remain in db")
+          this.remove(a)
+          // delete o
+          break
+      }
+    })
+  },
+  presentation: function(){
+    return new Promise(resolve => {
+      const completedArbitrages  = new exports.Arbitrages()
+      completedArbitrages.fetch({
+        data: {
+          status: "COMPLETED"
+        },
+        success: () => {
+          let profit_sum = 0, quantity_sum = 0
+          completedArbitrages.each(a =>{
+            // console.log(a.get("profitRate"), a.id)
+            profit_sum += a.get("profitRate") * a.get("quantity")
+            quantity_sum += a.get("quantity")
+          })
+          console.log("Arbitrage Profit: \u20A9", new Intl.NumberFormat().format(profit_sum),
+            ":", new Intl.NumberFormat().format((profit_sum/((new Date() - global.rabbit.ARBITRAGE_STARTED)/ 86400000)).toFixed(0)), "per day")
+          console.log("quantity_sum:", new Intl.NumberFormat().format(quantity_sum))
+          resolve()
+        }
+      })
+    })
+  },
+  // Make new arbitrage machine!
+  mind: function(options) {
+    if (this.length > 6){
+      console.log("[machine.js] arbitrages have more than 6. so just pass")
+      return []
+    }
+    console.log("arbitrages.length:", this.length)
+
+    const coinone = options.coinone,
+      korbit = options.korbit
+
+    const coinoneMaxBid = coinone.orderbook.bid[0].price,
+      coinoneMinAsk = coinone.orderbook.ask[0].price,
+      korbitMaxBid = korbit.orderbook.bid[0].price,
+      korbitMinAsk = korbit.orderbook.ask[0].price
+
+    const korbit2coinone = coinoneMaxBid - korbitMinAsk,
+      coinone2korbit = korbitMaxBid - coinoneMinAsk
+
+    const profitRate = (korbit2coinone > coinone2korbit) ? korbit2coinone : coinone2korbit
+    // console.log(coinoneMaxBid, coinoneMinAsk, korbitMaxBid, korbitMinAsk)
+    console.log("(korbit to coinone:", korbit2coinone, ", coinone to korbit:", coinone2korbit, ")")
+
+    let lowMarket, highMarket, quantity = 0
+    if (korbit2coinone > coinone2korbit){
+      lowMarket = korbit
+      highMarket = coinone
+    } else if (korbit2coinone < coinone2korbit) {
+      lowMarket = coinone
+      highMarket = korbit
+    } else if (korbit2coinone == coinone2korbit) {  // It happens
+      return []
+    }
+    const LIMIT = (profitRate > 4000) ? 2.0 : 0.1
+    quantity = (lowMarket.orderbook.ask[0].qty < highMarket.orderbook.bid[0].qty) ?
+      lowMarket.orderbook.ask[0].qty : highMarket.orderbook.bid[0].qty
+    quantity = quantity - 0.01  // Kind of flooring
+    quantity = (quantity > LIMIT) ? LIMIT : quantity  // Limit
+    quantity = quantity.toFixed(2) * 1
+    // quantity = 0.02 // for test
+
+    if (profitRate < 2000 || quantity < 0.01){
+      console.log("Pass arbitrage. profitRate:", profitRate, "quantity:", quantity)
+      return []
+    }
+
+    console.log(" 💴  IT'S GOLDEN TIME 💴  quantity:", quantity, "profitRate:", profitRate)
+    console.log(lowMarket.name, ":buy at", lowMarket.orderbook.ask[0].price,)
+    console.log(highMarket.name, ":ask at", highMarket.orderbook.bid[0].price)
+
+    // Validate balance
+    if (lowMarket.balance.krw.available - 10000 < lowMarket.orderbook.ask[0].price * quantity){
+      console.log("[machine.js] Not enough krw at", lowMarket.name)
+      const newQunatity = (lowMarket.balance.krw.available / lowMarket.orderbook.ask[0].price - 0.01).toFixed(2) * 1
+      if (newQunatity > 0.01){
+        console.log("[machine.js] So just place order less quantity:", newQunatity)
+        quantity = newQunatity
+      } else {
+        console.log("[machine.js] Real don't have krw at", lowMarket.name, "GIVE ME THE MONEY!!")
+        return []
+      }
+    }
+    if (highMarket.balance.eth.available - 1.0 < quantity){
+      console.log("[machine.js] Not enough eth", highMarket.name)
+      const newQunatity = (highMarket.balance.eth.available - 0.01).toFixed(2) * 1
+      if (newQunatity > 0.01){
+        console.log("[machine.js] So go less", newQunatity)
+        quantity = newQunatity
+      }else{
+        console.log("[mahine.js] Real don't have eth at", highMarket.name, "GIVE ME THE MONEY!")
+        return []
+      }
+    }
+
+    console.log("Well. It looks like real money. Make new arbitrage")
+
+    // New arbitrage only here
+    const newArbitrage = new exports.Arbitrage({
+      coinType: "ETH",
+      lowMarketName: lowMarket.name,
+      highMarketName: highMarket.name,
+      // just for log below
+      profit_krw: quantity * (profitRate - 100),  // Note that -100
+      quantity: quantity,
+      profitRate: profitRate - 100,
+      bidPrice: lowMarket.orderbook.ask[0].price + 50,  // Buy at minAskPrice
+      askPrice: highMarket.orderbook.bid[0].price - 50  // Ask at maxBidPrice
+    })
+
+    this.push(newArbitrage)
+
+    return [{
+        marketName: lowMarket.name,
+        coinType: "ETH",
+        bidQuantity: quantity,
+        askQuantity: 0,
+        bidPrice: newArbitrage.get("bidPrice"), 
+        // askPrice: maxBidPrice,
+        participants: [newArbitrage],
+        machineIds: [newArbitrage.id + ""]  // attached "" to avoid ObjectId("asoweugbalskug")
+      },
+      {
+        marketName: highMarket.name,
+        coinType: "ETH",
+        bidQuantity: 0,
+        askQuantity: quantity,
+        // bidPrice: minAskPrice,
+        askPrice: newArbitrage.get("askPrice"),
+        participants: [newArbitrage],
+        machineIds: [newArbitrage.id + ""] // attached "" to avoid ObjectId("asoweugbalskug")
+      }
+    ]
+  }, // end of .mind()
+  mind_test: function(){
+    const newArbitrage = new exports.Arbitrage({
+      coinType: "ETH",
+    })
+    return {
+      machineIds: [newArbitrage.id + ""]
+    }
+  }
+})
+
 
 
 // exports.Machine = Machine;
