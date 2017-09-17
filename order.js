@@ -218,14 +218,18 @@ exports.Orders = Backbone.Collection.extend({
         console.log("Whoa! internalTradeQuantity:", internalTradeQuantity)
 
       // Actual order here
-      const marketResult = await marketAPI({
-        type: type,
-        price: price,
-        qty: quantity,
-        coinType: options.coinType
-      })
-      console.log("[order.js] The order is placed", options.marketName, type, price, quantity, marketResult.orderId)
-      // console.log(marketResult.orderId)
+      let marketResult
+      // if (type == "BID" && options.tt != "ARBIT" && global.rabbit.bought_coin < 560) { // temporally BID is ignored
+        // marketResult = { orderId: "ignoredBID" + Date.now() }
+      // }else{
+        marketResult = await marketAPI({
+          type: type,
+          price: price,
+          qty: quantity,
+          coinType: options.coinType
+        })
+        console.log("[order.js] The order is placed", options.marketName, type, price, quantity, marketResult.orderId)
+      // }
 
       // Only success to place order
       if (marketResult.orderId){
@@ -269,7 +273,7 @@ exports.Orders = Backbone.Collection.extend({
     },
     // Refresh All of this orders. no matter what marketName or coinType. All of them.
     refresh: async function(options) {
-      console.log("100 [order.js] Will refresh", this.length, "the orders")
+      console.log("100 [order.js] Will refresh", this.length, "the local orders")
       if (this.length == 0)
         return
 
@@ -290,7 +294,7 @@ exports.Orders = Backbone.Collection.extend({
         uncompletedOrderIds = coinoneUncompletedOrderIds.concat(korbitUncompletedOrderIds)
 
         // console.log("101 [order.js] korbitUncompletedOrderIds:", korbitUncompletedOrderIds)
-        console.log("101 [order.js] uncompletedOrderIds:\n", uncompletedOrderIds)
+        console.log("101 [order.js] remote uncompletedOrderIds:\n", uncompletedOrderIds)
       } catch (e) {
         console.log("101 [order.js] One or two of uncompleted orders fetch is failed. Skip this refresh.")
         throw new Error(e)
@@ -300,9 +304,9 @@ exports.Orders = Backbone.Collection.extend({
       for (let order of this.where() ){  // DO NOT USE `this.models` that would be changed by remove event
         if (_.contains(uncompletedOrderIds, order.get("orderId") + "") ){
           // It's uncompleted order. Don't do anything.
-          console.log("104 [order.js] Uncompleted orderId:", order.get("orderId"),
+          console.log("104 [order.js] Uncompleted:", order.get("orderId"),
             order.get("price"), order.get("quantity"), order.get("type"),
-            ((new Date() - order.get("created_at")) / 3600000).toFixed(2), "hours ago\t",
+            ((new Date() - order.get("created_at")) / 3600000).toFixed(2), "hours ago",
             order.get("internalTradeQuantity") )
         }else{
           if (order.get("status") == "OPEN"){
@@ -326,7 +330,7 @@ exports.Orders = Backbone.Collection.extend({
       for (let orders of [coinoneOrders, korbitOrders]){
         console.log("[order.js] orders.length", orders.length)
         // if (orders.length > 5 && orders[0].get("marketName") == "KORBIT"){
-        if (orders.length > 5 && global.rabbit.coinone.info){
+        if (orders.length > 5 && global.rabbit.coinone && global.rabbit.coinone.info){
         // if (orders.length > 5 && global.rabbit.korbit.info){
             // The most far from current price
             const uselessOrder = _.sortBy(orders, order => -Math.abs(global.rabbit.coinone.info.last - order.get("price")))[0]
