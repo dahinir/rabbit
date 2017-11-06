@@ -176,6 +176,7 @@ module.exports = function (options) {
         result = JSON.parse(body)
       } catch (e) {
         console.log("[korbit.js] korbit's answer can't parse for JSON. maybe not a problem")
+        // console.log(body)
         reject(e)
         return
       }

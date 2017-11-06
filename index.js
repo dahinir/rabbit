@@ -26,12 +26,13 @@ global.rabbit = {
     orders: new Orders()
 }
 
-// global.rabbit.STARTED = new Date('July 4, 2017 13:20:00')
-global.rabbit.STARTED = new Date('September 16, 2017 13:00:00') // new Date('September 2, 2017 16:00:00')
+// global.rabbit.STARTED = new Date('September 2, 2017 16:00:00')
+// global.rabbit.STARTED = new Date('September 16, 2017 13:00:00') 
+global.rabbit.BORN = new Date('July 4, 2017 13:20:00')
+global.rabbit.STARTED = new Date('September 22, 2017 11:00:00') 
 global.rabbit.ARBITRAGE_STARTED = new Date('July 26, 2017 13:20:00')
-// Rabbit made ₩ 37,401,629 : 628,726 per day;  damage: -290,887 so ₩ 37,692,516 : 633,616 per day
-global.rabbit.PREVIOUS_PROFIT_SUM = 47089762 // 37401629
-global.rabbit.INVESTED_KRW = 170000000
+global.rabbit.PREVIOUS_PROFIT_SUM = 49752085 // 47089762 // 37401629
+global.rabbit.INVESTED_KRW = 165000000
 global.rabbit.bought_coin = 0
 
 

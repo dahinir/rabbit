@@ -10,7 +10,7 @@ console.log("[tick.js] Loaded!")
 
 let count = 0
 const machines = new Machines(global.rabbit.machines.filter(m => {
-  if (m.get("buy_at") >= 200000 && m.get("buy_at") < 400000)
+  if (m.get("buy_at") >= 300000 && m.get("buy_at") < 500000)
     return true
   else
     return false
@@ -20,9 +20,9 @@ const arbitrages = global.rabbit.arbitrages
 
 module.exports = async function(){
   const startTime = new Date()
-  console.log("\n--Tick no.", ++count, "with", machines.length, "machines. ",
+  console.log("\n-- ETH Tick no.", ++count, "with", machines.length, "machines. ",
     startTime.toLocaleString(), "It's been", ((new Date() - global.rabbit.STARTED)/ 86400000).toFixed(1),
-      "days.  Now refresh orders..")
+    "days. ", ((new Date() - global.rabbit.BORN) / 86400000).toFixed(1), "days old")
 
   // Check previous orders out
   // console.log("--refresh orders------")
@@ -50,9 +50,10 @@ module.exports = async function(){
     korbitEthOrderbook = await korbitEthOrderbookPromise
     korbitBalance = await korbitBalancePromise
   } catch (e) {
-    ignoreMoreRejectsFrom(coinoneInfoPromise, coinoneRecentCompleteOrdersPromise,
-      korbitEthOrderbookPromise, coinoneEthOrderbookPromise,
-      korbitBalancePromise, coinoneBalancePromise)
+    // ignoreMoreRejectsFrom(coinoneInfoPromise, coinoneRecentCompleteOrdersPromise,
+    //   korbitEthOrderbookPromise, coinoneEthOrderbookPromise,
+    //   korbitBalancePromise, coinoneBalancePromise)
+    console.log(e)
     throw new Error("[tick.js] Fail to fetch. Let me try again.")
   }
 
@@ -101,6 +102,7 @@ module.exports = async function(){
     results[0].tt = "ARBIT"
     results[1].tt = "ARBIT"
   }
+  // results = []
 
 
   if (results.length != 2){

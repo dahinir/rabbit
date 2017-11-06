@@ -43,12 +43,12 @@ machines.fetchAll({
                     let newCraving = Math.round(m.get('buy_at') * newPercentage / 100)
                     m.save({
                         // mind: {},
+                        craving_percentage: newPercentage,
+                        craving_krw: newCraving,
                         profit_krw: 0,
                         profit_rate: 0,
                         traded_count: (m.get("status") == "COIN") ? 1 : 0,
-                        last_traded_price: (m.get("status") == "COIN") ? m.get("last_traded_price") : 0,
-                        craving_percentage: newPercentage,
-                        craving_krw: newCraving
+                        last_traded_price: (m.get("status") == "COIN") ? m.get("last_traded_price") : 0
                     }, {
                         success: () => {
                             // console.log("success")

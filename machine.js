@@ -125,22 +125,29 @@ exports.Machine = Backbone.Model.extend({
           })
 
           // FOR BIGGIE PROFIT: now summary is 0.70 //
-          // db.machines.updateMany({craving_percentage: 6, status:"KRW"}, {$set:{capacity: 0.08}})
+          // db.machines.updateMany({craving_percentage: 10, status:"KRW"}, {$set:{capacity: 0.08}})
           // db.machines.findOne({craving_krw: 6000, status:"KRW", capacity: {$ne: 0.01}})
+          // sum: 0.59 eth
           if (this.get("craving_percentage") == 2)
-            changed.capacity = 0.03
+            changed.capacity = 0.01
           else if (this.get("craving_percentage") == 4)
-            changed.capacity = 0.09
+            changed.capacity = 0.01
           else if (this.get("craving_percentage") == 6)
-            changed.capacity = 0.08
+            changed.capacity = 0.01
           else if (this.get("craving_percentage") == 8)
-            changed.capacity = 0.02
+            changed.capacity = 0.01
           else if (this.get("craving_percentage") == 10)
-            changed.capacity = 0.01
+            changed.capacity = 0.04
           else if (this.get("craving_percentage") == 12)
-            changed.capacity = 0.01
+            changed.capacity = 0.21
           else if (this.get("craving_percentage") == 14)
-            changed.capacity = 0.01
+            changed.capacity = 0.15
+          else if (this.get("craving_percentage") == 16)
+            changed.capacity = 0.08
+          else if (this.get("craving_percentage") == 18)
+            changed.capacity = 0.05
+          else if (this.get("craving_percentage") == 20)
+            changed.capacity = 0.02
 
           console.log("[machine.js] A machine", this.id, "accomplish with profit", thisProfit * this.get("capacity"), "krw. craving_percentage:", this.get("craving_percentage"))
         }else if (this.get("mind").type == "BID"){
@@ -287,7 +294,8 @@ exports.Machines = Backbone.Collection.extend({
       global.rabbit.bought_coin = coin_sum
       profit_rate_each_craving = profit_rate_each_craving.map(el => (el/1000).toFixed(0)*1) // 1000 machines each craving
       
-      console.log("--", this.length, "machines presentation ----  \u20A9", new Intl.NumberFormat().format(global.rabbit.PREVIOUS_PROFIT_SUM + profit_krw_sum) )
+      console.log("--", this.length, "machines presentation ----  \u20A9", new Intl.NumberFormat().format(global.rabbit.PREVIOUS_PROFIT_SUM + profit_krw_sum),
+        ":", new Intl.NumberFormat().format(((global.rabbit.PREVIOUS_PROFIT_SUM + profit_krw_sum) / ((new Date() - global.rabbit.BORN ) / 86400000)).toFixed(0)), "per day" )
       console.log("Rabbit made \u20A9", new Intl.NumberFormat().format(profit_krw_sum),
         ":", new Intl.NumberFormat().format((profit_krw_sum/((new Date() - global.rabbit.STARTED)/ 86400000)).toFixed(0)), "per day; ",
         "damage:", new Intl.NumberFormat().format(krw_damage),
@@ -537,7 +545,7 @@ exports.Arbitrages = exports.Machines.extend({
     } else if (korbit2coinone == coinone2korbit) {  // It happens
       return []
     }
-    const LIMIT = (profitRate > 4000) ? 2.0 : 0.3 // 2.0 or 0.3
+    const LIMIT = (profitRate > 4000) ? 2.0 : 0.5 // 2.0 or 0.5
     quantity = (lowMarket.orderbook.ask[0].qty < highMarket.orderbook.bid[0].qty) ?
       lowMarket.orderbook.ask[0].qty : highMarket.orderbook.bid[0].qty
     quantity = quantity - 0.01  // Kind of flooring
