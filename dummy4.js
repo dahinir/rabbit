@@ -14,12 +14,29 @@ const xcoinAPI = require('./bithumb_modified.js'),
     moment = require('moment'),
     brain = require('brain.js')
 
-
-const machines = new Machines()
-
-machines.fetch({
-    data: {
-    },
-    success: function () {
-    }
-})
+// console.log((new Date()).toLocaleString())
+// let aa = [0,0,0,0,0]
+// aa.forEach(m => {
+//     const pIndex = 1
+//     aa[pIndex] += 1
+// })
+// console.log(aa)
+if (true && (false | false)) 
+    console.log(Date.now())
+else
+    console.log("aa")
+// const machines = new Machines()
+// machines.fetchAll({
+//     data: {
+//     },
+//     success: function () {
+//         console.log("success")
+//         let count = 0
+//         machines.each(m => {
+//             count += m.get("traded_count")
+//             // if (m.get("traded_count") > 0)
+//             //     console.log(m.get("traded_count"), m.get("buy_at"))
+//         })
+//         console.log(count)
+//     }
+// })

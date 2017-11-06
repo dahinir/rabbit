@@ -84,6 +84,7 @@ module.exports = function (options) {
       // console.log("coinone got answer")
       let result
       try {
+				// console.log(body)
         result = JSON.parse(body)
       } catch (e) {
         reject(e)

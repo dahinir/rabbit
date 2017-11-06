@@ -10,7 +10,7 @@ console.log("[tick.js] Loaded!")
 
 let count = 0
 const machines = new Machines(global.rabbit.machines.filter(m => {
-  if (m.get("buy_at") >= 350000 && m.get("buy_at") < 450000)
+  if (m.get("buy_at") >= 300000 && m.get("buy_at") < 500000)
     return true
   else
     return false
@@ -20,9 +20,9 @@ const arbitrages = global.rabbit.arbitrages
 
 module.exports = async function(){
   const startTime = new Date()
-  console.log("\n--Tick no.", ++count, "with", machines.length, "machines. ",
-    startTime.toLocaleString(), "It's been", Math.floor((new Date() - global.rabbit.STARTED)/ 86400000),
-      "days.  Now refresh orders..")
+  console.log("\n-- ETH Tick no.", ++count, "with", machines.length, "machines. ",
+    startTime.toLocaleString(), "It's been", ((new Date() - global.rabbit.STARTED)/ 86400000).toFixed(1),
+    "days. ", ((new Date() - global.rabbit.BORN) / 86400000).toFixed(1), "days old")
 
   // Check previous orders out
   // console.log("--refresh orders------")
@@ -30,13 +30,14 @@ module.exports = async function(){
 
 
   /////// FETCHING //////////
-  let coinoneInfo, coinoneEthOrderbook, coinoneBalance
+  let coinoneInfo, coinoneEthOrderbook, coinoneBalance, coinoneRecentCompleteOrders
   let korbitInfo, korbitEthOrderbook, korbitBalance
   try {
     // Act like Promise.all() 
     const coinoneInfoPromise = fetcher.getCoinoneInfo(),
       coinoneEthOrderbookPromise = fetcher.getCoinoneEthOrderbook(),
-      coinoneBalancePromise = fetcher.getCoinoneBalance()
+      coinoneBalancePromise = fetcher.getCoinoneBalance(),
+      coinoneRecentCompleteOrdersPromise = fetcher.getCoinoneRecentCompleteOrders()
     const  korbitEthOrderbookPromise = fetcher.getKorbitEthOrderbook(),
       korbitBalancePromise = fetcher.getKorbitBalance(),
       korbitInfoPromise = fetcher.getKorbitInfo()
@@ -44,13 +45,15 @@ module.exports = async function(){
     coinoneInfo = await coinoneInfoPromise
     coinoneEthOrderbook = await coinoneEthOrderbookPromise
     coinoneBalance = await coinoneBalancePromise
+    coinoneRecentCompleteOrders = await coinoneRecentCompleteOrdersPromise
     korbitInfo = await korbitInfoPromise
     korbitEthOrderbook = await korbitEthOrderbookPromise
     korbitBalance = await korbitBalancePromise
   } catch (e) {
-    ignoreMoreRejectsFrom(coinoneInfoPromise,
-      korbitEthOrderbookPromise, coinoneEthOrderbookPromise,
-      korbitBalancePromise, coinoneBalancePromise)
+    // ignoreMoreRejectsFrom(coinoneInfoPromise, coinoneRecentCompleteOrdersPromise,
+    //   korbitEthOrderbookPromise, coinoneEthOrderbookPromise,
+    //   korbitBalancePromise, coinoneBalancePromise)
+    console.log(e)
     throw new Error("[tick.js] Fail to fetch. Let me try again.")
   }
 
@@ -73,7 +76,7 @@ module.exports = async function(){
   console.log("--In 24hrs at Coinone:", coinone.info.low, "~", coinone.info.high, ":",coinone.info.last,"(",
       ((coinone.info.last- coinone.info.low)/(coinone.info.high- coinone.info.low)*100).toFixed(2),"% )----" )
   console.log("All fetchers've take", fetchingTime, "sec")
-  console.log("Invested krw:", new Intl.NumberFormat().format(120000000))
+  console.log("Invested krw:", new Intl.NumberFormat().format(global.rabbit.INVESTED_KRW))
   console.log("KRW:", new Intl.NumberFormat().format(korbit.balance.krw.balance + coinone.balance.krw.balance), "\tCoin:", (korbit.balance.eth.balance + coinone.balance.eth.balance).toFixed(2) )
   console.log("Balance:", new Intl.NumberFormat().format(korbit.balance.krw.balance + korbit.balance.eth.balance * korbit.orderbook.bid[0].price
     + coinone.balance.krw.balance + coinone.balance.eth.balance * coinone.orderbook.bid[0].price), "krw")
@@ -87,7 +90,7 @@ module.exports = async function(){
 
   /////// TIME TO MIND ////////
   let results = []
-  if (fetchingTime > 2.8) {
+  if (fetchingTime > 3.0) {
     console.log("Fetched too late. Don't buy when the market is busy. pass this tic. fetchingTime:", fetchingTime)
     return
   }
@@ -95,10 +98,22 @@ module.exports = async function(){
     korbit: korbit,
     coinone: coinone
   })  // It's Array
+  if (results.length == 2 ){
+    results[0].tt = "ARBIT"
+    results[1].tt = "ARBIT"
+  }
+  // results = []
+
 
   if (results.length != 2){
+  // isInclined(coinoneRecentCompleteOrders)
+  // if (false) {
     console.log("-- No arbitrages so mind machines --")
-    if (fetchingTime > 1.2 ){
+    if (isInclined(coinoneRecentCompleteOrders)){
+      console.log("Wait.. It looks like inclined")
+      return
+    }
+    if (fetchingTime > 2.0 ){
       console.log("Fetched too late. Don't buy when the market is busy. pass this tic. fetchingTime:", fetchingTime)
       return
     }
@@ -147,8 +162,6 @@ module.exports = async function(){
   // for (let o of placeOrderPromises)
   //   await o
 
-
-
   // Summary
   global.rabbit.machines.presentation(coinoneEthOrderbook)
   // await global.rabbit.arbitrages.presentation()
@@ -159,4 +172,48 @@ function ignoreMoreRejectsFrom(...promises) {
     promises.forEach(p => p && p.catch(function () {
       // Nothing to do
     }));
+}
+
+
+function isInclined(coinoneRecentCompleteOrders) {
+  coinoneRecentCompleteOrders = coinoneRecentCompleteOrders.reverse()
+
+  const lastTimestamp = coinoneRecentCompleteOrders[0].timestamp * 1
+  const TERM = 60 * 3  // 3 mins
+  // console.log(coinoneRecentCompleteOrders[0], coinoneRecentCompleteOrders[1])
+  let candles = coinoneRecentCompleteOrders.reduce((candles, o) => {
+    const index = Math.floor((lastTimestamp - (o.timestamp * 1)) / TERM)
+
+    if (_.isArray(candles[index]))
+      candles[index].push(o)
+    else
+      candles[index] = [o]
+    return candles
+  }, [])
+  candles = candles.map(c => {
+    const lastIndex = c.length - 1
+    const open = c[lastIndex].price * 1,
+      close = c[0].price * 1,
+      volume = c.reduce((sum, el) => {
+        return sum + el.qty * 1
+      }, 0)
+
+    return {
+      v: Math.round(volume),
+      count: c.length,
+      open: open,
+      close: close,
+      // low: 0,
+      // hight: 0,
+      body: (close > open) ? "+" : "-"
+    }
+  })
+
+  // console.log((candles[0].body == candles[1].body) ? "wait" : "action")
+  for (let i = 0; i < 5; i++)
+    console.log(candles[i])
+  // console.log(candles.length, candles[0].length, candles[1].length, candles[2].length, candles[3].length, candles[4].length)
+  // console.log( candles[candles.length - 1])
+  // console.log("All fetchers've take", fetchingTime, "sec", candles.length)
+  return (candles[0].body == candles[1].body) ? true : false
 }
