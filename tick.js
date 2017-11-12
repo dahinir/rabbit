@@ -8,7 +8,7 @@ const _ = require('underscore'),
 
 console.log("[tick.js] Loaded!")
 
-let count = 0
+let count = -1
 const machines = new Machines(global.rabbit.machines.filter(m => {
   if (m.get("buy_at") >= 300000 && m.get("buy_at") < 500000)
     return true
@@ -18,9 +18,17 @@ const machines = new Machines(global.rabbit.machines.filter(m => {
 const orders = global.rabbit.orders
 const arbitrages = global.rabbit.arbitrages
 
+const getCoinType = function () {
+  const chamber = ["ETH", "BTC"]
+  // return chamber[count % chamber.length]
+  return "ETH"
+}
+
 module.exports = async function(){
   const startTime = new Date()
-  console.log("\n-- ETH Tick no.", ++count, "with", machines.length, "machines. ",
+  count++
+
+  console.log("\n-- ", getCoinType(), "Tick no.", count, "with", machines.length, "machines. ",
     startTime.toLocaleString(), "It's been", ((new Date() - global.rabbit.STARTED)/ 86400000).toFixed(1),
     "days. ", ((new Date() - global.rabbit.BORN) / 86400000).toFixed(1), "days old")
 
@@ -30,28 +38,28 @@ module.exports = async function(){
 
 
   /////// FETCHING //////////
-  let coinoneInfo, coinoneEthOrderbook, coinoneBalance, coinoneRecentCompleteOrders
-  let korbitInfo, korbitEthOrderbook, korbitBalance
+  let coinoneInfo, coinoneOrderbook, coinoneBalance, coinoneRecentCompleteOrders
+  let korbitInfo, korbitOrderbook, korbitBalance
   try {
     // Act like Promise.all() 
     const coinoneInfoPromise = fetcher.getCoinoneInfo(),
-      coinoneEthOrderbookPromise = fetcher.getCoinoneEthOrderbook(),
+      coinoneOrderbookPromise = fetcher.getCoinoneOrderbook(getCoinType()),
       coinoneBalancePromise = fetcher.getCoinoneBalance(),
       coinoneRecentCompleteOrdersPromise = fetcher.getCoinoneRecentCompleteOrders()
-    const  korbitEthOrderbookPromise = fetcher.getKorbitEthOrderbook(),
+    const korbitOrderbookPromise = fetcher.getKorbitOrderbook(getCoinType()),
       korbitBalancePromise = fetcher.getKorbitBalance(),
       korbitInfoPromise = fetcher.getKorbitInfo()
 
     coinoneInfo = await coinoneInfoPromise
-    coinoneEthOrderbook = await coinoneEthOrderbookPromise
+    coinoneOrderbook = await coinoneOrderbookPromise
     coinoneBalance = await coinoneBalancePromise
     coinoneRecentCompleteOrders = await coinoneRecentCompleteOrdersPromise
     korbitInfo = await korbitInfoPromise
-    korbitEthOrderbook = await korbitEthOrderbookPromise
+    korbitOrderbook = await korbitOrderbookPromise
     korbitBalance = await korbitBalancePromise
   } catch (e) {
     // ignoreMoreRejectsFrom(coinoneInfoPromise, coinoneRecentCompleteOrdersPromise,
-    //   korbitEthOrderbookPromise, coinoneEthOrderbookPromise,
+    //   korbitOrderbookPromise, coinoneOrderbookPromise,
     //   korbitBalancePromise, coinoneBalancePromise)
     console.log(e)
     throw new Error("[tick.js] Fail to fetch. Let me try again.")
@@ -61,13 +69,13 @@ module.exports = async function(){
   const korbit = {
         name: "KORBIT",
         info: korbitInfo,
-        orderbook: korbitEthOrderbook,
+        orderbook: korbitOrderbook,
         balance: korbitBalance
       }
   const coinone = {
         name: "COINONE",
         info: coinoneInfo,
-        orderbook: coinoneEthOrderbook,
+        orderbook: coinoneOrderbook,
         balance: coinoneBalance
       }
   global.rabbit.coinone = coinone
@@ -90,7 +98,7 @@ module.exports = async function(){
 
   /////// TIME TO MIND ////////
   let results = []
-  if (fetchingTime > 3.0) {
+  if (fetchingTime > 5.2) {
     console.log("Fetched too late. Don't buy when the market is busy. pass this tic. fetchingTime:", fetchingTime)
     return
   }
@@ -111,10 +119,6 @@ module.exports = async function(){
     console.log("-- No arbitrages so mind machines --")
     if (isInclined(coinoneRecentCompleteOrders)){
       console.log("Wait.. It looks like inclined")
-      return
-    }
-    if (fetchingTime > 2.0 ){
-      console.log("Fetched too late. Don't buy when the market is busy. pass this tic. fetchingTime:", fetchingTime)
       return
     }
 
@@ -163,7 +167,7 @@ module.exports = async function(){
   //   await o
 
   // Summary
-  global.rabbit.machines.presentation(coinoneEthOrderbook)
+  global.rabbit.machines.presentation(coinoneOrderbook)
   // await global.rabbit.arbitrages.presentation()
 }
 

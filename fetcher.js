@@ -114,14 +114,15 @@ exports.getKorbitInfo = function(){
       })
   })
 }
-exports.getKorbitEthOrderbook = function() {
+exports.getKorbitOrderbook = function(coinType) {
+  // console.log("korbit with", (coinType=="ETH")?"eth_krw":"btc_krw")
   return new Promise((resolve, reject) => {
     // this is public api
     request({
             method: "GET",
             uri: "https://api.korbit.co.kr/v1/orderbook",
             qs: {
-                currency_pair: 'eth_krw'
+              currency_pair: coinType.toLowerCase() + "_krw"
             }
         },
         function(error, response, body) {
@@ -227,13 +228,14 @@ exports.getCoinoneInfo = function(){
       })
   })
 }
-exports.getCoinoneEthOrderbook = function() {
+exports.getCoinoneOrderbook = function(coinType) {
+  // console.log("coinone with", (coinType == "ETH") ? "eth" : "btc")
   return new Promise((resolve, reject) => {
     request({
             method: "GET",
             uri: "https://api.coinone.co.kr/orderbook/",
             qs: {
-                currency: 'eth'
+              currency: coinType.toLowerCase()
             }
         },
         function(error, response, body) {

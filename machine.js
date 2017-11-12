@@ -125,13 +125,13 @@ exports.Machine = Backbone.Model.extend({
           })
 
           // FOR BIGGIE PROFIT: now summary is 0.70 //
-          // db.machines.updateMany({craving_percentage: 10, status:"KRW"}, {$set:{capacity: 0.08}})
+          // db.machines.updateMany({craving_percentage: 4, status:"KRW"}, {$set:{capacity: 0.07}})
           // db.machines.findOne({craving_krw: 6000, status:"KRW", capacity: {$ne: 0.01}})
           // sum: 0.59 eth
           if (this.get("craving_percentage") == 2)
             changed.capacity = 0.01
           else if (this.get("craving_percentage") == 4)
-            changed.capacity = 0.01
+            changed.capacity = 0.07
           else if (this.get("craving_percentage") == 6)
             changed.capacity = 0.01
           else if (this.get("craving_percentage") == 8)
@@ -141,7 +141,7 @@ exports.Machine = Backbone.Model.extend({
           else if (this.get("craving_percentage") == 12)
             changed.capacity = 0.21
           else if (this.get("craving_percentage") == 14)
-            changed.capacity = 0.15
+            changed.capacity = 0.09
           else if (this.get("craving_percentage") == 16)
             changed.capacity = 0.08
           else if (this.get("craving_percentage") == 18)

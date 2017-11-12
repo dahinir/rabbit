@@ -32,7 +32,7 @@ global.rabbit.BORN = new Date('July 4, 2017 13:20:00')
 global.rabbit.STARTED = new Date('September 22, 2017 11:00:00') 
 global.rabbit.ARBITRAGE_STARTED = new Date('July 26, 2017 13:20:00')
 global.rabbit.PREVIOUS_PROFIT_SUM = 49752085 // 47089762 // 37401629
-global.rabbit.INVESTED_KRW = 165000000
+global.rabbit.INVESTED_KRW = 160000000
 global.rabbit.bought_coin = 0
 
 
@@ -112,7 +112,7 @@ global.rabbit.machines.fetchAll({
                 }
               })
 
-              // Rollback machine that is PENDING but not belongs to any order
+              // Rollback machine that is PENDING but does not belongs to any order
               async function rollbackMachines() {
                 const realPendingMachineIds = global.rabbit.orders.models.reduce((acc, o) => {
                   // console.log(acc, o)
@@ -135,7 +135,7 @@ global.rabbit.machines.fetchAll({
               }
               rollbackMachines().then(mIds => {
                 if (mIds.length > 0){
-                  console.log("machine was pended but don't have order. check it out", mIds.length, mIds)
+                  console.log("There're machines that was pended but doesn't have an order. Check it out", mIds.length, mIds)
                   return
                 }else{
                   // Run rabbit. Don't look back.
@@ -160,6 +160,7 @@ async function run() {
 
     // HERE BABE HERE IT IS
     await require("./tick.js")()
+    console.log("A tick has been completed.")
 
   } catch (e) {
     console.log("[index.js] Tick've got error!")

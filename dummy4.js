@@ -14,6 +14,22 @@ const xcoinAPI = require('./bithumb_modified.js'),
     moment = require('moment'),
     brain = require('brain.js')
 
+
+fetcher.getKorbitOrderbook("ETH").then(r => {
+    console.log(r)
+})
+
+
+// const coinRevolver = function () {
+//     const chamber = ["ETH", "BTC"]
+//     console.log(0%chamber.length)
+//     console.log(1 % chamber.length)
+//     console.log(2 % chamber.length)
+//     console.log(3 % chamber.length)
+//     return chamber[0]
+// }
+// console.log(coinRevolver().toLowerCase()+"_krw")
+
 // console.log((new Date()).toLocaleString())
 // let aa = [0,0,0,0,0]
 // aa.forEach(m => {
@@ -21,10 +37,12 @@ const xcoinAPI = require('./bithumb_modified.js'),
 //     aa[pIndex] += 1
 // })
 // console.log(aa)
-if (true && (false | false)) 
-    console.log(Date.now())
-else
-    console.log("aa")
+
+// if (true && (false | false)) 
+//     console.log(Date.now())
+// else
+//     console.log("aa")
+
 // const machines = new Machines()
 // machines.fetchAll({
 //     data: {
