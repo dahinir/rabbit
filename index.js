@@ -192,27 +192,7 @@ async function run() {
       count: count
     })
     
-    // PRESENTATION
-    if (coinType == runningCoinType[runningCoinType.length - 1]){
-      console.log("PRESENTATION TIME")
-      const days = ((new Date() - global.rabbit.BORN) / 86400000),
-        korbitBalance = global.rabbit.korbit.balance,
-        coinoneBalance = global.rabbit.coinone.balance,
-        korbit = global.rabbit.korbit,
-        coinone = global.rabbit.coinone
-      let profitSum = 0,
-        balanceSum = korbitBalance.KRW.balance + coinoneBalance.KRW.balance
-      
-      for (const ct of runningCoinType){
-        balanceSum += korbitBalance[ct].balance * korbit[ct].orderbook.bid[0].price
-         + coinoneBalance[ct].balance * coinone[ct].orderbook.bid[0].price
-        profitSum += global.rabbit.constants[ct].profit_krw_sum || 0
-      }
 
-      console.log("Invested krw: \u20A9", new Intl.NumberFormat().format(global.rabbit.INVESTED_KRW))
-      console.log("IN CASH: \u20A9", new Intl.NumberFormat().format(korbitBalance.KRW.balance + coinoneBalance.KRW.balance))
-      console.log("BALANCE: \u20A9", new Intl.NumberFormat().format(balanceSum.toFixed(0)), " ..so Rabbit maid \u20A9", new Intl.NumberFormat().format((profitSum/days).toFixed(0)), "per day")
-    }
 
   } catch (e) {
     console.log("[index.js] Tick've got error!")
@@ -230,6 +210,32 @@ async function run() {
     }else{
       const BREAK_TIME = MIN_TERM - (new Date() - startTime)
       console.log("-- takes", (new Date() -startTime)/1000,"sec, so", BREAK_TIME,"ms later --------------------\n\n")
+
+
+      // PRESENTATION
+      if (coinType == runningCoinType[runningCoinType.length - 1]) {
+        console.log("--PRESENTATION TIME--")
+        const days = ((new Date() - global.rabbit.BORN) / 86400000),
+          korbitBalance = global.rabbit.korbit.balance,
+          coinoneBalance = global.rabbit.coinone.balance,
+          korbit = global.rabbit.korbit,
+          coinone = global.rabbit.coinone
+        let profitSum = 0,
+          balanceSum = korbitBalance.KRW.balance + coinoneBalance.KRW.balance
+
+        for (const ct of runningCoinType) {
+          balanceSum += korbitBalance[ct].balance * korbit[ct].orderbook.bid[0].price
+            + coinoneBalance[ct].balance * coinone[ct].orderbook.bid[0].price
+          profitSum += global.rabbit.constants[ct].profit_krw_sum || 0
+        }
+
+        console.log("Invested krw: \u20A9", new Intl.NumberFormat().format(global.rabbit.INVESTED_KRW))
+        console.log("IN CASH: \u20A9", new Intl.NumberFormat().format(korbitBalance.KRW.balance + coinoneBalance.KRW.balance))
+        console.log("SUMMARY: \u20A9", new Intl.NumberFormat().format(balanceSum.toFixed(0)), " ..so Rabbit maid \u20A9", new Intl.NumberFormat().format((profitSum / days).toFixed(0)), "per day")
+        console.log("\n")
+      }
+
+
       // One more time
       setTimeout(run, BREAK_TIME)
     }
