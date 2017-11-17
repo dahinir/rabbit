@@ -23,7 +23,7 @@ async function go(ed) {
           type: "BID",
           qty: 0.001,
           coinType: "BTC",
-          price: 55000
+          price: 55050
         })
 
     } catch (e) {

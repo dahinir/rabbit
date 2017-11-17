@@ -39,8 +39,9 @@ exports.Machine = Backbone.Model.extend({
       let mind = {} //  will be new mind of this machine
 
       if (this.get("status") == "KRW") {
-        const AU = global.rabbit.constants[this.get("coinType")].ADDITIONAL_UNIT || 0
+        const AU = global.rabbit.constants[this.get("coinType")].ADDITIONAL_BUY_AT || 0
         if (options.minAskPrice == this.get("buy_at") || options.minAskPrice == this.get("buy_at") - AU)
+        // if (options.minAskPrice >= this.get("buy_at") - AU && options.minAskPrice <= this.get("buy_at"))
           mind = {
             type: "BID",
             price: options.minAskPrice,

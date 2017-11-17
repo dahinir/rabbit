@@ -60,7 +60,7 @@ function save(i) {
   } finally {
   }
 }
-save(0);
+// save(0);
 
 
 console.log("\nadded machines:", machine_count, settings.length);

@@ -31,7 +31,7 @@ global.rabbit.constants = {
   BTC: {
     PRECISION: 3,  // Actually It's 4. but I decided to use only 3 places after the decimal
     MIN_UNIT: 500,  // Minimum unit of KRW
-    ADDITIONAL_UNIT: 500, // using within mind()
+    ADDITIONAL_BUY_AT: 500, // using within mind()
     PREVIOUS_PROFIT_SUM: 0,
     BORN: new Date('November 17, 2017 14:45:00'), // 1 btc == 8,740,500 krw
     STARTED: new Date('November 17, 2017 14:45:00') 
@@ -39,7 +39,7 @@ global.rabbit.constants = {
   BCH: {
     PRECISION: 2,
     MIN_UNIT: 500,  // Minimum unit of KRW
-    ADDITIONAL_UNIT: 500, // using within mind()
+    ADDITIONAL_BUY_AT: 500, // using within mind(), Set as 900 for full sampling at Coinone
     PREVIOUS_PROFIT_SUM: 0,
     BORN: new Date('November 17, 2017 16:45:00'), // 1 bch == 1,291,000 krw
     STARTED: new Date('November 17, 2017 16:45:00')
@@ -47,10 +47,10 @@ global.rabbit.constants = {
   ETH: {
     PRECISION: 2,
     MIN_UNIT: 50,
-    ADDITIONAL_UNIT: 50,
+    ADDITIONAL_BUY_AT: 50,
     PREVIOUS_PROFIT_SUM: 49752085,
-    BORN: new Date('July 4, 2017 13:20:00'),
-    STARTED: new Date('September 22, 2017 11:00:00'),
+    BORN: new Date('July 4, 2017 13:20:00'),  // 1 eth == 337,500 krw
+    STARTED: new Date('September 22, 2017 11:00:00'), // 1 eth == 300,000 krw
     ARBITRAGE_STARTED: new Date('July 26, 2017 13:20:00')
   }
 }
