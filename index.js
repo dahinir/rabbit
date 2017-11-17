@@ -183,17 +183,15 @@ async function run() {
   const coinType = runningCoinType[count % runningCoinType.length]
   
   try {
-    // Korbit is an idiot
+    // Korbit is an idiot //
     await require("./korbit.js")({type: "REFRESH_TOKEN"})
 
-    // HERE BABE HERE IT IS
+    // HERE BABE HERE IT IS //
     await require("./tick.js")({
       coinType: coinType,
       count: count
     })
     
-
-
   } catch (e) {
     console.log("[index.js] Tick've got error!")
     // e.message ? console.log(e.message): console.log(e)
@@ -211,8 +209,7 @@ async function run() {
       const BREAK_TIME = MIN_TERM - (new Date() - startTime)
       console.log("-- takes", (new Date() -startTime)/1000,"sec, so", BREAK_TIME,"ms later --------------------\n\n")
 
-
-      // PRESENTATION
+      // PRESENTATION //
       if (coinType == runningCoinType[runningCoinType.length - 1]) {
         console.log("--PRESENTATION TIME--")
         const days = ((new Date() - global.rabbit.BORN) / 86400000),
@@ -229,14 +226,14 @@ async function run() {
           profitSum += global.rabbit.constants[ct].profit_krw_sum || 0
         }
 
-        console.log("Invested krw: \u20A9", new Intl.NumberFormat().format(global.rabbit.INVESTED_KRW))
+        console.log("Invested: \u20A9", new Intl.NumberFormat().format(global.rabbit.INVESTED_KRW))
         console.log("IN CASH: \u20A9", new Intl.NumberFormat().format(korbitBalance.KRW.balance + coinoneBalance.KRW.balance))
-        console.log("SUMMARY: \u20A9", new Intl.NumberFormat().format(balanceSum.toFixed(0)), " ..so Rabbit maid \u20A9", new Intl.NumberFormat().format((profitSum / days).toFixed(0)), "per day")
+        console.log("SUMMARY: \u20A9", new Intl.NumberFormat().format(balanceSum.toFixed(0)), 
+          "\tRabbit maid \u20A9", new Intl.NumberFormat().format((profitSum).toFixed(0)), "..so \u20A9", new Intl.NumberFormat().format((profitSum / days).toFixed(0)), "per day")
         console.log("\n")
       }
 
-
-      // One more time
+      // One more time //
       setTimeout(run, BREAK_TIME)
     }
   }
