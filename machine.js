@@ -316,6 +316,8 @@ exports.Machines = Backbone.Collection.extend({
 
       console.log("[profit rate]  ", JSON.stringify(profit_rate_each_craving))
       console.log("[traded count] ", JSON.stringify(traded_count_each_craving))
+
+      global.rabbit.constants[coinType].profit_krw_sum = PREVIOUS_PROFIT_SUM + profit_krw_sum
     },
     fetchAll: function(options) {
       options = options || {};

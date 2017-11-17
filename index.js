@@ -171,19 +171,49 @@ global.rabbit.machines.fetchAll({
   }
 })
 
-const MIN_TERM = 10000,  // ms ..minimum I think 2700~2900 ms
-  ERROR_BUFFER = 60000  // A minute
-async function run() {
-  const startTime = new Date()
 
+const runningCoinType = ["ETH", "BTC", "BCH"],  // It's gonna be tick order.
+  MIN_TERM = 10000,  // ms ..minimum I think 2700~2900 ms
+  ERROR_BUFFER = 60000  // A minute
+let count = -1
+
+async function run() {
+  count++
+  const startTime = new Date()
+  const coinType = runningCoinType[count % runningCoinType.length]
+  
   try {
     // Korbit is an idiot
     await require("./korbit.js")({type: "REFRESH_TOKEN"})
 
     // HERE BABE HERE IT IS
-    await require("./tick.js")()
-    console.log("A tick has been completed.")
+    await require("./tick.js")({
+      coinType: coinType,
+      count: count
+    })
     
+    // PRESENTATION
+    if (coinType == runningCoinType[runningCoinType.length - 1]){
+      console.log("PRESENTATION TIME")
+      const days = ((new Date() - global.rabbit.BORN) / 86400000),
+        korbitBalance = global.rabbit.korbit.balance,
+        coinoneBalance = global.rabbit.coinone.balance,
+        korbit = global.rabbit.korbit,
+        coinone = global.rabbit.coinone
+      let profitSum = 0,
+        balanceSum = korbitBalance.KRW.balance + coinoneBalance.KRW.balance
+      
+      for (const ct of runningCoinType){
+        balanceSum += korbitBalance[ct].balance * korbit[ct].orderbook.bid[0].price
+         + coinoneBalance[ct].balance * coinone[ct].orderbook.bid[0].price
+        profitSum += global.rabbit.constants[ct].profit_krw_sum || 0
+      }
+
+      console.log("Invested krw: \u20A9", new Intl.NumberFormat().format(global.rabbit.INVESTED_KRW))
+      console.log("IN CASH: \u20A9", new Intl.NumberFormat().format(korbitBalance.KRW.balance + coinoneBalance.KRW.balance))
+      console.log("BALANCE: \u20A9", new Intl.NumberFormat().format(balanceSum.toFixed(0)), " ..so Rabbit maid \u20A9", new Intl.NumberFormat().format((profitSum/days).toFixed(0)), "per day")
+    }
+
   } catch (e) {
     console.log("[index.js] Tick've got error!")
     // e.message ? console.log(e.message): console.log(e)
@@ -199,7 +229,7 @@ async function run() {
       return
     }else{
       const BREAK_TIME = MIN_TERM - (new Date() - startTime)
-      console.log("-- takes", (new Date() -startTime)/1000,"sec, so", BREAK_TIME,"ms later --------------------\n")
+      console.log("-- takes", (new Date() -startTime)/1000,"sec, so", BREAK_TIME,"ms later --------------------\n\n")
       // One more time
       setTimeout(run, BREAK_TIME)
     }

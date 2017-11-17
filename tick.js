@@ -52,23 +52,16 @@ function getOrders(coinType){
   return ordersChamber[coinType]
 }
 
-function getCoinType() {
-  const chamber = ["ETH", "BTC", "BCH"]  // It's tick order. I can choose type of coin and it's order
-  // const chamber = ["ETH"]
-  return chamber[count % chamber.length]
-}
 
-let count = -1
-
-module.exports = async function(){
-  count++
+module.exports = async function(options){
   const startTime = new Date()
-  const coinType = getCoinType()
+  const count = options.count
+  const coinType = options.coinType
  
   const machines = getMachines(coinType)
   const orders = getOrders(coinType)
 
-  console.log("\n-- ", coinType, "Tick no.", count, "with", machines.length, "machines. ",
+  console.log("-- ", coinType, "Tick no.", count, "with", machines.length, "machines. ",
     startTime.toLocaleString(), "It's been", ((new Date() - global.rabbit.constants[coinType].STARTED)/ 86400000).toFixed(1),
     "days. ", ((new Date() - global.rabbit.BORN) / 86400000).toFixed(1), "days old")
 
@@ -138,13 +131,11 @@ module.exports = async function(){
   }
 
   
-  console.log("--In 24hrs at Coinone:", coinoneInfo.low, "~", coinoneInfo.high, ":", coinoneInfo.last,"(",
+  console.log("--In 24hrs at Coinone", coinType, ":", coinoneInfo.low, "~", coinoneInfo.high, ":", coinoneInfo.last,"(",
     ((coinoneInfo.last - coinoneInfo.low) / (coinoneInfo.high - coinoneInfo.low)*100).toFixed(2),"% )----" )
   console.log("All fetchers've take", fetchingTime, "sec")
-  console.log("Invested krw:", new Intl.NumberFormat().format(global.rabbit.INVESTED_KRW))
-  console.log("KRW:", new Intl.NumberFormat().format(korbitBalance.KRW.balance + coinoneBalance.KRW.balance), "\tCoin:", (korbitBalance[coinType].balance + coinoneBalance[coinType].balance).toFixed(2) )
-  console.log("Balance:", new Intl.NumberFormat().format(korbitBalance.KRW.balance + korbitBalance[coinType].balance * korbitOrderbook.bid[0].price
-    + coinoneBalance.KRW.balance + coinoneBalance[coinType].balance * coinoneOrderbook.bid[0].price), "krw")
+  console.log("coin:", (korbitBalance[coinType].balance + coinoneBalance[coinType].balance).toFixed(2), coinType,
+    "== \u20A9", new Intl.NumberFormat().format(((korbitBalance[coinType].balance + coinoneBalance[coinType].balance) * coinoneOrderbook.bid[0].price).toFixed(0)))
   console.log("Coinone", coinType + ":", coinoneBalance[coinType].available.toFixed(2), "\tkrw:", new Intl.NumberFormat().format(coinoneBalance.KRW.available))
   console.log("Korbit", coinType + ":", korbitBalance[coinType].available.toFixed(2), "\tkrw:", new Intl.NumberFormat().format(korbitBalance.KRW.available))
   console.log("--(coinone", coinType + ")-----max bid:", coinoneOrderbook.bid[0], "min ask:", coinoneOrderbook.ask[0])
@@ -231,13 +222,18 @@ module.exports = async function(){
   // for (let o of placeOrderPromises)
   //   await o
 
-  // Summary
+
+
+  ////// Presentation ///////
   global.rabbit.machines.presentation({
     orderbook: coinoneOrderbook,
     coinType: coinType
   })
   // await global.rabbit.arbitrages.presentation()
-}
+} // End of module.exports
+
+
+
 
 // For error handling in a Promise.all like flow in async/await syntax
 function ignoreMoreRejectsFrom(...promises) {
