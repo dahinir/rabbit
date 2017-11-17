@@ -85,8 +85,8 @@ module.exports = function (options) {
 		return refreshToken()
 
   return new Promise((resolve, reject) => {
-    const headers = {"Authorization": "Bearer " + cookie.access_token},
-      currency_pair = (options.coinType == "ETH")?"eth_krw":"eth_krw"  // Only eth..
+    const headers = {"Authorization": "Bearer " + cookie.access_token}
+          // currency_pair = options.coinType.toLowerCase() + "_krw"
     let opts
 
 		if (options.type == "BID"){
@@ -97,11 +97,12 @@ module.exports = function (options) {
         form: {
           price: options.price,
   				coin_amount: options.qty,
-  				currency_pair: currency_pair,
+          currency_pair: options.coinType.toLowerCase() + "_krw",
           type: "limit",
           nonce: Date.now()
         }
       }
+      // console.log(opts)
 		}else if (options.type == "ASK"){
       opts = {
         method: "POST",
@@ -110,7 +111,7 @@ module.exports = function (options) {
         form: {
           price: options.price,
   				coin_amount: options.qty,
-  				currency_pair: currency_pair,
+          currency_pair: options.coinType.toLowerCase() + "_krw",
           type: "limit",
           nonce: Date.now()
         }
@@ -121,7 +122,7 @@ module.exports = function (options) {
       opts = {
         method: "GET",
         headers: headers,
-        url: ROOT_URL + "v1/user/orders/open?currency_pair=" + currency_pair +
+        url: ROOT_URL + "v1/user/orders/open?currency_pair=" + options.coinType.toLowerCase() + "_krw" +
           "&offset=" + offset + "&limit=" + limit
       }
 		}else if (options.type == "CANCEL_ORDER"){
@@ -130,7 +131,7 @@ module.exports = function (options) {
         headers: headers,
         url: ROOT_URL + "v1/user/orders/cancel",
         form: {
-          currency_pair: currency_pair,
+          currency_pair: options.coinType.toLowerCase() + "_krw",
           id: options.orderId,
           nonce: Date.now()
         }
@@ -145,7 +146,7 @@ module.exports = function (options) {
       opts = {
         method: "GET",
         headers: headers,
-        url: ROOT_URL + "v1/user/wallet?currency_pair=" + currency_pair
+        url: ROOT_URL + "v1/user/wallet?currency_pair=" + options.coinType.toLowerCase() + "_krw"
       }
     } else if (options.type == "ORDER_INFO") {
       console.log("[korbit.js] ORDER_INIFO didn't implemented")
@@ -170,13 +171,15 @@ module.exports = function (options) {
     // console.log("korbit called!")
     request(opts, function(error, response, body) {
       // console.log("korbit got answer")
-      // console.log(body)
+      // console.log(response)
 			let result
       try {
         result = JSON.parse(body)
       } catch (e) {
         console.log("[korbit.js] korbit's answer can't parse for JSON. maybe not a problem")
-        // console.log(body)
+        console.log(response.url)
+        console.log(response.form)
+        console.log(response.caseless)
         reject(e)
         return
       }

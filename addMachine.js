@@ -11,33 +11,27 @@ const Machine = require('./machine.js').Machine,
 // return;
 
 
-let setting = {
-    // "craving_krw": 2000,
-    // "cravingRatio": 0.5,
-    // "capacity": 0.001,
-    // "negativeHope": -10000,
-    // "positiveHope": 10000,
-    // "neverHope": -10000,
-    // "maxHope": 10000,
-    // "status": "KRW",
-    // "propensity": []
-};
+let setting = {};
 const settings = [];
 let machine_count = 0;
 
 setting = {
-  coinType: "ETH",
-  name: "SCATTERER",
-  capacity: 0.01,
-  buy_at: 0,
-  craving_krw: 0,
-  craving_percentage: 0
+    coinType: "BCH",
+    capacity: 0.01,
+    name: "SCATTERER",
+    buy_at: 0,
+    craving_krw: 0,
+    craving_percentage: 0
 }
 
-for (let buy_at = 200000; buy_at < 500000; buy_at += 100) {
+// for (let buy_at = 200000; buy_at < 500000; buy_at += 100) {  // ETH
+// for (let buy_at = 8000000; buy_at < 9000000; buy_at += 1000) {  // BTC
+for (let buy_at = 1000000; buy_at < 2000000; buy_at += 1000) {  // BCH
     setting.buy_at = buy_at;
 
-    for (let craving_percentage = 5; craving_percentage <= 50; craving_percentage += 5) {
+    // for (let craving_percentage = 2; craving_percentage <= 20; craving_percentage += 2) {    // ETH
+    // for (let craving_percentage = 3; craving_percentage <= 30; craving_percentage += 3) {    // BTC
+    for (let craving_percentage = 5; craving_percentage <= 50; craving_percentage += 5) {    // BCH
         setting.craving_percentage = craving_percentage;
         setting.craving_krw = Math.round(setting.buy_at * setting.craving_percentage / 100)
         settings.push(_.extend({}, setting));
@@ -66,8 +60,8 @@ function save(i) {
   } finally {
   }
 }
-// save(0);
+save(0);
 
 
 console.log("\nadded machines:", machine_count, settings.length);
-console.log("Rabbit needs", machine_count * 3000, "won");
+// console.log("Rabbit needs", machine_count * 3000, "won");

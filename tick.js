@@ -3,33 +3,73 @@
 const _ = require('underscore'),
  fetcher = require('./fetcher.js'),
  Machines = require("./machine").Machines,
- Arbitrages = require('./machine.js').Arbitrages,
- Orders = require('./order.js').Orders
+  Orders = require('./order.js').Orders,
+ Arbitrages = require('./machine.js').Arbitrages
 
-console.log("[tick.js] Loaded!")
+console.log("\n\n[tick.js] Loaded!")
 
-let count = -1
-const machines = new Machines(global.rabbit.machines.filter(m => {
-  if (m.get("buy_at") >= 300000 && m.get("buy_at") < 500000)
-    return true
-  else
-    return false
-}))
-const orders = global.rabbit.orders
+// const machines = new Machines(global.rabbit.machines.filter(m => {
+//   if (m.get("buy_at") >= 300000 && m.get("buy_at") < 500000)
+//     return true
+//   else
+//     return false
+// }))
+// const orders = global.rabbit.orders
 const arbitrages = global.rabbit.arbitrages
 
-const getCoinType = function () {
-  const chamber = ["ETH", "BTC"]
-  // return chamber[count % chamber.length]
-  return "ETH"
+const machinesChamber = {}
+function getMachines(coinType){
+  if (!machinesChamber[coinType]){
+    console.log("This is first tic of", coinType, "IF IT'S NOT, IT'S A PROBLEM. STOP THIS SHIT!")
+    machinesChamber[coinType] = new Machines(global.rabbit.machines.filter(m => {
+      if (coinType == "ETH"){
+        if (m.get("coinType") == coinType && m.get("buy_at") >= 300000 && m.get("buy_at") < 500000)
+          return true
+        else
+          return false
+      }else{
+        if (m.get("coinType") == coinType)
+          return true
+        else
+          return false
+      }
+    }))
+  }
+    // console.log("1",machinesChamber[coinType].models.length)
+    // console.log("2",machinesChamber[coinType].length)
+  // console.log("3", machinesChamber[coinType].at(0).attributes)
+    // console.log("4", [1,2,3,4,5].at(0))
+  // if (!machinesChamber[coinType])
+  //   machinesChamber[coinType] = new Machines(global.rabbit.machines.filter(m => (m.get("coinType") == coinType && m.get("buy_at") >= 300000 && m.get("buy_at") < 500000)))
+
+  return machinesChamber[coinType]
 }
 
-module.exports = async function(){
-  const startTime = new Date()
-  count++
+const ordersChamber = {}
+function getOrders(coinType){
+  if (!ordersChamber[coinType])
+    ordersChamber[coinType] = new Orders(global.rabbit.orders.filter(o => o.get("coinType") == coinType))
+  return ordersChamber[coinType]
+}
 
-  console.log("\n-- ", getCoinType(), "Tick no.", count, "with", machines.length, "machines. ",
-    startTime.toLocaleString(), "It's been", ((new Date() - global.rabbit.STARTED)/ 86400000).toFixed(1),
+function getCoinType() {
+  const chamber = ["ETH", "BTC", "BCH"]  // It's tick order. I can choose type of coin and it's order
+  // const chamber = ["ETH"]
+  return chamber[count % chamber.length]
+}
+
+let count = -1
+
+module.exports = async function(){
+  count++
+  const startTime = new Date()
+  const coinType = getCoinType()
+ 
+  const machines = getMachines(coinType)
+  const orders = getOrders(coinType)
+
+  console.log("\n-- ", coinType, "Tick no.", count, "with", machines.length, "machines. ",
+    startTime.toLocaleString(), "It's been", ((new Date() - global.rabbit.constants[coinType].STARTED)/ 86400000).toFixed(1),
     "days. ", ((new Date() - global.rabbit.BORN) / 86400000).toFixed(1), "days old")
 
   // Check previous orders out
@@ -42,13 +82,13 @@ module.exports = async function(){
   let korbitInfo, korbitOrderbook, korbitBalance
   try {
     // Act like Promise.all() 
-    const coinoneInfoPromise = fetcher.getCoinoneInfo(),
-      coinoneOrderbookPromise = fetcher.getCoinoneOrderbook(getCoinType()),
-      coinoneBalancePromise = fetcher.getCoinoneBalance(),
-      coinoneRecentCompleteOrdersPromise = fetcher.getCoinoneRecentCompleteOrders()
-    const korbitOrderbookPromise = fetcher.getKorbitOrderbook(getCoinType()),
-      korbitBalancePromise = fetcher.getKorbitBalance(),
-      korbitInfoPromise = fetcher.getKorbitInfo()
+    const coinoneBalancePromise = fetcher.getCoinoneBalance(),
+      coinoneInfoPromise = fetcher.getCoinoneInfo(coinType),
+      coinoneOrderbookPromise = fetcher.getCoinoneOrderbook(coinType),
+      coinoneRecentCompleteOrdersPromise = fetcher.getCoinoneRecentCompleteOrders(coinType)
+    const korbitBalancePromise = fetcher.getKorbitBalance(),
+      korbitOrderbookPromise = fetcher.getKorbitOrderbook(coinType),
+      korbitInfoPromise = fetcher.getKorbitInfo(coinType)
 
     coinoneInfo = await coinoneInfoPromise
     coinoneOrderbook = await coinoneOrderbookPromise
@@ -78,22 +118,38 @@ module.exports = async function(){
         orderbook: coinoneOrderbook,
         balance: coinoneBalance
       }
-  global.rabbit.coinone = coinone
-  global.rabbit.korbit = korbit
+      
+  // Some data needs to go global
+  // global.rabbit.coinone = coinone
+  // global.rabbit.korbit = korbit
+  global.rabbit.coinone = global.rabbit.coinone || {}
+  global.rabbit.coinone.balance = coinoneBalance
+  global.rabbit.coinone[coinType] = {
+    name: "COINONE",
+    info: coinoneInfo,
+    orderbook: coinoneOrderbook
+  }
+  global.rabbit.korbit = global.rabbit.korbit || {}
+  global.rabbit.korbit.balance = korbitBalance
+  global.rabbit.korbit[coinType] = {
+    name: "KORBIT",
+    info: korbitInfo,
+    orderbook: korbitOrderbook
+  }
+
   
-  console.log("--In 24hrs at Coinone:", coinone.info.low, "~", coinone.info.high, ":",coinone.info.last,"(",
-      ((coinone.info.last- coinone.info.low)/(coinone.info.high- coinone.info.low)*100).toFixed(2),"% )----" )
+  console.log("--In 24hrs at Coinone:", coinoneInfo.low, "~", coinoneInfo.high, ":", coinoneInfo.last,"(",
+    ((coinoneInfo.last - coinoneInfo.low) / (coinoneInfo.high - coinoneInfo.low)*100).toFixed(2),"% )----" )
   console.log("All fetchers've take", fetchingTime, "sec")
   console.log("Invested krw:", new Intl.NumberFormat().format(global.rabbit.INVESTED_KRW))
-  console.log("KRW:", new Intl.NumberFormat().format(korbit.balance.krw.balance + coinone.balance.krw.balance), "\tCoin:", (korbit.balance.eth.balance + coinone.balance.eth.balance).toFixed(2) )
-  console.log("Balance:", new Intl.NumberFormat().format(korbit.balance.krw.balance + korbit.balance.eth.balance * korbit.orderbook.bid[0].price
-    + coinone.balance.krw.balance + coinone.balance.eth.balance * coinone.orderbook.bid[0].price), "krw")
-  console.log("Coinone eth:", coinone.balance.eth.available.toFixed(2), "\tkrw:", new Intl.NumberFormat().format(coinone.balance.krw.available))
-  console.log("Korbit  eth:", korbit.balance.eth.available.toFixed(2), "\tkrw:", new Intl.NumberFormat().format(korbit.balance.krw.available))
-  console.log("--(coinone eth)-----max bid:", coinone.orderbook.bid[0], "min ask:", coinone.orderbook.ask[0])
-  console.log("--(korbit eth)------max bid:", korbit.orderbook.bid[0], "min ask:", korbit.orderbook.ask[0])
-  console.log("coinone eth volume:", coinone.info.volume, "korbit eth volume:", korbit.info.volume)
-
+  console.log("KRW:", new Intl.NumberFormat().format(korbitBalance.KRW.balance + coinoneBalance.KRW.balance), "\tCoin:", (korbitBalance[coinType].balance + coinoneBalance[coinType].balance).toFixed(2) )
+  console.log("Balance:", new Intl.NumberFormat().format(korbitBalance.KRW.balance + korbitBalance[coinType].balance * korbitOrderbook.bid[0].price
+    + coinoneBalance.KRW.balance + coinoneBalance[coinType].balance * coinoneOrderbook.bid[0].price), "krw")
+  console.log("Coinone", coinType + ":", coinoneBalance[coinType].available.toFixed(2), "\tkrw:", new Intl.NumberFormat().format(coinoneBalance.KRW.available))
+  console.log("Korbit", coinType + ":", korbitBalance[coinType].available.toFixed(2), "\tkrw:", new Intl.NumberFormat().format(korbitBalance.KRW.available))
+  console.log("--(coinone", coinType + ")-----max bid:", coinoneOrderbook.bid[0], "min ask:", coinoneOrderbook.ask[0])
+  console.log("--(korbit", coinType + ")------max bid:", korbitOrderbook.bid[0], "min ask:", korbitOrderbook.ask[0])
+  console.log("Coinone", coinType, "volume:", coinoneInfo.volume, " Korbit", coinType, "volume:", korbitInfo.volume)
 
 
   /////// TIME TO MIND ////////
@@ -102,16 +158,19 @@ module.exports = async function(){
     console.log("Fetched too late. Don't buy when the market is busy. pass this tic. fetchingTime:", fetchingTime)
     return
   }
-  results = arbitrages.mind({
-    korbit: korbit,
-    coinone: coinone
-  })  // It's Array
-  if (results.length == 2 ){
-    results[0].tt = "ARBIT"
-    results[1].tt = "ARBIT"
+
+  // Arbitrages
+  if (coinType == "ETH"){
+    results = arbitrages.mind({
+      korbit: korbit,
+      coinone: coinone
+    })  // It's Array
+    if (results.length == 2 ){
+      results[0].tt = "ARBIT"
+      results[1].tt = "ARBIT"
+    }
   }
   // results = []
-
 
   if (results.length != 2){
   // isInclined(coinoneRecentCompleteOrders)
@@ -124,20 +183,25 @@ module.exports = async function(){
 
     let altKorbit = korbit,
       altCoinone = coinone
-    if (coinone.balance.krw.available < 600000){
+    const MINS = {
+      "ETH": 2.0,
+      "BTC": 0.1,
+      "BCH": 0.5
+    }
+    if (coinone.balance.KRW.available < 600000){
       console.log("[tick.js] not enough krw at coinone.")
       altCoinone = (korbit.orderbook.bid[0].price < coinone.orderbook.bid[0].price) ? coinone : korbit
     }
-    if (coinone.balance.eth.available < 2.0){
-      console.log("[tick.js] not enough eth at coinone.")
-      altCoinone = (korbit.orderbook.ask[0].price > coinone.orderbook.ask[0].price) ? coinone : korbit
-    }
-    if (korbit.balance.krw.available < 600000){
+    if (korbit.balance.KRW.available < 600000){
       console.log("[tick.js] not enough krw at korbit.")
       altKorbit = (coinone.orderbook.bid[0].price < korbit.orderbook.bid[0].price) ? korbit : coinone
     }
-    if (korbit.balance.eth.available < 2.0){
-      console.log("[tick.js] not enough eth at korbit.")
+    if (coinone.balance[coinType].available < MINS[coinType]){
+      console.log("[tick.js] not enough",coinType ,"at coinone.")
+      altCoinone = (korbit.orderbook.ask[0].price > coinone.orderbook.ask[0].price) ? coinone : korbit
+    }
+    if (korbit.balance[coinType].available < MINS[coinType]){
+      console.log("[tick.js] not enough",coinType ,"at korbit.")
       altKorbit = (coinone.orderbook.ask[0].price > korbit.orderbook.ask[0].price) ? korbit : coinone
     }
     console.log("altCoinone:", altCoinone.name, "\taltKorbit:", altKorbit.name)
@@ -159,15 +223,19 @@ module.exports = async function(){
 
 
   ///////  TIME TO ORDER //////
-  for (let r of results)
-    await orders.placeOrder(r)
+  if (coinType == "ETH" || coinType == "BTC" || coinType == "BCH")
+    for (let r of results)
+      await orders.placeOrder(r)
   // idk why.. but Below code cause error..  set order on machine 
   // const placeOrderPromises = results.map(result => orders.placeOrder(result))
   // for (let o of placeOrderPromises)
   //   await o
 
   // Summary
-  global.rabbit.machines.presentation(coinoneOrderbook)
+  global.rabbit.machines.presentation({
+    orderbook: coinoneOrderbook,
+    coinType: coinType
+  })
   // await global.rabbit.arbitrages.presentation()
 }
 

@@ -26,14 +26,36 @@ global.rabbit = {
     orders: new Orders()
 }
 
-// global.rabbit.STARTED = new Date('September 2, 2017 16:00:00')
-// global.rabbit.STARTED = new Date('September 16, 2017 13:00:00') 
+// How many places after the decimal separator
+global.rabbit.constants = {
+  BTC: {
+    PRECISION: 3,  // Actually It's 4. but I decided to use only 3 places after the decimal
+    MIN_UNIT: 500,  // Minimum unit of KRW
+    ADDITIONAL_UNIT: 500, // using within mind()
+    PREVIOUS_PROFIT_SUM: 0,
+    BORN: new Date('November 17, 2017 14:45:00'), // 1 btc == 8,740,500 krw
+    STARTED: new Date('November 17, 2017 14:45:00') 
+  },
+  BCH: {
+    PRECISION: 2,
+    MIN_UNIT: 500,  // Minimum unit of KRW
+    ADDITIONAL_UNIT: 500, // using within mind()
+    PREVIOUS_PROFIT_SUM: 0,
+    BORN: new Date('November 17, 2017 16:45:00'), // 1 bch == 1,291,000 krw
+    STARTED: new Date('November 17, 2017 16:45:00')
+  },
+  ETH: {
+    PRECISION: 2,
+    MIN_UNIT: 50,
+    ADDITIONAL_UNIT: 50,
+    PREVIOUS_PROFIT_SUM: 49752085,
+    BORN: new Date('July 4, 2017 13:20:00'),
+    STARTED: new Date('September 22, 2017 11:00:00'),
+    ARBITRAGE_STARTED: new Date('July 26, 2017 13:20:00')
+  }
+}
+global.rabbit.INVESTED_KRW = 150000000
 global.rabbit.BORN = new Date('July 4, 2017 13:20:00')
-global.rabbit.STARTED = new Date('September 22, 2017 11:00:00') 
-global.rabbit.ARBITRAGE_STARTED = new Date('July 26, 2017 13:20:00')
-global.rabbit.PREVIOUS_PROFIT_SUM = 49752085 // 47089762 // 37401629
-global.rabbit.INVESTED_KRW = 160000000
-global.rabbit.bought_coin = 0
 
 
 // Fetch all machines and orders from db
@@ -57,7 +79,7 @@ global.rabbit.machines.fetchAll({
               console.log("[index.js] ", global.rabbit.orders.length, "OPEN orders are loaded.");
               console.log("===start======================")
 
-              if (global.rabbit.machines.length != 30000)
+              if (global.rabbit.machines.length != 50000)
                 throw new Error("How many machines do you have?")
 
               // Attach machines as participants
@@ -149,7 +171,7 @@ global.rabbit.machines.fetchAll({
   }
 })
 
-const MIN_TERM = 15000,  // ms ..minimum I think 2700~2900 ms
+const MIN_TERM = 10000,  // ms ..minimum I think 2700~2900 ms
   ERROR_BUFFER = 60000  // A minute
 async function run() {
   const startTime = new Date()
@@ -161,7 +183,7 @@ async function run() {
     // HERE BABE HERE IT IS
     await require("./tick.js")()
     console.log("A tick has been completed.")
-
+    
   } catch (e) {
     console.log("[index.js] Tick've got error!")
     // e.message ? console.log(e.message): console.log(e)
@@ -169,9 +191,9 @@ async function run() {
 
     if (e && e.message == "KILL_ME")
       killSign = true
-    // killSign = true
   } finally {
 
+    // killSign = true
     if (killSign){
       console.log("Rabbit is stopped by killSign. Gracefully maybe.")
       return

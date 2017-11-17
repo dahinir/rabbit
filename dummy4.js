@@ -9,15 +9,62 @@ const xcoinAPI = require('./bithumb_modified.js'),
     Machines = require('./machine.js').Machines,
     Arbitrage = require('./machine.js').Arbitrage,
     Arbitrages = require('./machine.js').Arbitrages,
+    Backbone = require('backbone'),
     _ = require('underscore'),
     fs = require('fs'),
     moment = require('moment'),
     brain = require('brain.js')
 
 
-fetcher.getKorbitOrderbook("ETH").then(r => {
-    console.log(r)
-})
+async function go(ed) {
+    try {
+
+        marketResult = await korbitAPI({
+          type: "BID",
+          qty: 0.001,
+          coinType: "BTC",
+          price: 55000
+        })
+
+    } catch (e) {
+        // console.log("catch")
+        // console.log(e)
+        // if (e.errorCode == "104")
+        //   console.log("haah")
+        // if only coinone!
+        // if ( e.errorCode == "1015") // Cancel more than available. maybe..
+    }
+
+    // console.log("--")
+}
+go()
+// go().then(r => console.log("result:", r)).catch(e => console.log("catch",e))
+return
+
+for( let m of [1,2,4])
+    console.log(m)
+console.log(m)
+return
+
+
+const hey = {
+    ab: "ab"
+}
+
+console.log(hey)
+{
+var aa = "added"
+}
+// hey[aa]="dd"
+// hey.aa = "asdf"
+hey.aa = hey.aa || {}
+hey.aa[aa] = "what"
+console.log(hey)
+
+
+// fetcher.getKorbitBalance("ETH").then(r => {
+//     console.log(r)
+// })
 
 
 // const coinRevolver = function () {

@@ -88,13 +88,13 @@ exports.getRecentTransactions = function(){
 
 
 
-exports.getKorbitInfo = function(){
+exports.getKorbitInfo = function (coinType){
   return new Promise((resolve, reject) => {
     request({
         method: "GET",
         uri: "https://api.korbit.co.kr/v1/ticker/detailed",
         qs: {
-          currency_pair: "eth_krw"
+          currency_pair: coinType.toLowerCase() + "_krw"
         }
       },
       function(error, response, body) {
@@ -154,34 +154,44 @@ exports.getKorbitBalance = async function(){
   })
 
   return {
-    eth: {
+    BTC: {
+      available: result.btc.available * 1,
+      balance: result.btc.available * 1 + result.btc.trade_in_use * 1
+    },
+    BCH: {
+      available: result.bch.available * 1,
+      balance: result.bch.available * 1 + result.bch.trade_in_use * 1
+    },
+    ETH: {
       available: result.eth.available * 1,
       balance: result.eth.available * 1 + result.eth.trade_in_use * 1
     },
-    krw: {
+    ETC: {
+      available: result.etc.available * 1,
+      balance: result.etc.available * 1 + result.etc.trade_in_use * 1
+    },
+    XRP: {
+      available: result.xrp.available * 1,
+      balance: result.xrp.available * 1 + result.xrp.trade_in_use * 1
+    },
+    LTC: {
+      available: result.ltc.available * 1,
+      balance: result.ltc.available * 1 + result.ltc.trade_in_use * 1
+    },
+    KRW: {
       available: result.krw.available * 1,
       balance: result.krw.available * 1 + result.krw.trade_in_use * 1
     }
   }
-  // return {
-  //   eth: {
-  //     available: result.tradable.find(({currency}) => currency == "eth").value * 1,
-  //     balance: result.balance.find(({currency}) => currency == "eth").value * 1
-  //   },
-  //   krw: {
-  //     available: result.tradable.find(({currency}) => currency == "krw").value * 1,
-  //     balance: result.balance.find(({currency}) => currency == "krw").value * 1
-  //   }
-  // }
 }
 
-exports.getCoinoneRecentCompleteOrders = function () {
+exports.getCoinoneRecentCompleteOrders = function (coinType) {
   return new Promise((resolve, reject) => {
     request({
         method: "GET",
         uri: "https://api.coinone.co.kr/trades/",
         qs: {
-          currency: 'eth',
+          currency: coinType.toLowerCase(),
           period: 'hour'
         }
       },
@@ -202,13 +212,13 @@ exports.getCoinoneRecentCompleteOrders = function () {
       })
   })
 }
-exports.getCoinoneInfo = function(){
+exports.getCoinoneInfo = function (coinType){
   return new Promise((resolve, reject) => {
     request({
         method: "GET",
         uri: "https://api.coinone.co.kr/ticker/",
         qs: {
-          currency: 'eth'
+          currency: coinType.toLowerCase()
         }
       },
       function(error, response, body) {
@@ -265,11 +275,31 @@ exports.getCoinoneBalance = async function(){
     type: "BALANCE"
   })
   return {
-    eth: {
+    BTC: {
+      available: result.btc.avail * 1,
+      balance: result.btc.balance * 1
+    },
+    BCH: {
+      available: result.bch.avail * 1,
+      balance: result.bch.balance * 1
+    },
+    ETH: {
       available: result.eth.avail * 1,
       balance: result.eth.balance * 1
     },
-    krw: {
+    ETC: {
+      available: result.etc.avail * 1,
+      balance: result.etc.balance * 1
+    },
+    XRP: {
+      available: result.xrp.avail * 1,
+      balance: result.xrp.balance * 1
+    },
+    LTC: {
+      available: result.ltc.avail * 1,
+      balance: result.ltc.balance * 1
+    },
+    KRW: {
       available: result.krw.avail * 1,
       balance: result.krw.balance * 1
     }

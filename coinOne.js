@@ -92,6 +92,7 @@ module.exports = function (options) {
       }
 
       if (result.result == "success"){
+				// console.log(result)
         resolve(result)
       } else{
         console.log("[coinone.js] result is funny:", result)
