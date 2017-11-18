@@ -11,30 +11,17 @@ exports.Machine = Backbone.Model.extend({
     sync: backsync.mongodb(),
     idAttribute: "id", // cuz of Backsync
     defaults: {
-        // craving_krw: 2000, // 2,000 won!
-        capacity: 0.01, // min eth 0.01
-        // negativeHope: -5000,
-        // positiveHope: -3000,
-        // neverHope: -10000,
-        // maxHope: 0,
+        capacity: 0.0, // min eth 0.01
         status: "KRW", // "KRW" or "COIN" or "PENDING"
         coinType: "",  // "ETH" or "BTC"
-        // marketName: "",  // "COINONE" etcs..
-
-        // profit_btc: 0,
         profit_krw: 0,
         profit_rate: 0, //	profit_krw/capacity
         traded_count: 0,
         last_traded_price: 0
     },
     initialize: function(attributes, options) {
-      // if (attributes.orderId){
-      //   console.log("SOMETHING WRONG!!")
-      //   console.log(attributes)
-      //   throw new Error("a")
-      // }
       this.on("change:orderId", function(e){
-        console.log("fuck.. orderId is setting at machine..")
+        console.log("fuck.. orderId is setted at this machine instance..")
         console.log(e.attributes)
         throw new Error("KILL_ME")
       });
@@ -49,28 +36,26 @@ exports.Machine = Backbone.Model.extend({
       if (this.get("status") == "PENDING")
         return {type: "PENDING"}
 
-      options = options || {}
       let mind = {} //  will be new mind of this machine
 
-      switch (this.get("name")) {
-        case "SCATTERER": // These machines scatter every prices
-          if (this.get("status") == "KRW") {
-            if (options.minAskPrice == this.get("buy_at") || options.minAskPrice == this.get("buy_at") - 50)
-              mind = {
-                type: "BID",
-                price: options.minAskPrice
-              }
-          } else if (this.get("status") == "COIN") {
-            if (options.maxBidPrice >= this.get("craving_krw") + this.get("buy_at"))
-              mind = {
-                type: "ASK",
-                price: options.maxBidPrice
-              }
+      if (this.get("status") == "KRW") {
+        const AU = global.rabbit.constants[this.get("coinType")].ADDITIONAL_BUY_AT || 0
+        if (options.minAskPrice == this.get("buy_at") || options.minAskPrice == this.get("buy_at") - AU)
+        // if (options.minAskPrice >= this.get("buy_at") - AU && options.minAskPrice <= this.get("buy_at"))
+          mind = {
+            type: "BID",
+            price: options.minAskPrice,
+            at: new Date()
           }
-          break
+      } else if (this.get("status") == "COIN") {
+        if (options.maxBidPrice >= this.get("craving_krw") + this.get("buy_at"))
+          mind = {
+            type: "ASK",
+            price: options.maxBidPrice,
+            at: new Date()
+          }
       }
 
-      mind.at = new Date()
       this.set({
         mind: mind
       })
@@ -125,30 +110,34 @@ exports.Machine = Backbone.Model.extend({
           })
 
           // FOR BIGGIE PROFIT: now summary is 0.70 //
-          // db.machines.updateMany({craving_percentage: 10, status:"KRW"}, {$set:{capacity: 0.08}})
+          // db.machines.updateMany({coinType:"ETH", craving_percentage: 4, status:"KRW"}, {$set:{capacity: 0.18}})
           // db.machines.findOne({craving_krw: 6000, status:"KRW", capacity: {$ne: 0.01}})
-          // sum: 0.59 eth
-          if (this.get("craving_percentage") == 2)
-            changed.capacity = 0.01
-          else if (this.get("craving_percentage") == 4)
-            changed.capacity = 0.01
-          else if (this.get("craving_percentage") == 6)
-            changed.capacity = 0.01
-          else if (this.get("craving_percentage") == 8)
-            changed.capacity = 0.01
-          else if (this.get("craving_percentage") == 10)
-            changed.capacity = 0.04
-          else if (this.get("craving_percentage") == 12)
-            changed.capacity = 0.21
-          else if (this.get("craving_percentage") == 14)
-            changed.capacity = 0.15
-          else if (this.get("craving_percentage") == 16)
-            changed.capacity = 0.08
-          else if (this.get("craving_percentage") == 18)
-            changed.capacity = 0.05
-          else if (this.get("craving_percentage") == 20)
-            changed.capacity = 0.02
-
+          switch (this.get("coinType")) {
+            case "ETH":
+              // sum: 0.60 eth
+              if (this.get("craving_percentage") == 2)
+                changed.capacity = 0.01
+              else if (this.get("craving_percentage") == 4)
+                changed.capacity = 0.18
+              else if (this.get("craving_percentage") == 6)
+                changed.capacity = 0.02
+              else if (this.get("craving_percentage") == 8)
+                changed.capacity = 0.03
+              else if (this.get("craving_percentage") == 10)
+                changed.capacity = 0.04
+              else if (this.get("craving_percentage") == 12)
+                changed.capacity = 0.10
+              else if (this.get("craving_percentage") == 14)
+                changed.capacity = 0.09
+              else if (this.get("craving_percentage") == 16)
+                changed.capacity = 0.06
+              else if (this.get("craving_percentage") == 18)
+                changed.capacity = 0.05
+              else if (this.get("craving_percentage") == 20)
+                changed.capacity = 0.02
+              break
+          }
+          
           console.log("[machine.js] A machine", this.id, "accomplish with profit", thisProfit * this.get("capacity"), "krw. craving_percentage:", this.get("craving_percentage"))
         }else if (this.get("mind").type == "BID"){
           changed.status = "COIN"
@@ -265,10 +254,29 @@ exports.Machines = Backbone.Collection.extend({
     sync: backsync.mongodb(),
     model: exports.Machine,
     initialize: function(attributes, options) {
-      console.log("machines init")
+      console.log("Machines init")
     },
-    presentation: function(orderbook){
-      const maxBidPrice = orderbook.bid[0].price
+    presentation: function(options){
+      const maxBidPrice = options.orderbook.bid[0].price,
+        coinType = options.coinType,
+        PREVIOUS_PROFIT_SUM = global.rabbit.constants[coinType].PREVIOUS_PROFIT_SUM || 0,
+        BORN = global.rabbit.constants[coinType].BORN,
+        STARTED = global.rabbit.constants[coinType].STARTED
+
+      const sameCoinMachines = this.filter(m => m.get("coinType") == coinType)
+      // console.log("Is it Array?", _.isArray(sameCoinMachines))
+
+      // Find minCravingPercentage of a specific coinType
+      this.minCravingPercentages = this.minCravingPercentages || {}
+      if (!this.minCravingPercentages[coinType]){
+        let min = Infinity
+        for (let m of sameCoinMachines)
+          min = (min > m.get("craving_percentage"))? m.get("craving_percentage"): min
+        console.log("[machines.js] Is it first time? right?", coinType, "minCravingPercentage will be setted as", min)
+        this.minCravingPercentages[coinType] = min
+      }
+      const minCravingPercentages = this.minCravingPercentages[coinType]
+      console.log("minCravingPercentages", minCravingPercentages)
 
       let profit_krw_sum = 0,
         total_traded = 0,
@@ -277,7 +285,7 @@ exports.Machines = Backbone.Collection.extend({
         profit_rate_each_craving = [0,0,0,0,0, 0,0,0,0,0],
         traded_count_each_craving = [0,0,0,0,0, 0,0,0,0,0]
 
-      this.each(m => {
+      for (let m of sameCoinMachines){
         profit_krw_sum += m.get("profit_krw")
         total_traded += m.get("traded_count")
         coin_sum += m.get("status") == "COIN" ? m.get("capacity") : 0
@@ -287,24 +295,32 @@ exports.Machines = Backbone.Collection.extend({
         krw_damage += m.get("status") == "COIN" ?
           (m.get("last_traded_price") - maxBidPrice) * m.get("capacity") : 0
 
-        const pIndex = Math.round(m.get("craving_percentage")/2 - 1)
+        const pIndex = Math.round(m.get("craving_percentage") / minCravingPercentages - 1)
         profit_rate_each_craving[pIndex] += m.get("profit_rate")
         traded_count_each_craving[pIndex] += m.get("traded_count")
-      })
-      global.rabbit.bought_coin = coin_sum
-      profit_rate_each_craving = profit_rate_each_craving.map(el => (el/1000).toFixed(0)*1) // 1000 machines each craving
+      }
+      // global.rabbit.bought_coin = coin_sum
+      profit_krw_sum = profit_krw_sum.toFixed(0) * 1
+      profit_rate_each_craving = profit_rate_each_craving.map(el => Math.round(el/1000)) // 1000 machines each craving
       
-      console.log("--", this.length, "machines presentation ----  \u20A9", new Intl.NumberFormat().format(global.rabbit.PREVIOUS_PROFIT_SUM + profit_krw_sum),
-        ":", new Intl.NumberFormat().format(((global.rabbit.PREVIOUS_PROFIT_SUM + profit_krw_sum) / ((new Date() - global.rabbit.BORN ) / 86400000)).toFixed(0)), "per day" )
+      console.log("--", sameCoinMachines.length, coinType, "machines presentation ----  \u20A9", new Intl.NumberFormat().format(PREVIOUS_PROFIT_SUM + profit_krw_sum),
+        ":", new Intl.NumberFormat().format(((PREVIOUS_PROFIT_SUM + profit_krw_sum) / ((new Date() - BORN ) / 86400000)).toFixed(0)), "per day" )
+
       console.log("Rabbit made \u20A9", new Intl.NumberFormat().format(profit_krw_sum),
-        ":", new Intl.NumberFormat().format((profit_krw_sum/((new Date() - global.rabbit.STARTED)/ 86400000)).toFixed(0)), "per day; ",
+        ":", new Intl.NumberFormat().format((profit_krw_sum / ((new Date() - STARTED)/ 86400000)).toFixed(0)), "per day; ",
         "damage:", new Intl.NumberFormat().format(krw_damage),
         "so \u20A9", new Intl.NumberFormat().format(profit_krw_sum - krw_damage),
-        ":", new Intl.NumberFormat().format(((profit_krw_sum - krw_damage)/((new Date() - global.rabbit.STARTED)/ 86400000)).toFixed(0)), "per day")
+        ":", new Intl.NumberFormat().format(((profit_krw_sum - krw_damage) / ((new Date() - STARTED)/ 86400000)).toFixed(0)), "per day")
+
       console.log("Total Traded:", new Intl.NumberFormat().format(total_traded),
-        ", Bought Coin:", coin_sum.toFixed(2))
-      console.log("percentage[2, ..., 20] ", JSON.stringify(profit_rate_each_craving))
-      console.log("percentage[2, ..., 20] ", JSON.stringify(traded_count_each_craving))
+        ", Bought Coin:", coin_sum.toFixed(3))
+
+      console.log("[profit rate]  ", JSON.stringify(profit_rate_each_craving))
+      console.log("[traded count] ", JSON.stringify(traded_count_each_craving))
+
+      // for inde.js presentation //
+      global.rabbit.constants[coinType].profit_krw_sum = PREVIOUS_PROFIT_SUM + profit_krw_sum
+      global.rabbit.constants[coinType].krw_damage = krw_damage
     },
     fetchAll: function(options) {
       options = options || {};
@@ -340,12 +356,14 @@ exports.Machines = Backbone.Collection.extend({
     },
     mind: function(options) {
       const startTime = new Date()
-      const korbit = options.korbit,
-        coinone = options.coinone
+      const coinType = this.at(0).get("coinType"),
+        korbit = options.korbit,
+        coinone = options.coinone,
+        MIN_KRW_UNIT = global.rabbit.constants[coinType].MIN_KRW_UNIT
 
       let highBidMarket, lowAskMarket
       if (coinone.orderbook.bid[0].price >= korbit.orderbook.bid[0].price){
-        // if (coinoneBalance.eth.available > MIN_ETH)
+        // if (coinoneBalance.ETH.available > MIN_ETH)
         highBidMarket = coinone
       }else {
         highBidMarket = korbit
@@ -394,8 +412,9 @@ exports.Machines = Backbone.Collection.extend({
           askMachineIds.push(m.id + "") // attached "" to avoid ObjectId("asoweugbalskug")
         }
       })
-      totalBid = totalBid.toFixed(2) * 1
-      totalAsk = totalAsk.toFixed(2) * 1
+      const PRECISION = global.rabbit.constants[coinType].PRECISION
+      totalBid = totalBid.toFixed(PRECISION) * 1
+      totalAsk = totalAsk.toFixed(PRECISION) * 1
 
       ///// Validate and Make a result
       let result  // will return this result
@@ -404,14 +423,14 @@ exports.Machines = Backbone.Collection.extend({
       if (bestOrderbook.bid[0].price <= bestOrderbook.ask[0].price){  // internal trade recommended
         // Validate the balance
         if (totalBid > totalAsk){
-          if ((totalBid - totalAsk) * bestOrderbook.ask[0].price < lowAskMarket.balance.krw.available - 10000){
+          if ((totalBid - totalAsk) * bestOrderbook.ask[0].price < lowAskMarket.balance.KRW.available - 10000){
             console.log("[machine.js] I have money to buy coin at", lowAskMarket.name )
           }else{
             console.log("[machine.js] Not enough money at", lowAskMarket.name, "hurry up!!!!!")
             return []
           }
         }else{
-          if (totalAsk - totalBid < highBidMarket.balance.eth.available - 0.1){ // 0.1 is buffer for fee
+          if (totalAsk - totalBid < highBidMarket.balance[coinType].available - 0.1){ // 0.1 is buffer for fee
             console.log("[machine.js] I have coin to ask at", highBidMarket.name)
           }else{
             console.log("[machine.js] Not enough coin at", highBidMarket.name, "hurry up!!!!!")
@@ -422,51 +441,51 @@ exports.Machines = Backbone.Collection.extend({
         // Make result as one so that can be internal trade
         result = [{
           marketName: marketName,
-          coinType: this.at(0).get("coinType"),
+          coinType: coinType,
           bidQuantity: totalBid,
           askQuantity: totalAsk,
-          bidPrice: (marketName == "KORBIT") ? bestOrderbook.ask[0].price - 50: bestOrderbook.ask[0].price,  // Buy at minAskPrice
-          askPrice: (marketName == "KORBIT") ? bestOrderbook.bid[0].price + 50 : bestOrderbook.bid[0].price,
+          bidPrice: (marketName == "KORBIT") ? bestOrderbook.ask[0].price - MIN_KRW_UNIT: bestOrderbook.ask[0].price,  // Buy at minAskPrice
+          askPrice: (marketName == "KORBIT") ? bestOrderbook.bid[0].price + MIN_KRW_UNIT : bestOrderbook.bid[0].price,
           participants: bidParticipants.concat(askParticipants),
           machineIds: bidMachineIds.concat(askMachineIds)
         }]
       } else {  // Don't make internal trade in this case.
         // Validate the balances
-        if (totalBid * bestOrderbook.ask[0].price < lowAskMarket.balance.krw.available - 10000){
+        if (totalBid * bestOrderbook.ask[0].price < lowAskMarket.balance.KRW.available - 10000){
           console.log("[machine.js] Enough money at", lowAskMarket.name)
         }else {
           console.log("[machine.js] Put money at", lowAskMarket.name, "hurry up!!!!!!")
           totalBid = 0, bidMachineIds = [], bidParticipants = []
         }
-        if (totalAsk < highBidMarket.balance.eth.available - 0.1){
-          console.log("[machine.js] Enough Ethereum at", highBidMarket.name)
+        if (totalAsk < highBidMarket.balance[coinType].available - 0.1){
+          console.log("[machine.js] Enough",coinType ,"at", highBidMarket.name)
         }else {
-          console.log("[machine.js] Put Ethereum at", highBidMarket.name, "hurry up!!!!!!")
+          console.log("[machine.js] Put",coinType ,"at", highBidMarket.name, "hurry up!!!!!!")
           totalAsk = 0, askMachineIds = [], askParticipants = []
         }
         // Make two result to make order seprarately
         result = [{
           marketName: lowAskMarket.name,
-          coinType: this.at(0).get("coinType"),
+          coinType: coinType,
           bidQuantity: totalBid,
           askQuantity: 0,
-          bidPrice: (lowAskMarket.name == "KORBIT") ? bestOrderbook.ask[0].price - 50: bestOrderbook.ask[0].price,  // Buy at minAskPrice
+          bidPrice: (lowAskMarket.name == "KORBIT") ? bestOrderbook.ask[0].price - MIN_KRW_UNIT: bestOrderbook.ask[0].price,  // Buy at minAskPrice
           // askPrice: bestOrderbook.bid[0].price,
           participants: bidParticipants,
           machineIds: bidMachineIds
         }, {
           marketName: highBidMarket.name,
-          coinType: this.at(0).get("coinType"),
+          coinType: coinType,
           bidQuantity: 0,
           askQuantity: totalAsk,
           // bidPrice: bestOrderbook.ask[0].price,  // Buy at minAskPrice
-          askPrice: (highBidMarket.name == "KORBIT") ? bestOrderbook.bid[0].price + 50 : bestOrderbook.bid[0].price,
+          askPrice: (highBidMarket.name == "KORBIT") ? bestOrderbook.bid[0].price + MIN_KRW_UNIT : bestOrderbook.bid[0].price,
           participants: askParticipants,
           machineIds: askMachineIds
         }]
       }
       
-      console.log("[machine.js] machines.mind() takes", ((new Date() - startTime) / 1000).toFixed(2), "sec")
+      console.log("[machine.js] machines.mind() takes", ((new Date() - startTime) / 1000).toFixed(3), "sec")
       return result
     }
 });
@@ -505,7 +524,7 @@ exports.Arbitrages = exports.Machines.extend({
             quantity_sum += a.get("quantity")
           })
           console.log("Arbitrage Profit: \u20A9", new Intl.NumberFormat().format(profit_sum),
-            ":", new Intl.NumberFormat().format((profit_sum/((new Date() - global.rabbit.ARBITRAGE_STARTED)/ 86400000)).toFixed(0)), "per day")
+            ":", new Intl.NumberFormat().format((profit_sum / ((new Date() - global.rabbit.constants["ETH"].ARBITRAGE_STARTED)/ 86400000)).toFixed(0)), "per day")
           console.log("quantity_sum:", new Intl.NumberFormat().format(quantity_sum))
           resolve()
         }
@@ -563,9 +582,9 @@ exports.Arbitrages = exports.Machines.extend({
     console.log(highMarket.name, ":ask at", highMarket.orderbook.bid[0].price)
 
     // Validate balance
-    if (lowMarket.balance.krw.available - 10000 < lowMarket.orderbook.ask[0].price * quantity){
+    if (lowMarket.balance.KRW.available - 10000 < lowMarket.orderbook.ask[0].price * quantity){
       console.log("[machine.js] Not enough krw at", lowMarket.name)
-      const newQunatity = (lowMarket.balance.krw.available / lowMarket.orderbook.ask[0].price - 0.01).toFixed(2) * 1
+      const newQunatity = (lowMarket.balance.KRW.available / lowMarket.orderbook.ask[0].price - 0.01).toFixed(2) * 1
       if (newQunatity > 0.01){
         console.log("[machine.js] So just place order less quantity:", newQunatity)
         quantity = newQunatity
@@ -574,9 +593,9 @@ exports.Arbitrages = exports.Machines.extend({
         return []
       }
     }
-    if (highMarket.balance.eth.available - 1.0 < quantity){
+    if (highMarket.balance.ETH.available - 1.0 < quantity){
       console.log("[machine.js] Not enough eth", highMarket.name)
-      const newQunatity = (highMarket.balance.eth.available - 0.01).toFixed(2) * 1
+      const newQunatity = (highMarket.balance.ETH.available - 0.01).toFixed(2) * 1
       if (newQunatity > 0.01){
         console.log("[machine.js] So go less", newQunatity)
         quantity = newQunatity

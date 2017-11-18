@@ -16,7 +16,7 @@ exports.Order = Backbone.Model.extend({
         machineIds: [],
         internalTradeQuantity: 0,
         adjustedQuantity: 0, // adjusted with machines
-        coinType: 'ETH', // 'btc' or 'eth'
+        coinType: "", // 'BTC' or 'ETH'
         marketName: ""
     },
     initialize: function(attributes, options) {
@@ -62,7 +62,7 @@ exports.Order = Backbone.Model.extend({
     },
     cancel: async function(){
       console.log("[order.js] Cancel orderId:", this.get("orderId"), "at", this.get("marketName"),
-        this.get("price"), this.get("quantity"), this.get("type") )
+        this.get("price"), this.get("quantity"), this.get("type"), this.get("coinType") )
 
       try {
         if (this.get("marketName") == "COINONE"){
@@ -161,10 +161,11 @@ exports.Orders = Backbone.Collection.extend({
       if (!_.isObject(options))
         throw new Error("[order.placeOrder()] options needed")
       
-      options.askQuantity = _.isUndefined(options.askQuantity) ? 0 : options.askQuantity
-      options.bidQuantity = _.isUndefined(options.bidQuantity) ? 0 : options.bidQuantity
+      const coinType = options.coinType,
+        askQuantity = _.isUndefined(options.askQuantity) ? 0 : options.askQuantity,
+        bidQuantity = _.isUndefined(options.bidQuantity) ? 0 : options.bidQuantity
 
-      if ((options.bidQuantity == 0) && (options.askQuantity == 0)){
+      if ((bidQuantity == 0) && (askQuantity == 0)){
         console.log("[order.js] It's zero quantity order. won't place order")
         return
       }
@@ -180,39 +181,40 @@ exports.Orders = Backbone.Collection.extend({
         default:
           throw new Error("Trying place order without marketName")
       }
+      
 
       // NEW ORDER ONLY HERE
       const newOrder = new exports.Order({
         machineIds: options.machineIds,
-        coinType: options.coinType
+        coinType: coinType
       })
       newOrder.participants = options.participants  // machines array. not as attributes
 
 
       let type, price, quantity, internalTradeQuantity
-      if (options.bidQuantity > options.askQuantity){
+      if (bidQuantity > askQuantity){
         type = "BID"
         price = options.bidPrice
-        quantity = options.bidQuantity - options.askQuantity
-        internalTradeQuantity = options.askQuantity * 2 // Smaller one
-      }else if (options.bidQuantity < options.askQuantity){
+        quantity = bidQuantity - askQuantity
+        internalTradeQuantity = askQuantity * 2 // Smaller one
+      }else if (bidQuantity < askQuantity){
         type = "ASK"
         price = options.askPrice
-        quantity = options.askQuantity - options.bidQuantity
-        internalTradeQuantity = options.bidQuantity * 2
-      }else if (options.bidQuantity == options.askQuantity){
+        quantity = askQuantity - bidQuantity
+        internalTradeQuantity = bidQuantity * 2
+      }else if (bidQuantity == askQuantity){
         console.log("[order.js] Perpect internal trade! Can you believe it?")
         // console.log(options)
         newOrder.set({
           marketName: "INTERNAL_TRADE",
           price: options.bidPrice, // It can be askPrice but I prefer
           quantity: 0,
-          internalTradeQuantity: options.bidQuantity * 2
+          internalTradeQuantity: bidQuantity * 2
         })
         await newOrder.completed()
         return  // doesn't need deal with real market like Coinone
       }
-      quantity = quantity.toFixed(2) * 1
+      quantity = quantity.toFixed(global.rabbit.constants[coinType].PRECISION) * 1
 
       if (internalTradeQuantity > 0)
         console.log("Whoa! internalTradeQuantity:", internalTradeQuantity)
@@ -226,7 +228,7 @@ exports.Orders = Backbone.Collection.extend({
           type: type,
           price: price,
           qty: quantity,
-          coinType: options.coinType
+          coinType: coinType
         })
         console.log("[order.js] The order is placed", options.marketName, type, price, quantity, marketResult.orderId)
       // }
@@ -272,21 +274,22 @@ exports.Orders = Backbone.Collection.extend({
       }
     },
     // Refresh All of this orders. no matter what marketName or coinType. All of them.
-    refresh: async function(options) {
-      console.log("100 [order.js] Will refresh", this.length, "the local orders")
+    refresh: async function () {
       if (this.length == 0)
         return
+      const coinType = this.at(0).get("coinType")
+      console.log("100 [order.js] Will refresh", this.length, "the local", coinType, "orders")
 
       // Fetch uncompleted orders from markets
       let uncompletedOrderIds
       try {
         let coinonePromise = coinoneAPI({
           type: "UNCOMPLETED_ORDERS",
-          coinType: "ETH"
+          coinType: coinType
         })
         let korbitPromise = korbitAPI({
           type: "UNCOMPLETED_ORDERS",
-          coinType: "ETH"
+          coinType: coinType
         })
         let coinoneUncompletedOrderIds = (await coinonePromise).limitOrders.map(o => o.orderId) // string
         let korbitUncompletedOrderIds = (await korbitPromise).map(o => o.id + "")  // string.. unbelievable.. so I add "" to 
@@ -300,13 +303,13 @@ exports.Orders = Backbone.Collection.extend({
         throw new Error(e)
       }
 
-      // Check all of new completed order in Korbit and Coinone
-      for (let order of this.where() ){  // DO NOT USE `this.models` that would be changed by remove event
+      // Check new completed order in Korbit and Coinone
+      for (let order of this.where({coinType: coinType}) ){  // DO NOT USE `this.models` that would be changed by remove event
         if (_.contains(uncompletedOrderIds, order.get("orderId") + "") ){
           // It's uncompleted order. Don't do anything.
           console.log("104 [order.js] Uncompleted:", order.get("orderId"),
             order.get("price"), order.get("quantity"), order.get("type"),
-            ((new Date() - order.get("created_at")) / 3600000).toFixed(2), "hours ago",
+            ((new Date() - order.get("created_at")) / 3600000).toFixed(1), "hours ago",
             order.get("internalTradeQuantity") )
         }else{
           if (order.get("status") == "OPEN"){
@@ -322,19 +325,20 @@ exports.Orders = Backbone.Collection.extend({
       } // End of for loop
       console.log("105 [order.js] refresh loop end")
 
+
       // Time to cancel the old orders
       // Array.filter() return [] if there is no order. not undefined
-      const coinoneOrders = this.models.filter(order => order.get("marketName") == "COINONE")
-      const korbitOrders = this.models.filter(order => order.get("marketName") == "KORBIT")
+      const coinoneOrders = this.models.filter(order => order.get("coinType") == coinType).filter(order => order.get("marketName") == "COINONE")
+      const korbitOrders = this.models.filter(order => order.get("coinType") == coinType).filter(order => order.get("marketName") == "KORBIT")
 
       for (let orders of [coinoneOrders, korbitOrders]){
         console.log("[order.js] orders.length", orders.length)
         // if (orders.length > 5 && orders[0].get("marketName") == "KORBIT"){
-        if (orders.length > 5 && global.rabbit.coinone && global.rabbit.coinone.info){
-        // if (orders.length > 5 && global.rabbit.korbit.info){
+        if (orders.length > 5 && global.rabbit.coinone[coinType] && global.rabbit.coinone[coinType].info){
+        // if (orders.length > 5 && global.rabbit.korbit[coinType].info){
             // The most far from current price
-            const uselessOrder = _.sortBy(orders, order => -Math.abs(global.rabbit.coinone.info.last - order.get("price")))[0]
-            // const uselessOrder = _.sortBy(orders, order => -Math.abs(global.rabbit.korbit.info.last - order.get("price")))[0]
+          const uselessOrder = _.sortBy(orders, order => -Math.abs(global.rabbit.coinone[coinType].info.last - order.get("price")))[0]
+            // const uselessOrder = _.sortBy(orders, order => -Math.abs(global.rabbit.korbit[coinType].info.last - order.get("price")))[0]
 
             console.log("[order.js] Cancel order:", uselessOrder.id)
             // Cancel useless order!

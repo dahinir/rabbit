@@ -26,14 +26,52 @@ global.rabbit = {
     orders: new Orders()
 }
 
-// global.rabbit.STARTED = new Date('September 2, 2017 16:00:00')
-// global.rabbit.STARTED = new Date('September 16, 2017 13:00:00') 
+// How many places after the decimal separator
+global.rabbit.constants = {
+  BTC: {
+    PRECISION: 3,  // Actually It's 4. but I decided to use only 3 places after the decimal
+    MIN_KRW_UNIT: 500,  // Minimum unit of KRW
+    ADDITIONAL_BUY_AT: 500, // using within mind()
+    PREVIOUS_PROFIT_SUM: 0,
+    BORN: new Date('November 17, 2017 14:45:00'), // 1 btc == 8,740,500 krw
+    STARTED: new Date('November 17, 2017 14:45:00') 
+  },
+  BCH: {
+    PRECISION: 2,
+    MIN_KRW_UNIT: 500,
+    ADDITIONAL_BUY_AT: 500, // using within mind(), Set as 900 for full sampling at Coinone
+    PREVIOUS_PROFIT_SUM: 0,
+    BORN: new Date('November 17, 2017 16:45:00'), // 1 bch == 1,291,000 krw
+    STARTED: new Date('November 17, 2017 16:45:00')
+  },
+  ETH: {
+    PRECISION: 2,
+    MIN_KRW_UNIT: 50,
+    ADDITIONAL_BUY_AT: 50,
+    PREVIOUS_PROFIT_SUM: 49752085,
+    BORN: new Date('July 4, 2017 13:20:00'),  // 1 eth == 337,500 krw
+    STARTED: new Date('September 22, 2017 11:00:00'), // 1 eth == 300,000 krw
+    ARBITRAGE_STARTED: new Date('July 26, 2017 13:20:00')
+  },
+  ETC: {
+    PRECISION: 1,
+    MIN_KRW_UNIT: 10,
+    ADDITIONAL_BUY_AT: 0, // ETC doesn't need
+    PREVIOUS_PROFIT_SUM: 0,
+    BORN: new Date('November 18, 2017 13:10:00'), // 1 etc == 19,190 krw
+    STARTED: new Date('November 18, 2017 13:10:00')
+  },
+  XRP:{
+    PRECISION: 0,
+    MIN_KRW_UNIT: 1,
+    ADDITIONAL_BUY_AT: 0,
+    PREVIOUS_PROFIT_SUM: 0,
+    BORN: new Date('November 18, 2017 13:35:00'), // 1 xrp == 247 krw
+    STARTED: new Date('November 18, 2017 13:35:00')
+  }
+}
+global.rabbit.INVESTED_KRW = 150000000
 global.rabbit.BORN = new Date('July 4, 2017 13:20:00')
-global.rabbit.STARTED = new Date('September 22, 2017 11:00:00') 
-global.rabbit.ARBITRAGE_STARTED = new Date('July 26, 2017 13:20:00')
-global.rabbit.PREVIOUS_PROFIT_SUM = 49752085 // 47089762 // 37401629
-global.rabbit.INVESTED_KRW = 165000000
-global.rabbit.bought_coin = 0
 
 
 // Fetch all machines and orders from db
@@ -57,7 +95,7 @@ global.rabbit.machines.fetchAll({
               console.log("[index.js] ", global.rabbit.orders.length, "OPEN orders are loaded.");
               console.log("===start======================")
 
-              if (global.rabbit.machines.length != 30000)
+              if (global.rabbit.machines.length != 70000)
                 throw new Error("How many machines do you have?")
 
               // Attach machines as participants
@@ -112,7 +150,7 @@ global.rabbit.machines.fetchAll({
                 }
               })
 
-              // Rollback machine that is PENDING but not belongs to any order
+              // Rollback machine that is PENDING but does not belongs to any order
               async function rollbackMachines() {
                 const realPendingMachineIds = global.rabbit.orders.models.reduce((acc, o) => {
                   // console.log(acc, o)
@@ -135,7 +173,7 @@ global.rabbit.machines.fetchAll({
               }
               rollbackMachines().then(mIds => {
                 if (mIds.length > 0){
-                  console.log("machine was pended but don't have order. check it out", mIds.length, mIds)
+                  console.log("There're machines that was pended but doesn't have an order. Check it out", mIds.length, mIds)
                   return
                 }else{
                   // Run rabbit. Don't look back.
@@ -149,18 +187,27 @@ global.rabbit.machines.fetchAll({
   }
 })
 
-const MIN_TERM = 15000,  // ms ..minimum I think 2700~2900 ms
-  ERROR_BUFFER = 60000  // A minute
-async function run() {
-  const startTime = new Date()
 
+const runningCoinType = ["BTC", "BCH", "ETH", "ETC", "XRP"],  // It's gonna be tick order.
+  MIN_TERM = 10000,  // ms ..minimum I think 2700~2900 ms
+  ERROR_BUFFER = 60000  // A minute
+let count = -1
+
+async function run() {
+  count++
+  const startTime = new Date()
+  const coinType = runningCoinType[count % runningCoinType.length]
+  
   try {
-    // Korbit is an idiot
+    // Korbit is an idiot //
     await require("./korbit.js")({type: "REFRESH_TOKEN"})
 
-    // HERE BABE HERE IT IS
-    await require("./tick.js")()
-
+    // HERE BABE HERE IT IS //
+    await require("./tick.js")({
+      coinType: coinType,
+      count: count
+    })
+    
   } catch (e) {
     console.log("[index.js] Tick've got error!")
     // e.message ? console.log(e.message): console.log(e)
@@ -168,16 +215,47 @@ async function run() {
 
     if (e && e.message == "KILL_ME")
       killSign = true
-    // killSign = true
   } finally {
 
+    // killSign = true
     if (killSign){
       console.log("Rabbit is stopped by killSign. Gracefully maybe.")
       return
     }else{
       const BREAK_TIME = MIN_TERM - (new Date() - startTime)
-      console.log("-- takes", (new Date() -startTime)/1000,"sec, so", BREAK_TIME,"ms later --------------------\n")
-      // One more time
+      console.log("-- takes", (new Date() -startTime)/1000,"sec, so", BREAK_TIME,"ms later --------------------\n\n")
+
+      // PRESENTATION //
+      if (coinType == runningCoinType[runningCoinType.length - 1]) {
+        console.log("--PRESENTATION TIME--")
+        console.log("Invested: \u20A9", new Intl.NumberFormat().format(global.rabbit.INVESTED_KRW))
+
+        const days = ((new Date() - global.rabbit.BORN) / 86400000),
+          korbitBalance = global.rabbit.korbit.balance,
+          coinoneBalance = global.rabbit.coinone.balance,
+          korbit = global.rabbit.korbit,
+          coinone = global.rabbit.coinone
+        let profitSum = 0,
+          balanceSum = korbitBalance.KRW.balance + coinoneBalance.KRW.balance
+
+        for (const ct of runningCoinType) {
+          balanceSum += korbitBalance[ct].balance * korbit[ct].orderbook.bid[0].price
+            + coinoneBalance[ct].balance * coinone[ct].orderbook.bid[0].price
+          const profit = global.rabbit.constants[ct].profit_krw_sum || 0
+          const damage = global.rabbit.constants[ct].krw_damage || 0
+          console.log(ct, "machines maid: \u20A9", new Intl.NumberFormat().format(profit), "\t\u20A9", new Intl.NumberFormat().format(-damage))
+          profitSum += profit
+        }
+
+        console.log("IN CASH: \u20A9", new Intl.NumberFormat().format(korbitBalance.KRW.balance + coinoneBalance.KRW.balance),
+          "\t( Coinone:", new Intl.NumberFormat().format(coinoneBalance.KRW.balance),
+          "  Korbit:", new Intl.NumberFormat().format(korbitBalance.KRW.balance), ")")
+        console.log("SUMMARY: \u20A9", new Intl.NumberFormat().format(balanceSum.toFixed(0)), 
+          "\tRabbit maid \u20A9", new Intl.NumberFormat().format((profitSum).toFixed(0)), "..so \u20A9", new Intl.NumberFormat().format((profitSum / days).toFixed(0)), "per day")
+        console.log("\n")
+      }
+
+      // One more time //
       setTimeout(run, BREAK_TIME)
     }
   }

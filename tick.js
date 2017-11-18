@@ -3,25 +3,66 @@
 const _ = require('underscore'),
  fetcher = require('./fetcher.js'),
  Machines = require("./machine").Machines,
- Arbitrages = require('./machine.js').Arbitrages,
- Orders = require('./order.js').Orders
+  Orders = require('./order.js').Orders,
+ Arbitrages = require('./machine.js').Arbitrages
 
-console.log("[tick.js] Loaded!")
+console.log("\n\n[tick.js] Loaded!")
 
-let count = 0
-const machines = new Machines(global.rabbit.machines.filter(m => {
-  if (m.get("buy_at") >= 300000 && m.get("buy_at") < 500000)
-    return true
-  else
-    return false
-}))
-const orders = global.rabbit.orders
+// const machines = new Machines(global.rabbit.machines.filter(m => {
+//   if (m.get("buy_at") >= 300000 && m.get("buy_at") < 500000)
+//     return true
+//   else
+//     return false
+// }))
+// const orders = global.rabbit.orders
 const arbitrages = global.rabbit.arbitrages
 
-module.exports = async function(){
+const machinesChamber = {}
+function getMachines(coinType){
+  if (!machinesChamber[coinType]){
+    console.log("This is first tic of", coinType, "IF IT'S NOT, IT'S A PROBLEM. STOP THIS SHIT!")
+    machinesChamber[coinType] = new Machines(global.rabbit.machines.filter(m => {
+      if (coinType == "ETH"){
+        if (m.get("coinType") == coinType && m.get("buy_at") >= 300000 && m.get("buy_at") < 500000)
+          return true
+        else
+          return false
+      }else{
+        if (m.get("coinType") == coinType)
+          return true
+        else
+          return false
+      }
+    }))
+  }
+    // console.log("1",machinesChamber[coinType].models.length)
+    // console.log("2",machinesChamber[coinType].length)
+  // console.log("3", machinesChamber[coinType].at(0).attributes)
+    // console.log("4", [1,2,3,4,5].at(0))
+  // if (!machinesChamber[coinType])
+  //   machinesChamber[coinType] = new Machines(global.rabbit.machines.filter(m => (m.get("coinType") == coinType && m.get("buy_at") >= 300000 && m.get("buy_at") < 500000)))
+
+  return machinesChamber[coinType]
+}
+
+const ordersChamber = {}
+function getOrders(coinType){
+  if (!ordersChamber[coinType])
+    ordersChamber[coinType] = new Orders(global.rabbit.orders.filter(o => o.get("coinType") == coinType))
+  return ordersChamber[coinType]
+}
+
+
+module.exports = async function(options){
   const startTime = new Date()
-  console.log("\n-- ETH Tick no.", ++count, "with", machines.length, "machines. ",
-    startTime.toLocaleString(), "It's been", ((new Date() - global.rabbit.STARTED)/ 86400000).toFixed(1),
+  const count = options.count
+  const coinType = options.coinType
+ 
+  const machines = getMachines(coinType)
+  const orders = getOrders(coinType)
+
+  console.log("-- ", coinType, "Tick no.", count, "with", machines.length, "machines. ",
+    startTime.toLocaleString(), "It's been", ((new Date() - global.rabbit.constants[coinType].STARTED)/ 86400000).toFixed(1),
     "days. ", ((new Date() - global.rabbit.BORN) / 86400000).toFixed(1), "days old")
 
   // Check previous orders out
@@ -30,28 +71,28 @@ module.exports = async function(){
 
 
   /////// FETCHING //////////
-  let coinoneInfo, coinoneEthOrderbook, coinoneBalance, coinoneRecentCompleteOrders
-  let korbitInfo, korbitEthOrderbook, korbitBalance
+  let coinoneInfo, coinoneOrderbook, coinoneBalance, coinoneRecentCompleteOrders
+  let korbitInfo, korbitOrderbook, korbitBalance
   try {
     // Act like Promise.all() 
-    const coinoneInfoPromise = fetcher.getCoinoneInfo(),
-      coinoneEthOrderbookPromise = fetcher.getCoinoneEthOrderbook(),
-      coinoneBalancePromise = fetcher.getCoinoneBalance(),
-      coinoneRecentCompleteOrdersPromise = fetcher.getCoinoneRecentCompleteOrders()
-    const  korbitEthOrderbookPromise = fetcher.getKorbitEthOrderbook(),
-      korbitBalancePromise = fetcher.getKorbitBalance(),
-      korbitInfoPromise = fetcher.getKorbitInfo()
+    const coinoneBalancePromise = fetcher.getCoinoneBalance(),
+      coinoneInfoPromise = fetcher.getCoinoneInfo(coinType),
+      coinoneOrderbookPromise = fetcher.getCoinoneOrderbook(coinType),
+      coinoneRecentCompleteOrdersPromise = fetcher.getCoinoneRecentCompleteOrders(coinType)
+    const korbitBalancePromise = fetcher.getKorbitBalance(),
+      korbitOrderbookPromise = fetcher.getKorbitOrderbook(coinType),
+      korbitInfoPromise = fetcher.getKorbitInfo(coinType)
 
     coinoneInfo = await coinoneInfoPromise
-    coinoneEthOrderbook = await coinoneEthOrderbookPromise
+    coinoneOrderbook = await coinoneOrderbookPromise
     coinoneBalance = await coinoneBalancePromise
     coinoneRecentCompleteOrders = await coinoneRecentCompleteOrdersPromise
     korbitInfo = await korbitInfoPromise
-    korbitEthOrderbook = await korbitEthOrderbookPromise
+    korbitOrderbook = await korbitOrderbookPromise
     korbitBalance = await korbitBalancePromise
   } catch (e) {
     // ignoreMoreRejectsFrom(coinoneInfoPromise, coinoneRecentCompleteOrdersPromise,
-    //   korbitEthOrderbookPromise, coinoneEthOrderbookPromise,
+    //   korbitOrderbookPromise, coinoneOrderbookPromise,
     //   korbitBalancePromise, coinoneBalancePromise)
     console.log(e)
     throw new Error("[tick.js] Fail to fetch. Let me try again.")
@@ -61,49 +102,66 @@ module.exports = async function(){
   const korbit = {
         name: "KORBIT",
         info: korbitInfo,
-        orderbook: korbitEthOrderbook,
+        orderbook: korbitOrderbook,
         balance: korbitBalance
       }
   const coinone = {
         name: "COINONE",
         info: coinoneInfo,
-        orderbook: coinoneEthOrderbook,
+        orderbook: coinoneOrderbook,
         balance: coinoneBalance
       }
-  global.rabbit.coinone = coinone
-  global.rabbit.korbit = korbit
-  
-  console.log("--In 24hrs at Coinone:", coinone.info.low, "~", coinone.info.high, ":",coinone.info.last,"(",
-      ((coinone.info.last- coinone.info.low)/(coinone.info.high- coinone.info.low)*100).toFixed(2),"% )----" )
-  console.log("All fetchers've take", fetchingTime, "sec")
-  console.log("Invested krw:", new Intl.NumberFormat().format(global.rabbit.INVESTED_KRW))
-  console.log("KRW:", new Intl.NumberFormat().format(korbit.balance.krw.balance + coinone.balance.krw.balance), "\tCoin:", (korbit.balance.eth.balance + coinone.balance.eth.balance).toFixed(2) )
-  console.log("Balance:", new Intl.NumberFormat().format(korbit.balance.krw.balance + korbit.balance.eth.balance * korbit.orderbook.bid[0].price
-    + coinone.balance.krw.balance + coinone.balance.eth.balance * coinone.orderbook.bid[0].price), "krw")
-  console.log("Coinone eth:", coinone.balance.eth.available.toFixed(2), "\tkrw:", new Intl.NumberFormat().format(coinone.balance.krw.available))
-  console.log("Korbit  eth:", korbit.balance.eth.available.toFixed(2), "\tkrw:", new Intl.NumberFormat().format(korbit.balance.krw.available))
-  console.log("--(coinone eth)-----max bid:", coinone.orderbook.bid[0], "min ask:", coinone.orderbook.ask[0])
-  console.log("--(korbit eth)------max bid:", korbit.orderbook.bid[0], "min ask:", korbit.orderbook.ask[0])
-  console.log("coinone eth volume:", coinone.info.volume, "korbit eth volume:", korbit.info.volume)
+      
+  // Some data needs to go global
+  // global.rabbit.coinone = coinone
+  // global.rabbit.korbit = korbit
+  global.rabbit.coinone = global.rabbit.coinone || {}
+  global.rabbit.coinone.balance = coinoneBalance
+  global.rabbit.coinone[coinType] = {
+    name: "COINONE",
+    info: coinoneInfo,
+    orderbook: coinoneOrderbook
+  }
+  global.rabbit.korbit = global.rabbit.korbit || {}
+  global.rabbit.korbit.balance = korbitBalance
+  global.rabbit.korbit[coinType] = {
+    name: "KORBIT",
+    info: korbitInfo,
+    orderbook: korbitOrderbook
+  }
 
+  
+  console.log("--In 24hrs at Coinone", coinType, ":", coinoneInfo.low, "~", coinoneInfo.high, ":", coinoneInfo.last,"(",
+    ((coinoneInfo.last - coinoneInfo.low) / (coinoneInfo.high - coinoneInfo.low)*100).toFixed(2),"% )----" )
+  console.log("All fetchers've take", fetchingTime, "sec")
+  console.log("coin:", (korbitBalance[coinType].balance + coinoneBalance[coinType].balance).toFixed(2), coinType,
+    "== \u20A9", new Intl.NumberFormat().format(((korbitBalance[coinType].balance + coinoneBalance[coinType].balance) * coinoneOrderbook.bid[0].price).toFixed(0)))
+  console.log("Coinone", coinType + ":", coinoneBalance[coinType].available.toFixed(2))
+  console.log("Korbit", coinType + ":", korbitBalance[coinType].available.toFixed(2))
+  console.log("--(coinone", coinType + ")-----max bid:", coinoneOrderbook.bid[0], "min ask:", coinoneOrderbook.ask[0])
+  console.log("--(korbit", coinType + ")------max bid:", korbitOrderbook.bid[0], "min ask:", korbitOrderbook.ask[0])
+  console.log("Coinone", coinType, "volume:", coinoneInfo.volume, " Korbit", coinType, "volume:", korbitInfo.volume)
 
 
   /////// TIME TO MIND ////////
   let results = []
-  if (fetchingTime > 3.0) {
+  if (fetchingTime > 5.2) {
     console.log("Fetched too late. Don't buy when the market is busy. pass this tic. fetchingTime:", fetchingTime)
     return
   }
-  results = arbitrages.mind({
-    korbit: korbit,
-    coinone: coinone
-  })  // It's Array
-  if (results.length == 2 ){
-    results[0].tt = "ARBIT"
-    results[1].tt = "ARBIT"
+
+  // Arbitrages
+  if (coinType == "ETH"){
+    results = arbitrages.mind({
+      korbit: korbit,
+      coinone: coinone
+    })  // It's Array
+    if (results.length == 2 ){
+      results[0].tt = "ARBIT"
+      results[1].tt = "ARBIT"
+    }
   }
   // results = []
-
 
   if (results.length != 2){
   // isInclined(coinoneRecentCompleteOrders)
@@ -113,28 +171,31 @@ module.exports = async function(){
       console.log("Wait.. It looks like inclined")
       return
     }
-    if (fetchingTime > 2.0 ){
-      console.log("Fetched too late. Don't buy when the market is busy. pass this tic. fetchingTime:", fetchingTime)
-      return
-    }
 
     let altKorbit = korbit,
       altCoinone = coinone
-    if (coinone.balance.krw.available < 600000){
+    const MINS = {
+      "BTC": 0.1,
+      "BCH": 0.5,
+      "ETH": 2.0,
+      "ETC": 50,
+      "XRP": 1000
+    }
+    if (coinone.balance.KRW.available < 600000){
       console.log("[tick.js] not enough krw at coinone.")
-      altCoinone = (korbit.orderbook.bid[0].price < coinone.orderbook.bid[0].price) ? coinone : korbit
+      altCoinone = (korbit.orderbook.bid[0].price <= coinone.orderbook.bid[0].price) ? coinone : korbit
     }
-    if (coinone.balance.eth.available < 2.0){
-      console.log("[tick.js] not enough eth at coinone.")
-      altCoinone = (korbit.orderbook.ask[0].price > coinone.orderbook.ask[0].price) ? coinone : korbit
-    }
-    if (korbit.balance.krw.available < 600000){
+    if (korbit.balance.KRW.available < 600000){
       console.log("[tick.js] not enough krw at korbit.")
-      altKorbit = (coinone.orderbook.bid[0].price < korbit.orderbook.bid[0].price) ? korbit : coinone
+      altKorbit = (coinone.orderbook.bid[0].price <= korbit.orderbook.bid[0].price) ? korbit : coinone
     }
-    if (korbit.balance.eth.available < 2.0){
-      console.log("[tick.js] not enough eth at korbit.")
-      altKorbit = (coinone.orderbook.ask[0].price > korbit.orderbook.ask[0].price) ? korbit : coinone
+    if (coinone.balance[coinType].available < MINS[coinType]){
+      console.log("[tick.js] not enough",coinType ,"at coinone.")
+      altCoinone = (korbit.orderbook.ask[0].price >= coinone.orderbook.ask[0].price) ? coinone : korbit
+    }
+    if (korbit.balance[coinType].available < MINS[coinType]){
+      console.log("[tick.js] not enough",coinType ,"at korbit.")
+      altKorbit = (coinone.orderbook.ask[0].price >= korbit.orderbook.ask[0].price) ? korbit : coinone
     }
     console.log("altCoinone:", altCoinone.name, "\taltKorbit:", altKorbit.name)
     if (altKorbit.name == "COINONE" && altCoinone.name == "KORBIT"){
@@ -162,10 +223,18 @@ module.exports = async function(){
   // for (let o of placeOrderPromises)
   //   await o
 
-  // Summary
-  global.rabbit.machines.presentation(coinoneEthOrderbook)
+
+
+  ////// Presentation ///////
+  global.rabbit.machines.presentation({
+    orderbook: coinoneOrderbook,
+    coinType: coinType
+  })
   // await global.rabbit.arbitrages.presentation()
-}
+} // End of module.exports
+
+
+
 
 // For error handling in a Promise.all like flow in async/await syntax
 function ignoreMoreRejectsFrom(...promises) {
@@ -209,11 +278,14 @@ function isInclined(coinoneRecentCompleteOrders) {
     }
   })
 
+  
   // console.log((candles[0].body == candles[1].body) ? "wait" : "action")
   for (let i = 0; i < 5; i++)
-    console.log(candles[i])
+  console.log(candles[i])
   // console.log(candles.length, candles[0].length, candles[1].length, candles[2].length, candles[3].length, candles[4].length)
   // console.log( candles[candles.length - 1])
   // console.log("All fetchers've take", fetchingTime, "sec", candles.length)
+  if (candles[0].open == candles[0].close)
+    return false
   return (candles[0].body == candles[1].body) ? true : false
 }
