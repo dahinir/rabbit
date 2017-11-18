@@ -175,9 +175,11 @@ module.exports = async function(options){
     let altKorbit = korbit,
       altCoinone = coinone
     const MINS = {
-      "ETH": 2.0,
       "BTC": 0.1,
-      "BCH": 0.5
+      "BCH": 0.5,
+      "ETH": 2.0,
+      "ETC": 50,
+      "XRP": 1000
     }
     if (coinone.balance.KRW.available < 600000){
       console.log("[tick.js] not enough krw at coinone.")
@@ -214,9 +216,8 @@ module.exports = async function(options){
 
 
   ///////  TIME TO ORDER //////
-  if (coinType == "ETH" || coinType == "BTC" || coinType == "BCH")
-    for (let r of results)
-      await orders.placeOrder(r)
+  for (let r of results)
+    await orders.placeOrder(r)
   // idk why.. but Below code cause error..  set order on machine 
   // const placeOrderPromises = results.map(result => orders.placeOrder(result))
   // for (let o of placeOrderPromises)

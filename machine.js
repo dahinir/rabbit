@@ -110,7 +110,7 @@ exports.Machine = Backbone.Model.extend({
           })
 
           // FOR BIGGIE PROFIT: now summary is 0.70 //
-          // db.machines.updateMany({craving_percentage: 4, status:"KRW"}, {$set:{capacity: 0.18}})
+          // db.machines.updateMany({coinType:"ETH", craving_percentage: 4, status:"KRW"}, {$set:{capacity: 0.18}})
           // db.machines.findOne({craving_krw: 6000, status:"KRW", capacity: {$ne: 0.01}})
           switch (this.get("coinType")) {
             case "ETH":
@@ -317,7 +317,9 @@ exports.Machines = Backbone.Collection.extend({
       console.log("[profit rate]  ", JSON.stringify(profit_rate_each_craving))
       console.log("[traded count] ", JSON.stringify(traded_count_each_craving))
 
+      // for inde.js presentation //
       global.rabbit.constants[coinType].profit_krw_sum = PREVIOUS_PROFIT_SUM + profit_krw_sum
+      global.rabbit.constants[coinType].krw_damage = krw_damage
     },
     fetchAll: function(options) {
       options = options || {};
@@ -356,7 +358,7 @@ exports.Machines = Backbone.Collection.extend({
       const coinType = this.at(0).get("coinType"),
         korbit = options.korbit,
         coinone = options.coinone,
-        MIN_UNIT = global.rabbit.constants[coinType].MIN_UNIT
+        MIN_KRW_UNIT = global.rabbit.constants[coinType].MIN_KRW_UNIT
 
       let highBidMarket, lowAskMarket
       if (coinone.orderbook.bid[0].price >= korbit.orderbook.bid[0].price){
@@ -441,8 +443,8 @@ exports.Machines = Backbone.Collection.extend({
           coinType: coinType,
           bidQuantity: totalBid,
           askQuantity: totalAsk,
-          bidPrice: (marketName == "KORBIT") ? bestOrderbook.ask[0].price - MIN_UNIT: bestOrderbook.ask[0].price,  // Buy at minAskPrice
-          askPrice: (marketName == "KORBIT") ? bestOrderbook.bid[0].price + MIN_UNIT : bestOrderbook.bid[0].price,
+          bidPrice: (marketName == "KORBIT") ? bestOrderbook.ask[0].price - MIN_KRW_UNIT: bestOrderbook.ask[0].price,  // Buy at minAskPrice
+          askPrice: (marketName == "KORBIT") ? bestOrderbook.bid[0].price + MIN_KRW_UNIT : bestOrderbook.bid[0].price,
           participants: bidParticipants.concat(askParticipants),
           machineIds: bidMachineIds.concat(askMachineIds)
         }]
@@ -466,7 +468,7 @@ exports.Machines = Backbone.Collection.extend({
           coinType: coinType,
           bidQuantity: totalBid,
           askQuantity: 0,
-          bidPrice: (lowAskMarket.name == "KORBIT") ? bestOrderbook.ask[0].price - MIN_UNIT: bestOrderbook.ask[0].price,  // Buy at minAskPrice
+          bidPrice: (lowAskMarket.name == "KORBIT") ? bestOrderbook.ask[0].price - MIN_KRW_UNIT: bestOrderbook.ask[0].price,  // Buy at minAskPrice
           // askPrice: bestOrderbook.bid[0].price,
           participants: bidParticipants,
           machineIds: bidMachineIds
@@ -476,7 +478,7 @@ exports.Machines = Backbone.Collection.extend({
           bidQuantity: 0,
           askQuantity: totalAsk,
           // bidPrice: bestOrderbook.ask[0].price,  // Buy at minAskPrice
-          askPrice: (highBidMarket.name == "KORBIT") ? bestOrderbook.bid[0].price + MIN_UNIT : bestOrderbook.bid[0].price,
+          askPrice: (highBidMarket.name == "KORBIT") ? bestOrderbook.bid[0].price + MIN_KRW_UNIT : bestOrderbook.bid[0].price,
           participants: askParticipants,
           machineIds: askMachineIds
         }]

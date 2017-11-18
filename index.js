@@ -30,7 +30,7 @@ global.rabbit = {
 global.rabbit.constants = {
   BTC: {
     PRECISION: 3,  // Actually It's 4. but I decided to use only 3 places after the decimal
-    MIN_UNIT: 500,  // Minimum unit of KRW
+    MIN_KRW_UNIT: 500,  // Minimum unit of KRW
     ADDITIONAL_BUY_AT: 500, // using within mind()
     PREVIOUS_PROFIT_SUM: 0,
     BORN: new Date('November 17, 2017 14:45:00'), // 1 btc == 8,740,500 krw
@@ -38,7 +38,7 @@ global.rabbit.constants = {
   },
   BCH: {
     PRECISION: 2,
-    MIN_UNIT: 500,  // Minimum unit of KRW
+    MIN_KRW_UNIT: 500,
     ADDITIONAL_BUY_AT: 500, // using within mind(), Set as 900 for full sampling at Coinone
     PREVIOUS_PROFIT_SUM: 0,
     BORN: new Date('November 17, 2017 16:45:00'), // 1 bch == 1,291,000 krw
@@ -46,12 +46,28 @@ global.rabbit.constants = {
   },
   ETH: {
     PRECISION: 2,
-    MIN_UNIT: 50,
+    MIN_KRW_UNIT: 50,
     ADDITIONAL_BUY_AT: 50,
     PREVIOUS_PROFIT_SUM: 49752085,
     BORN: new Date('July 4, 2017 13:20:00'),  // 1 eth == 337,500 krw
     STARTED: new Date('September 22, 2017 11:00:00'), // 1 eth == 300,000 krw
     ARBITRAGE_STARTED: new Date('July 26, 2017 13:20:00')
+  },
+  ETC: {
+    PRECISION: 1,
+    MIN_KRW_UNIT: 10,
+    ADDITIONAL_BUY_AT: 0, // ETC doesn't need
+    PREVIOUS_PROFIT_SUM: 0,
+    BORN: new Date('November 18, 2017 13:10:00'), // 1 etc == 19,190 krw
+    STARTED: new Date('November 18, 2017 13:10:00')
+  },
+  XRP:{
+    PRECISION: 0,
+    MIN_KRW_UNIT: 1,
+    ADDITIONAL_BUY_AT: 0,
+    PREVIOUS_PROFIT_SUM: 0,
+    BORN: new Date('November 18, 2017 13:35:00'), // 1 xrp == 247 krw
+    STARTED: new Date('November 18, 2017 13:35:00')
   }
 }
 global.rabbit.INVESTED_KRW = 150000000
@@ -79,7 +95,7 @@ global.rabbit.machines.fetchAll({
               console.log("[index.js] ", global.rabbit.orders.length, "OPEN orders are loaded.");
               console.log("===start======================")
 
-              if (global.rabbit.machines.length != 50000)
+              if (global.rabbit.machines.length != 70000)
                 throw new Error("How many machines do you have?")
 
               // Attach machines as participants
@@ -172,7 +188,7 @@ global.rabbit.machines.fetchAll({
 })
 
 
-const runningCoinType = ["ETH", "BTC", "BCH"],  // It's gonna be tick order.
+const runningCoinType = ["BTC", "BCH", "ETH", "ETC", "XRP"],  // It's gonna be tick order.
   MIN_TERM = 10000,  // ms ..minimum I think 2700~2900 ms
   ERROR_BUFFER = 60000  // A minute
 let count = -1
@@ -212,6 +228,8 @@ async function run() {
       // PRESENTATION //
       if (coinType == runningCoinType[runningCoinType.length - 1]) {
         console.log("--PRESENTATION TIME--")
+        console.log("Invested: \u20A9", new Intl.NumberFormat().format(global.rabbit.INVESTED_KRW))
+
         const days = ((new Date() - global.rabbit.BORN) / 86400000),
           korbitBalance = global.rabbit.korbit.balance,
           coinoneBalance = global.rabbit.coinone.balance,
@@ -223,10 +241,12 @@ async function run() {
         for (const ct of runningCoinType) {
           balanceSum += korbitBalance[ct].balance * korbit[ct].orderbook.bid[0].price
             + coinoneBalance[ct].balance * coinone[ct].orderbook.bid[0].price
-          profitSum += global.rabbit.constants[ct].profit_krw_sum || 0
+          const profit = global.rabbit.constants[ct].profit_krw_sum || 0
+          const damage = global.rabbit.constants[ct].krw_damage || 0
+          console.log(ct, "machines maid: \u20A9", new Intl.NumberFormat().format(profit), new Intl.NumberFormat().format(-damage))
+          profitSum += profit
         }
 
-        console.log("Invested: \u20A9", new Intl.NumberFormat().format(global.rabbit.INVESTED_KRW))
         console.log("IN CASH: \u20A9", new Intl.NumberFormat().format(korbitBalance.KRW.balance + coinoneBalance.KRW.balance))
         console.log("SUMMARY: \u20A9", new Intl.NumberFormat().format(balanceSum.toFixed(0)), 
           "\tRabbit maid \u20A9", new Intl.NumberFormat().format((profitSum).toFixed(0)), "..so \u20A9", new Intl.NumberFormat().format((profitSum / days).toFixed(0)), "per day")
