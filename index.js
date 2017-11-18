@@ -243,7 +243,7 @@ async function run() {
             + coinoneBalance[ct].balance * coinone[ct].orderbook.bid[0].price
           const profit = global.rabbit.constants[ct].profit_krw_sum || 0
           const damage = global.rabbit.constants[ct].krw_damage || 0
-          console.log(ct, "machines maid: \u20A9", new Intl.NumberFormat().format(profit), new Intl.NumberFormat().format(-damage))
+          console.log(ct, "machines maid: \u20A9", new Intl.NumberFormat().format(profit), "\t", new Intl.NumberFormat().format(-damage))
           profitSum += profit
         }
 

@@ -278,6 +278,9 @@ function isInclined(coinoneRecentCompleteOrders) {
     }
   })
 
+  if (candles[0].open == candles[0].close)
+    return false
+
   // console.log((candles[0].body == candles[1].body) ? "wait" : "action")
   for (let i = 0; i < 5; i++)
     console.log(candles[i])
