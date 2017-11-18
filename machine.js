@@ -300,6 +300,7 @@ exports.Machines = Backbone.Collection.extend({
         traded_count_each_craving[pIndex] += m.get("traded_count")
       }
       // global.rabbit.bought_coin = coin_sum
+      profit_krw_sum = profit_krw_sum.toFixed(0) * 1
       profit_rate_each_craving = profit_rate_each_craving.map(el => Math.round(el/1000)) // 1000 machines each craving
       
       console.log("--", sameCoinMachines.length, coinType, "machines presentation ----  \u20A9", new Intl.NumberFormat().format(PREVIOUS_PROFIT_SUM + profit_krw_sum),
@@ -312,7 +313,7 @@ exports.Machines = Backbone.Collection.extend({
         ":", new Intl.NumberFormat().format(((profit_krw_sum - krw_damage) / ((new Date() - STARTED)/ 86400000)).toFixed(0)), "per day")
 
       console.log("Total Traded:", new Intl.NumberFormat().format(total_traded),
-        ", Bought Coin:", coin_sum.toFixed(4))
+        ", Bought Coin:", coin_sum.toFixed(3))
 
       console.log("[profit rate]  ", JSON.stringify(profit_rate_each_craving))
       console.log("[traded count] ", JSON.stringify(traded_count_each_craving))

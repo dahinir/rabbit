@@ -247,7 +247,9 @@ async function run() {
           profitSum += profit
         }
 
-        console.log("IN CASH: \u20A9", new Intl.NumberFormat().format(korbitBalance.KRW.balance + coinoneBalance.KRW.balance))
+        console.log("IN CASH: \u20A9", new Intl.NumberFormat().format(korbitBalance.KRW.balance + coinoneBalance.KRW.balance),
+          "\t( Coinone:", new Intl.NumberFormat().format(coinoneBalance.KRW.balance),
+          "  Korbit:", new Intl.NumberFormat().format(korbitBalance.KRW.balance), ")")
         console.log("SUMMARY: \u20A9", new Intl.NumberFormat().format(balanceSum.toFixed(0)), 
           "\tRabbit maid \u20A9", new Intl.NumberFormat().format((profitSum).toFixed(0)), "..so \u20A9", new Intl.NumberFormat().format((profitSum / days).toFixed(0)), "per day")
         console.log("\n")

@@ -136,8 +136,8 @@ module.exports = async function(options){
   console.log("All fetchers've take", fetchingTime, "sec")
   console.log("coin:", (korbitBalance[coinType].balance + coinoneBalance[coinType].balance).toFixed(2), coinType,
     "== \u20A9", new Intl.NumberFormat().format(((korbitBalance[coinType].balance + coinoneBalance[coinType].balance) * coinoneOrderbook.bid[0].price).toFixed(0)))
-  console.log("Coinone", coinType + ":", coinoneBalance[coinType].available.toFixed(2), "\tkrw:", new Intl.NumberFormat().format(coinoneBalance.KRW.available))
-  console.log("Korbit", coinType + ":", korbitBalance[coinType].available.toFixed(2), "\tkrw:", new Intl.NumberFormat().format(korbitBalance.KRW.available))
+  console.log("Coinone", coinType + ":", coinoneBalance[coinType].available.toFixed(2))
+  console.log("Korbit", coinType + ":", korbitBalance[coinType].available.toFixed(2))
   console.log("--(coinone", coinType + ")-----max bid:", coinoneOrderbook.bid[0], "min ask:", coinoneOrderbook.ask[0])
   console.log("--(korbit", coinType + ")------max bid:", korbitOrderbook.bid[0], "min ask:", korbitOrderbook.ask[0])
   console.log("Coinone", coinType, "volume:", coinoneInfo.volume, " Korbit", coinType, "volume:", korbitInfo.volume)
@@ -278,14 +278,14 @@ function isInclined(coinoneRecentCompleteOrders) {
     }
   })
 
-  if (candles[0].open == candles[0].close)
-    return false
-
+  
   // console.log((candles[0].body == candles[1].body) ? "wait" : "action")
   for (let i = 0; i < 5; i++)
-    console.log(candles[i])
+  console.log(candles[i])
   // console.log(candles.length, candles[0].length, candles[1].length, candles[2].length, candles[3].length, candles[4].length)
   // console.log( candles[candles.length - 1])
   // console.log("All fetchers've take", fetchingTime, "sec", candles.length)
+  if (candles[0].open == candles[0].close)
+    return false
   return (candles[0].body == candles[1].body) ? true : false
 }

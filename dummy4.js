@@ -16,7 +16,7 @@ const xcoinAPI = require('./bithumb_modified.js'),
     brain = require('brain.js')
 
 for (const c of [2,3,4])
-    console.log(c, -c)
+    console.log(c, -c.toFixed)
     return
 
 async function go(ed) {
