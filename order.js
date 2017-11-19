@@ -142,21 +142,21 @@ exports.Orders = Backbone.Collection.extend({
         }
       })
     },
-    createOrder: function(options){
-      console.log("createOrder")
-      const newOrder = new exports.Order();
-      // newOrder.on("change:status", o => {
-        // console.log("event!", o.get("status"))
-        // console.log(arguments)
-        // if (o.get("status"))
-        //   this.remove(o)
-        // else {
-        //   console.log("wwwwww")
-        // }
-      // })
-      this.push(newOrder)
-      return newOrder
-    },
+    // createOrder: function(options){
+    //   console.log("createOrder")
+    //   const newOrder = new exports.Order();
+    //   // newOrder.on("change:status", o => {
+    //     // console.log("event!", o.get("status"))
+    //     // console.log(arguments)
+    //     // if (o.get("status"))
+    //     //   this.remove(o)
+    //     // else {
+    //     //   console.log("wwwwww")
+    //     // }
+    //   // })
+    //   this.push(newOrder)
+    //   return newOrder
+    // },
     placeOrder: async function(options){
       if (!_.isObject(options))
         throw new Error("[order.placeOrder()] options needed")
@@ -324,26 +324,31 @@ exports.Orders = Backbone.Collection.extend({
         }
       } // End of for loop
       console.log("105 [order.js] refresh loop end")
+    }, // End of refresh()
+    cancel: async function (options) {
+      if (this.length == 0)
+        return
 
+      const coinType = options.coinType || this.at(0).get("coinType"),
+        lastPrice = options.orderbook.bid[0].price  // or ask[0] whatever
 
-      // Time to cancel the old orders
+      console.log("[order.js] Time to cancel order.", coinType, "lastPrice:", lastPrice)
+
       // Array.filter() return [] if there is no order. not undefined
       const coinoneOrders = this.models.filter(order => order.get("coinType") == coinType).filter(order => order.get("marketName") == "COINONE")
       const korbitOrders = this.models.filter(order => order.get("coinType") == coinType).filter(order => order.get("marketName") == "KORBIT")
 
-      for (let orders of [coinoneOrders, korbitOrders]){
+      for (let orders of [coinoneOrders, korbitOrders]) {
         console.log("[order.js] orders.length", orders.length)
-        // if (orders.length > 5 && orders[0].get("marketName") == "KORBIT"){
-        if (orders.length > 5 && global.rabbit.coinone[coinType] && global.rabbit.coinone[coinType].info){
-        // if (orders.length > 5 && global.rabbit.korbit[coinType].info){
-            // The most far from current price
-          const uselessOrder = _.sortBy(orders, order => -Math.abs(global.rabbit.coinone[coinType].info.last - order.get("price")))[0]
-            // const uselessOrder = _.sortBy(orders, order => -Math.abs(global.rabbit.korbit[coinType].info.last - order.get("price")))[0]
+        if (orders.length > 5) {
+          // The most far from current price
+          const uselessOrder = _.sortBy(orders, order => -Math.abs(lastPrice - order.get("price")))[0]
+          // const uselessOrder = _.sortBy(orders, order => -Math.abs(global.rabbit.korbit[coinType].info.last - order.get("price")))[0]
 
-            console.log("[order.js] Cancel order:", uselessOrder.id)
-            // Cancel useless order!
-            await uselessOrder.cancel()
+          console.log("[order.js] Cancel order:", uselessOrder.id)
+          // Cancel useless order!
+          await uselessOrder.cancel()
         }
       }
-    } // end of refresh
+    } // End of cancel()
 })

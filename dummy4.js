@@ -15,9 +15,6 @@ const xcoinAPI = require('./bithumb_modified.js'),
     moment = require('moment'),
     brain = require('brain.js')
 
-for (const c of [2,3,4])
-    console.log(c, -c.toFixed)
-    return
 
 async function go(ed) {
     try {
@@ -26,7 +23,7 @@ async function go(ed) {
           type: "BID",
           qty: 0.001,
           coinType: "BTC",
-          price: 55050
+          price: 6000
         })
 
     } catch (e) {

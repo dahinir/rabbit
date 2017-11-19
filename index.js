@@ -227,8 +227,7 @@ async function run() {
 
       // PRESENTATION //
       if (coinType == runningCoinType[runningCoinType.length - 1]) {
-        console.log("--PRESENTATION TIME--")
-        console.log("Invested: \u20A9", new Intl.NumberFormat().format(global.rabbit.INVESTED_KRW))
+        console.log("--PRESENTATION of \u20A9", new Intl.NumberFormat().format(global.rabbit.INVESTED_KRW), "--")
 
         const days = ((new Date() - global.rabbit.BORN) / 86400000),
           korbitBalance = global.rabbit.korbit.balance,

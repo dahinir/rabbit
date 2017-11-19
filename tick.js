@@ -224,8 +224,12 @@ module.exports = async function(options){
   //   await o
 
 
+  ////// Time to Cancel a useless order ////
+  await orders.cancel({
+    orderbook: coinoneOrderbook
+  })
 
-  ////// Presentation ///////
+  ////// Presentation /////// :will move to index.js
   global.rabbit.machines.presentation({
     orderbook: coinoneOrderbook,
     coinType: coinType

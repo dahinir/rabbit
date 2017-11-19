@@ -109,11 +109,11 @@ exports.Machine = Backbone.Model.extend({
             profit_rate: this.get("profit_rate") + thisProfit
           })
 
-          // FOR BIGGIE PROFIT: now summary is 0.70 //
-          // db.machines.updateMany({coinType:"ETH", craving_percentage: 4, status:"KRW"}, {$set:{capacity: 0.18}})
-          // db.machines.findOne({craving_krw: 6000, status:"KRW", capacity: {$ne: 0.01}})
+          // FOR BIGGIE PROFIT //
           switch (this.get("coinType")) {
             case "ETH":
+              // db.machines.updateMany({coinType:"ETH", craving_percentage: 4, status:"KRW"}, {$set:{capacity: 0.18}})
+              // db.machines.findOne({craving_krw: 6000, status:"KRW", capacity: {$ne: 0.01}})
               // sum: 0.60 eth
               if (this.get("craving_percentage") == 2)
                 changed.capacity = 0.01
@@ -135,6 +135,14 @@ exports.Machine = Backbone.Model.extend({
                 changed.capacity = 0.05
               else if (this.get("craving_percentage") == 20)
                 changed.capacity = 0.02
+              break
+            case "ETC":
+              // db.machines.updateMany({coinType:"ETC", status:"KRW"}, {$set:{capacity: 0.2}})
+              changed.capacity = 0.2
+              break
+            case "XRP":
+              // db.machines.updateMany({coinType:"XRP", status:"KRW"}, {$set:{capacity: 100}})
+              changed.capacity = 100
               break
           }
           
