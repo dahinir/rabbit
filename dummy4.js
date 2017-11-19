@@ -1,6 +1,6 @@
 "use strict"
-const xcoinAPI = require('./bithumb_modified.js'),
-    coinoneAPI = require("./coinone.js"),
+
+const coinoneAPI = require("./coinone.js"),
     korbitAPI = require("./korbit.js"),
     fetcher = require('./fetcher.js'),
     Order = require('./order.js').Order,
@@ -16,6 +16,12 @@ const xcoinAPI = require('./bithumb_modified.js'),
     brain = require('brain.js')
 
 
+
+
+    const startTime = ["A","BB"]
+    console.log(startTime.indexOf("BB"))
+
+return
 async function go(ed) {
     try {
 

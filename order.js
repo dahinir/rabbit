@@ -339,11 +339,11 @@ exports.Orders = Backbone.Collection.extend({
       const korbitOrders = this.models.filter(order => order.get("coinType") == coinType).filter(order => order.get("marketName") == "KORBIT")
 
       for (let orders of [coinoneOrders, korbitOrders]) {
-        console.log("[order.js] orders.length", orders.length)
+        // console.log("[order.js] orders.length", orders.length)
         if (orders.length > 5) {
+          console.log("[order.js] Mo than 5", coinType, "orders at", orders.at(0).get("marketName"))
           // The most far from current price
           const uselessOrder = _.sortBy(orders, order => -Math.abs(lastPrice - order.get("price")))[0]
-          // const uselessOrder = _.sortBy(orders, order => -Math.abs(global.rabbit.korbit[coinType].info.last - order.get("price")))[0]
 
           console.log("[order.js] Cancel order:", uselessOrder.id)
           // Cancel useless order!

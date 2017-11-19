@@ -54,15 +54,17 @@ function getOrders(coinType){
 
 
 module.exports = async function(options){
-  const startTime = new Date()
+  const TICK_STARTED = new Date()
   const count = options.count
   const coinType = options.coinType
+  const KORBIT = global.rabbit.constants[coinType].MARKET || true,
+    COINONE = global.rabbit.constants[coinType] || true
  
   const machines = getMachines(coinType)
   const orders = getOrders(coinType)
 
   console.log("-- ", coinType, "Tick no.", count, "with", machines.length, "machines. ",
-    startTime.toLocaleString(), "It's been", ((new Date() - global.rabbit.constants[coinType].STARTED)/ 86400000).toFixed(1),
+    TICK_STARTED.toLocaleString(), "It's been", ((new Date() - global.rabbit.constants[coinType].STARTED)/ 86400000).toFixed(1),
     "days. ", ((new Date() - global.rabbit.BORN) / 86400000).toFixed(1), "days old")
 
   // Check previous orders out
@@ -71,25 +73,32 @@ module.exports = async function(options){
 
 
   /////// FETCHING //////////
-  let coinoneInfo, coinoneOrderbook, coinoneBalance, coinoneRecentCompleteOrders
-  let korbitInfo, korbitOrderbook, korbitBalance
+  let coinoneInfo, korbitInfo, fetchingTime = Infinity
+  let coinoneOrderbook, coinoneBalance, coinoneRecentCompleteOrders
+  let korbitOrderbook, korbitBalance
   try {
-    // Act like Promise.all() 
-    const coinoneBalancePromise = fetcher.getCoinoneBalance(),
-      coinoneInfoPromise = fetcher.getCoinoneInfo(coinType),
-      coinoneOrderbookPromise = fetcher.getCoinoneOrderbook(coinType),
+    // Act like Promise.all()
+    // Less important in time domain
+    const coinoneInfoPromise = fetcher.getCoinoneInfo(coinType),
+      korbitInfoPromise = fetcher.getKorbitInfo(coinType),
+      coinoneBalancePromise = fetcher.getCoinoneBalance(),
+      korbitBalancePromise = fetcher.getKorbitBalance(),
       coinoneRecentCompleteOrdersPromise = fetcher.getCoinoneRecentCompleteOrders(coinType)
-    const korbitBalancePromise = fetcher.getKorbitBalance(),
-      korbitOrderbookPromise = fetcher.getKorbitOrderbook(coinType),
-      korbitInfoPromise = fetcher.getKorbitInfo(coinType)
-
     coinoneInfo = await coinoneInfoPromise
-    coinoneOrderbook = await coinoneOrderbookPromise
-    coinoneBalance = await coinoneBalancePromise
-    coinoneRecentCompleteOrders = await coinoneRecentCompleteOrdersPromise
     korbitInfo = await korbitInfoPromise
-    korbitOrderbook = await korbitOrderbookPromise
+    coinoneBalance = await coinoneBalancePromise
     korbitBalance = await korbitBalancePromise
+    coinoneRecentCompleteOrders = await coinoneRecentCompleteOrdersPromise
+    // console.log("Fetching some info takes", ((new Date() - TICK_STARTED) / 1000).toFixed(2), "sec")
+
+    // More important in time domain
+    const FETCH_STARTED = new Date()
+    const coinoneOrderbookPromise = fetcher.getCoinoneOrderbook(coinType),
+      korbitOrderbookPromise = fetcher.getKorbitOrderbook(coinType)
+    coinoneOrderbook = await coinoneOrderbookPromise
+    korbitOrderbook = await korbitOrderbookPromise
+    fetchingTime = ((new Date() - FETCH_STARTED) / 1000).toFixed(2) // sec
+    console.log("Fetching Orderbooks takes", fetchingTime, "sec")
   } catch (e) {
     // ignoreMoreRejectsFrom(coinoneInfoPromise, coinoneRecentCompleteOrdersPromise,
     //   korbitOrderbookPromise, coinoneOrderbookPromise,
@@ -97,8 +106,8 @@ module.exports = async function(options){
     console.log(e)
     throw new Error("[tick.js] Fail to fetch. Let me try again.")
   }
-
-  const fetchingTime = ((new Date() - startTime) / 1000).toFixed(2) // sec
+  
+  
   const korbit = {
         name: "KORBIT",
         info: korbitInfo,
@@ -107,19 +116,17 @@ module.exports = async function(options){
       }
   const coinone = {
         name: "COINONE",
-        info: coinoneInfo,
+        // info: coinoneInfo,
         orderbook: coinoneOrderbook,
         balance: coinoneBalance
       }
       
   // Some data needs to go global
-  // global.rabbit.coinone = coinone
-  // global.rabbit.korbit = korbit
   global.rabbit.coinone = global.rabbit.coinone || {}
   global.rabbit.coinone.balance = coinoneBalance
   global.rabbit.coinone[coinType] = {
     name: "COINONE",
-    info: coinoneInfo,
+    // info: coinoneInfo,
     orderbook: coinoneOrderbook
   }
   global.rabbit.korbit = global.rabbit.korbit || {}
@@ -131,16 +138,13 @@ module.exports = async function(options){
   }
 
   
-  console.log("--In 24hrs at Coinone", coinType, ":", coinoneInfo.low, "~", coinoneInfo.high, ":", coinoneInfo.last,"(",
-    ((coinoneInfo.last - coinoneInfo.low) / (coinoneInfo.high - coinoneInfo.low)*100).toFixed(2),"% )----" )
-  console.log("All fetchers've take", fetchingTime, "sec")
+  console.log("-- In 24 hrs", coinoneInfo.volume, coinType, "traded at Coinone:", coinoneInfo.low, "~", coinoneInfo.high, ":", coinoneInfo.last, "(", ((coinoneInfo.last - coinoneInfo.low) / (coinoneInfo.high - coinoneInfo.low) * 100).toFixed(2), "% )----")
   console.log("coin:", (korbitBalance[coinType].balance + coinoneBalance[coinType].balance).toFixed(2), coinType,
-    "== \u20A9", new Intl.NumberFormat().format(((korbitBalance[coinType].balance + coinoneBalance[coinType].balance) * coinoneOrderbook.bid[0].price).toFixed(0)))
+    "is now about \u20A9", new Intl.NumberFormat().format(((korbitBalance[coinType].balance + coinoneBalance[coinType].balance) * coinoneOrderbook.bid[0].price).toFixed(0)))
   console.log("Coinone", coinType + ":", coinoneBalance[coinType].available.toFixed(2))
   console.log("Korbit", coinType + ":", korbitBalance[coinType].available.toFixed(2))
   console.log("--(coinone", coinType + ")-----max bid:", coinoneOrderbook.bid[0], "min ask:", coinoneOrderbook.ask[0])
   console.log("--(korbit", coinType + ")------max bid:", korbitOrderbook.bid[0], "min ask:", korbitOrderbook.ask[0])
-  console.log("Coinone", coinType, "volume:", coinoneInfo.volume, " Korbit", coinType, "volume:", korbitInfo.volume)
 
 
   /////// TIME TO MIND ////////
@@ -288,7 +292,6 @@ function isInclined(coinoneRecentCompleteOrders) {
   console.log(candles[i])
   // console.log(candles.length, candles[0].length, candles[1].length, candles[2].length, candles[3].length, candles[4].length)
   // console.log( candles[candles.length - 1])
-  // console.log("All fetchers've take", fetchingTime, "sec", candles.length)
   if (candles[0].open == candles[0].close)
     return false
   return (candles[0].body == candles[1].body) ? true : false
