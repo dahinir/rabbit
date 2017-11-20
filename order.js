@@ -134,8 +134,12 @@ exports.Orders = Backbone.Collection.extend({
       this.on("change:status", o => {
         switch (o.get("status")) {
           case "COMPLETED":
+            console.log(`"COMPLETED" event called. The orderId ${o.get("orderId")} will be removed from the orders. remain in db`)
+            this.remove(o)
+            // delete o
+            break
           case "CANCELED":
-            console.log("The order will be removed from the orders. remain in db")
+            console.log(`"CANCELED" event called. The orderId ${o.get("orderId")} will be removed from the orders. remain in db`)
             this.remove(o)
             // delete o
             break
@@ -341,11 +345,11 @@ exports.Orders = Backbone.Collection.extend({
       for (let orders of [coinoneOrders, korbitOrders]) {
         // console.log("[order.js] orders.length", orders.length)
         if (orders.length > 5) {
-          console.log("[order.js] Mo than 5", coinType, "orders at", orders.at(0).get("marketName"))
+          console.log("[order.js] Mo than 5", coinType, "orders at", orders[0].get("marketName"))
           // The most far from current price
           const uselessOrder = _.sortBy(orders, order => -Math.abs(lastPrice - order.get("price")))[0]
 
-          console.log("[order.js] Cancel order:", uselessOrder.id)
+          console.log("[order.js] uselessOrder's ObjectId is", uselessOrder.id)
           // Cancel useless order!
           await uselessOrder.cancel()
         }

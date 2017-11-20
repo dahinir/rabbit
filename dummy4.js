@@ -16,12 +16,19 @@ const coinoneAPI = require("./coinone.js"),
     brain = require('brain.js')
 
 
-
-
-    const startTime = ["A","BB"]
-    console.log(startTime.indexOf("BB"))
-
+// for (let )   
+    const AA = function(){
+        return "d"
+    }()
+    console.log(`A:${AA} haha`)
+    const o = new Order({orderId:"HAHAHAHAHAHAH"})
+console.log(`"CANCELED" event called. The order ${o.get("orderId")}will be removed from the orders. remain in db`)
 return
+
+    //     const startTime = ["A","BB"]
+//     console.log(startTime.indexOf("BB"))
+
+// return
 async function go(ed) {
     try {
 
@@ -31,7 +38,6 @@ async function go(ed) {
           coinType: "BTC",
           price: 6000
         })
-
     } catch (e) {
         // console.log("catch")
         // console.log(e)

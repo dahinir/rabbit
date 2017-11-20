@@ -220,10 +220,13 @@ async function run() {
     // killSign = true
     if (killSign){
       console.log("Rabbit is stopped by killSign. Gracefully maybe.")
+      process.exit(0);
       return
     }else{
       const BREAK_TIME = MIN_TERM - (new Date() - startTime)
-      console.log("-- takes", (new Date() -startTime)/1000,"sec, so", BREAK_TIME,"ms later --------------------\n\n")
+      // console.log("-- takes", (new Date() -startTime)/1000,"sec, so", BREAK_TIME,"ms later --------------------\n\n")
+      console.log(`-- takes ${(new Date() - startTime) / 1000} sec, so ${BREAK_TIME} ms later --------------------\n\n`)
+
 
       // PRESENTATION //
       if (coinType == runningCoinType[runningCoinType.length - 1]) {
