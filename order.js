@@ -335,24 +335,23 @@ exports.Orders = Backbone.Collection.extend({
 
       const coinType = options.coinType || this.at(0).get("coinType"),
         lastPrice = options.orderbook.bid[0].price  // or ask[0] whatever
+        
+        // Array.filter() return [] if there is no order. not undefined
+        const coinoneOrders = this.models.filter(order => order.get("coinType") == coinType).filter(order => order.get("marketName") == "COINONE")
+        const korbitOrders = this.models.filter(order => order.get("coinType") == coinType).filter(order => order.get("marketName") == "KORBIT")
+        
+        for (let orders of [coinoneOrders, korbitOrders]) {
+          // console.log("[order.js] orders.length", orders.length)
+          if (orders.length > 5) {
+            console.log("[order.js] Time to cancel order.", coinType, "lastPrice:", lastPrice)
+            console.log("[order.js] Mo than 5", coinType, "orders at", orders[0].get("marketName"))
+            // The most far from current price
+            const uselessOrder = _.sortBy(orders, order => -Math.abs(lastPrice - order.get("price")))[0]
 
-      console.log("[order.js] Time to cancel order.", coinType, "lastPrice:", lastPrice)
-
-      // Array.filter() return [] if there is no order. not undefined
-      const coinoneOrders = this.models.filter(order => order.get("coinType") == coinType).filter(order => order.get("marketName") == "COINONE")
-      const korbitOrders = this.models.filter(order => order.get("coinType") == coinType).filter(order => order.get("marketName") == "KORBIT")
-
-      for (let orders of [coinoneOrders, korbitOrders]) {
-        // console.log("[order.js] orders.length", orders.length)
-        if (orders.length > 5) {
-          console.log("[order.js] Mo than 5", coinType, "orders at", orders[0].get("marketName"))
-          // The most far from current price
-          const uselessOrder = _.sortBy(orders, order => -Math.abs(lastPrice - order.get("price")))[0]
-
-          console.log("[order.js] uselessOrder's ObjectId is", uselessOrder.id)
-          // Cancel useless order!
-          await uselessOrder.cancel()
+            console.log("[order.js] uselessOrder's ObjectId is", uselessOrder.id)
+            // Cancel useless order!
+            await uselessOrder.cancel()
+          }
         }
-      }
     } // End of cancel()
 })

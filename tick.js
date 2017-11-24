@@ -155,7 +155,7 @@ module.exports = async function(options){
   }
 
   // Arbitrages
-  if (coinType == "ETH"){
+  if (global.rabbit.constants[coinType].ARBITRAGE_STARTED && machines.length > 1000){
     results = arbitrages.mind({
       korbit: korbit,
       coinone: coinone
@@ -176,43 +176,46 @@ module.exports = async function(options){
       return
     }
 
-    let altKorbit = korbit,
-      altCoinone = coinone
-    const MINS = {
-      "BTC": 0.1,
-      "BCH": 0.5,
-      "ETH": 2.0,
-      "ETC": 50,
-      "XRP": 1000
-    }
-    if (coinone.balance.KRW.available < 600000){
-      console.log("[tick.js] not enough krw at coinone.")
-      altCoinone = (korbit.orderbook.bid[0].price <= coinone.orderbook.bid[0].price) ? coinone : korbit
-    }
-    if (korbit.balance.KRW.available < 600000){
-      console.log("[tick.js] not enough krw at korbit.")
-      altKorbit = (coinone.orderbook.bid[0].price <= korbit.orderbook.bid[0].price) ? korbit : coinone
-    }
-    if (coinone.balance[coinType].available < MINS[coinType]){
-      console.log("[tick.js] not enough",coinType ,"at coinone.")
-      altCoinone = (korbit.orderbook.ask[0].price >= coinone.orderbook.ask[0].price) ? coinone : korbit
-    }
-    if (korbit.balance[coinType].available < MINS[coinType]){
-      console.log("[tick.js] not enough",coinType ,"at korbit.")
-      altKorbit = (coinone.orderbook.ask[0].price >= korbit.orderbook.ask[0].price) ? korbit : coinone
-    }
-    console.log("altCoinone:", altCoinone.name, "\taltKorbit:", altKorbit.name)
-    if (altKorbit.name == "COINONE" && altCoinone.name == "KORBIT"){
-      console.log("altCoinone is korbit, altKorbit is coinone. so pass this tick")
-      // throw new Error("KILL_ME")
-      return
-    }
+    // let altKorbit = korbit,
+    //   altCoinone = coinone
+    // if (machines.length > 1000){
+    //   const MINS = {
+    //     "BTC": 0.1,
+    //     "BCH": 0.5,
+    //     "ETH": 2.0,
+    //     "ETC": 50,
+    //     "XRP": 1000
+    //   }
+    //   if (coinone.balance.KRW.available < 600000){
+    //     console.log("[tick.js] not enough krw at coinone.")
+    //     altCoinone = (korbit.orderbook.bid[0].price <= coinone.orderbook.bid[0].price) ? coinone : korbit
+    //   }
+    //   if (korbit.balance.KRW.available < 600000){
+    //     console.log("[tick.js] not enough krw at korbit.")
+    //     altKorbit = (coinone.orderbook.bid[0].price <= korbit.orderbook.bid[0].price) ? korbit : coinone
+    //   }
+    //   if (coinone.balance[coinType].available < MINS[coinType]){
+    //     console.log("[tick.js] not enough",coinType ,"at coinone.")
+    //     altCoinone = (korbit.orderbook.ask[0].price >= coinone.orderbook.ask[0].price) ? coinone : korbit
+    //   }
+    //   if (korbit.balance[coinType].available < MINS[coinType]){
+    //     console.log("[tick.js] not enough",coinType ,"at korbit.")
+    //     altKorbit = (coinone.orderbook.ask[0].price >= korbit.orderbook.ask[0].price) ? korbit : coinone
+    //   }
+    //   console.log("altCoinone:", altCoinone.name, "\taltKorbit:", altKorbit.name)
+    //   if (altKorbit.name == "COINONE" && altCoinone.name == "KORBIT"){
+    //     console.log("altCoinone is korbit, altKorbit is coinone. so pass this tick")
+    //     // throw new Error("KILL_ME")
+    //     return
+    //   }
+    // }
 
     results = machines.mind({
-      korbit: altKorbit,
-      coinone: altCoinone
-      // korbit: coinone,
-      // coinone: coinone
+      coinType: coinType,
+      // korbit: altKorbit,
+      // coinone: altCoinone
+      korbit: coinone,
+      coinone: coinone
     })
   }
   // console.log("[tick.js]", machinesResult.participants.length, "machinesResult want to deal")
@@ -234,9 +237,10 @@ module.exports = async function(options){
   })
 
   ////// Presentation /////// :will move to index.js
-  global.rabbit.machines.presentation({
-    orderbook: coinoneOrderbook,
-    coinType: coinType
+  // global.rabbit.machines.presentation({
+  machines.presentation({
+    // coinType: coinType,
+    orderbook: coinoneOrderbook
   })
   // await global.rabbit.arbitrages.presentation()
 } // End of module.exports

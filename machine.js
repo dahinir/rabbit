@@ -266,25 +266,15 @@ exports.Machines = Backbone.Collection.extend({
     },
     presentation: function(options){
       const maxBidPrice = options.orderbook.bid[0].price,
-        coinType = options.coinType,
+        coinType = options.coinType || this.at(0).get("coinType"),
         PREVIOUS_PROFIT_SUM = global.rabbit.constants[coinType].PREVIOUS_PROFIT_SUM || 0,
         BORN = global.rabbit.constants[coinType].BORN,
-        STARTED = global.rabbit.constants[coinType].STARTED
+        STARTED = global.rabbit.constants[coinType].STARTED,
+        MIN_CRAVING_PERCENTAGE = global.rabbit.constants[coinType].MACHINE_SETTING.MIN_CRAVING_PERCENTAGE
 
-      const sameCoinMachines = this.filter(m => m.get("coinType") == coinType)
+      // const sameCoinMachines = this.filter(m => m.get("coinType") == coinType)
+      // console.log("LENGTH:", this.length, sameCoinMachines.length)
       // console.log("Is it Array?", _.isArray(sameCoinMachines))
-
-      // Find minCravingPercentage of a specific coinType
-      this.minCravingPercentages = this.minCravingPercentages || {}
-      if (!this.minCravingPercentages[coinType]){
-        let min = Infinity
-        for (let m of sameCoinMachines)
-          min = (min > m.get("craving_percentage"))? m.get("craving_percentage"): min
-        console.log("[machines.js] Is it first time? right?", coinType, "minCravingPercentage will be setted as", min)
-        this.minCravingPercentages[coinType] = min
-      }
-      const minCravingPercentages = this.minCravingPercentages[coinType]
-      console.log("minCravingPercentages", minCravingPercentages)
 
       let profit_krw_sum = 0,
         total_traded = 0,
@@ -293,7 +283,7 @@ exports.Machines = Backbone.Collection.extend({
         profit_rate_each_craving = [0,0,0,0,0, 0,0,0,0,0],
         traded_count_each_craving = [0,0,0,0,0, 0,0,0,0,0]
 
-      for (let m of sameCoinMachines){
+      for (let m of this.models){
         profit_krw_sum += m.get("profit_krw")
         total_traded += m.get("traded_count")
         coin_sum += m.get("status") == "COIN" ? m.get("capacity") : 0
@@ -303,7 +293,7 @@ exports.Machines = Backbone.Collection.extend({
         krw_damage += m.get("status") == "COIN" ?
           (m.get("last_traded_price") - maxBidPrice) * m.get("capacity") : 0
 
-        const pIndex = Math.round(m.get("craving_percentage") / minCravingPercentages - 1)
+        const pIndex = Math.round(m.get("craving_percentage") / MIN_CRAVING_PERCENTAGE - 1)
         profit_rate_each_craving[pIndex] += m.get("profit_rate")
         traded_count_each_craving[pIndex] += m.get("traded_count")
       }
@@ -311,7 +301,7 @@ exports.Machines = Backbone.Collection.extend({
       profit_krw_sum = profit_krw_sum.toFixed(0) * 1
       profit_rate_each_craving = profit_rate_each_craving.map(el => Math.round(el/1000)) // 1000 machines each craving
       
-      console.log("--", sameCoinMachines.length, coinType, "machines presentation ----  \u20A9", new Intl.NumberFormat().format(PREVIOUS_PROFIT_SUM + profit_krw_sum),
+      console.log("--", this.length, coinType, "machines presentation ----  \u20A9", new Intl.NumberFormat().format(PREVIOUS_PROFIT_SUM + profit_krw_sum),
         ":", new Intl.NumberFormat().format(((PREVIOUS_PROFIT_SUM + profit_krw_sum) / ((new Date() - BORN ) / 86400000)).toFixed(0)), "per day" )
 
       console.log("Rabbit made \u20A9", new Intl.NumberFormat().format(profit_krw_sum),
@@ -326,7 +316,7 @@ exports.Machines = Backbone.Collection.extend({
       console.log("[profit rate]  ", JSON.stringify(profit_rate_each_craving))
       console.log("[traded count] ", JSON.stringify(traded_count_each_craving))
 
-      // for inde.js presentation //
+      // for index.js presentation //
       global.rabbit.constants[coinType].profit_krw_sum = PREVIOUS_PROFIT_SUM + profit_krw_sum
       global.rabbit.constants[coinType].krw_damage = krw_damage
     },
@@ -364,19 +354,19 @@ exports.Machines = Backbone.Collection.extend({
     },
     mind: function(options) {
       const startTime = new Date()
-      const coinType = this.at(0).get("coinType"),
+      const coinType = options.coinType || this.at(0).get("coinType"),
         korbit = options.korbit,
         coinone = options.coinone,
         MIN_KRW_UNIT = global.rabbit.constants[coinType].MIN_KRW_UNIT
 
       let highBidMarket, lowAskMarket
-      if (coinone.orderbook.bid[0].price >= korbit.orderbook.bid[0].price){
+      if (coinone.orderbook.bid[0].price > korbit.orderbook.bid[0].price){
         // if (coinoneBalance.ETH.available > MIN_ETH)
         highBidMarket = coinone
       }else {
         highBidMarket = korbit
       }
-      if (coinone.orderbook.ask[0].price <= korbit.orderbook.ask[0].price){
+      if (coinone.orderbook.ask[0].price < korbit.orderbook.ask[0].price){
         lowAskMarket = coinone
       }else {
         lowAskMarket = korbit
@@ -385,18 +375,32 @@ exports.Machines = Backbone.Collection.extend({
         bid: highBidMarket.orderbook.bid,
         ask: lowAskMarket.orderbook.ask
       }
-      console.log("[machine.js] Low ask market:", lowAskMarket.name, "\tHigh bid market:", highBidMarket.name)
-
-
+      console.log("[machines.mind()] Low ask market:", lowAskMarket.name, "\tHigh bid market:", highBidMarket.name)
 
       // Make decision which orderbook to use
       const minAskPrice = bestOrderbook.ask[0].price,
           maxBidPrice = bestOrderbook.bid[0].price
+      console.log("[machines.mind()] maxBid:", maxBidPrice, " minAsk:", minAskPrice)
 
-      console.log("[machine.js] maxBid:", maxBidPrice, " minAsk:", minAskPrice)
 
+      ///// Find or Create //////
+      if (this.where({buy_at: minAskPrice}).length == 0){
+        console.log(`There is no machine for ${minAskPrice} krw in ${this.length} machines, so I will create`)
+        const MIN_CRAVING_PERCENTAGE = global.rabbit.constants[coinType].MACHINE_SETTING.MIN_CRAVING_PERCENTAGE
+        
+        for (let i = 1; i <= 10; i++){
+          this.add({
+            coinType: coinType,
+            capacity: global.rabbit.constants[coinType].MACHINE_SETTING.CAPACITY,
+            buy_at: minAskPrice,
+            craving_percentage: MIN_CRAVING_PERCENTAGE * i,
+            craving_krw: Math.round(minAskPrice * MIN_CRAVING_PERCENTAGE * i / 100)
+          })
+        }
+        console.log(`Now ${coinType} machines are ${this.length}`)
+      }
 
-      ///// Mind
+      ///// Mind /////
       let bidParticipants = [], askParticipants = [],
         bidMachineIds = [], askMachineIds = [],
         totalBid = 0.0, totalAsk = 0.0,

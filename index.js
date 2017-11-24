@@ -51,7 +51,11 @@ global.rabbit.constants = {
     PREVIOUS_PROFIT_SUM: 49752085,
     BORN: new Date('July 4, 2017 13:20:00'),  // 1 eth == 337,500 krw
     STARTED: new Date('September 22, 2017 11:00:00'), // 1 eth == 300,000 krw
-    ARBITRAGE_STARTED: new Date('July 26, 2017 13:20:00')
+    ARBITRAGE_STARTED: new Date('July 26, 2017 13:20:00'),
+    MACHINE_SETTING: {
+      CAPACITY: 0.01,
+      MIN_CRAVING_PERCENTAGE: 2
+    }
   },
   ETC: {
     PRECISION: 1,
@@ -70,7 +74,7 @@ global.rabbit.constants = {
     STARTED: new Date('November 18, 2017 13:35:00')
   }
 }
-global.rabbit.INVESTED_KRW = 150000000
+global.rabbit.INVESTED_KRW = 110000000
 global.rabbit.BORN = new Date('July 4, 2017 13:20:00')
 
 
@@ -90,13 +94,13 @@ global.rabbit.machines.fetchAll({
             // $limit: 10
           },
           success: function() {
+            console.log("===DB LOADED======================")
               console.log("[index.js] ", global.rabbit.machines.length, "machines are loaded.");
               console.log("[index.js] ", global.rabbit.arbitrages.length, "arbitrages are loaded.")
               console.log("[index.js] ", global.rabbit.orders.length, "OPEN orders are loaded.");
-              console.log("===start======================")
 
-              if (global.rabbit.machines.length != 70000)
-                throw new Error("How many machines do you have?")
+              // if (global.rabbit.machines.length != 70000)
+              //   throw new Error("How many machines do you have?")
 
               // Attach machines as participants
               global.rabbit.orders.each(order => {
@@ -188,7 +192,8 @@ global.rabbit.machines.fetchAll({
 })
 
 
-const runningCoinType = ["BTC", "BCH", "ETH", "ETC", "XRP"],  // It's gonna be tick order.
+// const runningCoinType = ["BTC", "BCH", "ETH", "ETC", "XRP"],  // It's gonna be tick order.
+const runningCoinType = ["ETH"],
   MIN_TERM = 10000,  // ms ..minimum I think 2700~2900 ms
   ERROR_BUFFER = 60000  // A minute
 let count = -1
@@ -229,6 +234,7 @@ async function run() {
 
 
       // PRESENTATION //
+      // if (false){
       if (coinType == runningCoinType[runningCoinType.length - 1]) {
         console.log("--PRESENTATION of \u20A9", new Intl.NumberFormat().format(global.rabbit.INVESTED_KRW), "--")
 
