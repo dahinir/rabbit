@@ -1,10 +1,7 @@
 "use strict"
 
 const _ = require('underscore'),
-  fetcher = require('./fetcher.js'),
-  Machines = require("./machine").Machines,
-  Orders = require('./order.js').Orders,
-  Arbitrages = require('./machine.js').Arbitrages
+  fetcher = require('./fetcher.js')
 
 console.log("\n\n[tick.js] Loaded!")
 
@@ -172,7 +169,7 @@ module.exports = async function(options){
       coinType: coinType,
       // korbit: altKorbit,
       // coinone: altCoinone
-      korbit: coinone,
+      korbit: korbit,
       coinone: coinone
     })
   }
@@ -203,14 +200,13 @@ module.exports = async function(options){
 
 
 
-
+/////// HELPER FUNCTIONS //////
 // For error handling in a Promise.all like flow in async/await syntax
 function ignoreMoreRejectsFrom(...promises) {
     promises.forEach(p => p && p.catch(function () {
       // Nothing to do
     }));
 }
-
 
 function isInclined(coinoneRecentCompleteOrders) {
   coinoneRecentCompleteOrders = coinoneRecentCompleteOrders.reverse()

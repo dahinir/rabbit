@@ -79,16 +79,12 @@ global.rabbit.BORN = new Date('July 4, 2017 13:20:00')
 
 
 
-// global.rabbit = {
-//     machines: new Machines(),
-//     arbitrages: new Arbitrages(),
-//     orders: new Orders()
-// }
+// For loading from DB
 const arbitrages = new Arbitrages(),
   machines = new Machines(),
   orders = new Orders()
 
-// Fetch all machines and orders from db
+// Fetch all machines and orders from DB
 machines.fetchAll({
   success: function() {
     arbitrages.fetch({
@@ -279,6 +275,8 @@ async function run() {
 }
 
 
+
+///// HELPER FUNCTIONS ////
 const machinesChamber = {}
 function getMachines(coinType) {
   if (!machinesChamber[coinType]) {
