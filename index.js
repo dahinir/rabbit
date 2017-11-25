@@ -6,12 +6,12 @@ const _ = require('underscore'),
 // const xcoinAPI = require('./bithumb_modified.js');
 const fetcher = require('./fetcher.js');
 
-const Machine = require('./machine.js').Machine;
-const Machines = require('./machine.js').Machines;
-const Arbitrage = require('./machine.js').Arbitrage,
-  Arbitrages = require('./machine.js').Arbitrages
-const Order = require('./order.js').Order;
-const Orders = require('./order.js').Orders;
+const Machine = require('./machine.js').Machine,
+  Machines = require('./machine.js').Machines,
+  Arbitrage = require('./machine.js').Arbitrage,
+  Arbitrages = require('./machine.js').Arbitrages,
+  Order = require('./order.js').Order,
+  Orders = require('./order.js').Orders
 
 
 let killSign = false
@@ -20,18 +20,14 @@ process.on('SIGINT', function() {
   killSign = true
 })
 
-global.rabbit = {
-    machines: new Machines(),
-    arbitrages: new Arbitrages(),
-    orders: new Orders()
-}
+global.rabbit = {}
 
 // How many places after the decimal separator
 global.rabbit.constants = {
   BTC: {
     PRECISION: 3,  // Actually It's 4. but I decided to use only 3 places after the decimal
     MIN_KRW_UNIT: 500,  // Minimum unit of KRW
-    ADDITIONAL_BUY_AT: 500, // using within mind()
+    // ADDITIONAL_BUY_AT: 500, // using within mind()
     PREVIOUS_PROFIT_SUM: 0,
     BORN: new Date('November 17, 2017 14:45:00'), // 1 btc == 8,740,500 krw
     STARTED: new Date('November 17, 2017 14:45:00') 
@@ -39,7 +35,7 @@ global.rabbit.constants = {
   BCH: {
     PRECISION: 2,
     MIN_KRW_UNIT: 500,
-    ADDITIONAL_BUY_AT: 500, // using within mind(), Set as 900 for full sampling at Coinone
+    // ADDITIONAL_BUY_AT: 500, // using within mind(), Set as 900 for full sampling at Coinone
     PREVIOUS_PROFIT_SUM: 0,
     BORN: new Date('November 17, 2017 16:45:00'), // 1 bch == 1,291,000 krw
     STARTED: new Date('November 17, 2017 16:45:00')
@@ -47,20 +43,23 @@ global.rabbit.constants = {
   ETH: {
     PRECISION: 2,
     MIN_KRW_UNIT: 50,
-    ADDITIONAL_BUY_AT: 50,
-    PREVIOUS_PROFIT_SUM: 49752085,
+    // ADDITIONAL_BUY_AT: 50,
+    PREVIOUS_PROFIT_SUM: 0, // 68,000,000? 49752085,
+    PREVIOUS_PROFIT_RATE_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    PREVIOUS_TRADED_COUNT_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     BORN: new Date('July 4, 2017 13:20:00'),  // 1 eth == 337,500 krw
     STARTED: new Date('September 22, 2017 11:00:00'), // 1 eth == 300,000 krw
     ARBITRAGE_STARTED: new Date('July 26, 2017 13:20:00'),
     MACHINE_SETTING: {
       CAPACITY: 0.01,
+      CAPACITY_EACH_CRAVING: [0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01],
       MIN_CRAVING_PERCENTAGE: 2
     }
   },
   ETC: {
     PRECISION: 1,
     MIN_KRW_UNIT: 10,
-    ADDITIONAL_BUY_AT: 0, // ETC doesn't need
+    // ADDITIONAL_BUY_AT: 0, // ETC doesn't need
     PREVIOUS_PROFIT_SUM: 0,
     BORN: new Date('November 18, 2017 13:10:00'), // 1 etc == 19,190 krw
     STARTED: new Date('November 18, 2017 13:10:00')
@@ -68,7 +67,7 @@ global.rabbit.constants = {
   XRP:{
     PRECISION: 0,
     MIN_KRW_UNIT: 1,
-    ADDITIONAL_BUY_AT: 0,
+    // ADDITIONAL_BUY_AT: 0,
     PREVIOUS_PROFIT_SUM: 0,
     BORN: new Date('November 18, 2017 13:35:00'), // 1 xrp == 247 krw
     STARTED: new Date('November 18, 2017 13:35:00')
@@ -78,16 +77,27 @@ global.rabbit.INVESTED_KRW = 110000000
 global.rabbit.BORN = new Date('July 4, 2017 13:20:00')
 
 
+
+
+// global.rabbit = {
+//     machines: new Machines(),
+//     arbitrages: new Arbitrages(),
+//     orders: new Orders()
+// }
+const arbitrages = new Arbitrages(),
+  machines = new Machines(),
+  orders = new Orders()
+
 // Fetch all machines and orders from db
-global.rabbit.machines.fetchAll({
+machines.fetchAll({
   success: function() {
-    global.rabbit.arbitrages.fetch({
+    arbitrages.fetch({
       data: {
         status: "PENDING",
         pend_count: 2
       },
       success: function(){
-        global.rabbit.orders.fetch({
+        orders.fetch({
           data: {
             status: "OPEN"
             // $skip: 10,
@@ -95,21 +105,21 @@ global.rabbit.machines.fetchAll({
           },
           success: function() {
             console.log("===DB LOADED======================")
-              console.log("[index.js] ", global.rabbit.machines.length, "machines are loaded.");
-              console.log("[index.js] ", global.rabbit.arbitrages.length, "arbitrages are loaded.")
-              console.log("[index.js] ", global.rabbit.orders.length, "OPEN orders are loaded.");
+              console.log("[index.js] ", machines.length, "machines are loaded.");
+              console.log("[index.js] ", arbitrages.length, "arbitrages are loaded.")
+              console.log("[index.js] ", orders.length, "OPEN orders are loaded.");
 
-              // if (global.rabbit.machines.length != 70000)
+              // if (machines.length != 70000)
               //   throw new Error("How many machines do you have?")
 
               // Attach machines as participants
-              global.rabbit.orders.each(order => {
+              orders.each(order => {
                 let participants = []
 
                 for (let mId of order.get("machineIds")){
-                  let m = global.rabbit.machines.get(mId)
+                  let m = machines.get(mId)
                   if(_.isUndefined(m)){
-                    m = global.rabbit.arbitrages.get(mId)
+                    m = arbitrages.get(mId)
                     if(_.isUndefined(m)){
                       console.log("undefined machine! order.attributes:", order.attributes)
                       throw new Error("wtf")
@@ -134,20 +144,16 @@ global.rabbit.machines.fetchAll({
               })
 
               // Attach orders to arbitrages
-              global.rabbit.arbitrages.each(a => {
-                const orders = [] // will be attaced
+              arbitrages.each(a => {
+                a.orders = [] // will be attaced
 
                 a.get("orderIds").map(orderId => {
-                  // console.log("orderId:", orderId)
-                  const order = global.rabbit.orders.findWhere({orderId: orderId})
-                  if (order)
-                    orders.push(order)
-                  // console.log(order.attributes)
+                  const o = orders.findWhere({orderId: orderId})
+                  if (o) a.orders.push(o)
                 })
-                // console.log(orders.length)
-                if (orders.length + a.get("traded_count") == 2){
-                  console.log("arbitrage id", a.id, "have the", orders.length, "orders", a.get("traded_count") ,"traded_count properly")
-                  a.orders = orders
+
+                if (a.orders.length + a.get("traded_count") == 2){
+                  console.log("arbitrage id", a.id, "have the", a.orders.length, "orders", a.get("traded_count") ,"traded_count properly")
                 } else{
                   console.log("Why the orders ain't two? arbitrage.attributes:", a.attributes)
                   throw new Error("arbitrage id", a.id, "does not have 2 orders")
@@ -156,14 +162,14 @@ global.rabbit.machines.fetchAll({
 
               // Rollback machine that is PENDING but does not belongs to any order
               async function rollbackMachines() {
-                const realPendingMachineIds = global.rabbit.orders.models.reduce((acc, o) => {
+                const realPendingMachineIds = orders.models.reduce((acc, o) => {
                   // console.log(acc, o)
                   return acc.concat(o.get("machineIds"))
                 }, [])
                 console.log("pended machine ids:", realPendingMachineIds)
                 let rollbackedMachineIds = [], realPendingMachineCount = 0
 
-                for (let m of global.rabbit.machines.models){
+                for (let m of machines.models){
                   if (m.get("status") == "PENDING"){
                     if (realPendingMachineIds.includes(m.id)){
                       realPendingMachineCount++
@@ -209,6 +215,9 @@ async function run() {
 
     // HERE BABE HERE IT IS //
     await require("./tick.js")({
+      arbitrages: arbitrages,
+      machines: getMachines(coinType),
+      orders: getOrders(coinType),
       coinType: coinType,
       count: count
     })
@@ -267,4 +276,21 @@ async function run() {
       setTimeout(run, BREAK_TIME)
     }
   }
+}
+
+
+const machinesChamber = {}
+function getMachines(coinType) {
+  if (!machinesChamber[coinType]) {
+    console.log("This is first tic of", coinType, "IF IT'S NOT, IT'S A PROBLEM. STOP THIS SHIT!")
+    machinesChamber[coinType] = new Machines(machines.where({ coinType: coinType }))
+  }
+  return machinesChamber[coinType]
+}
+
+const ordersChamber = {}
+function getOrders(coinType) {
+  if (!ordersChamber[coinType])
+    ordersChamber[coinType] = new Orders(orders.filter(o => o.get("coinType") == coinType))
+  return ordersChamber[coinType]
 }

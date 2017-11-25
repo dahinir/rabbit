@@ -1,69 +1,27 @@
 "use strict"
 
 const _ = require('underscore'),
- fetcher = require('./fetcher.js'),
- Machines = require("./machine").Machines,
+  fetcher = require('./fetcher.js'),
+  Machines = require("./machine").Machines,
   Orders = require('./order.js').Orders,
- Arbitrages = require('./machine.js').Arbitrages
+  Arbitrages = require('./machine.js').Arbitrages
 
 console.log("\n\n[tick.js] Loaded!")
 
-// const machines = new Machines(global.rabbit.machines.filter(m => {
-//   if (m.get("buy_at") >= 300000 && m.get("buy_at") < 500000)
-//     return true
-//   else
-//     return false
-// }))
-// const orders = global.rabbit.orders
-const arbitrages = global.rabbit.arbitrages
-
-const machinesChamber = {}
-function getMachines(coinType){
-  if (!machinesChamber[coinType]){
-    console.log("This is first tic of", coinType, "IF IT'S NOT, IT'S A PROBLEM. STOP THIS SHIT!")
-    machinesChamber[coinType] = new Machines(global.rabbit.machines.filter(m => {
-      if (coinType == "ETH"){
-        if (m.get("coinType") == coinType && m.get("buy_at") >= 300000 && m.get("buy_at") < 500000)
-          return true
-        else
-          return false
-      }else{
-        if (m.get("coinType") == coinType)
-          return true
-        else
-          return false
-      }
-    }))
-  }
-    // console.log("1",machinesChamber[coinType].models.length)
-    // console.log("2",machinesChamber[coinType].length)
-  // console.log("3", machinesChamber[coinType].at(0).attributes)
-    // console.log("4", [1,2,3,4,5].at(0))
-  // if (!machinesChamber[coinType])
-  //   machinesChamber[coinType] = new Machines(global.rabbit.machines.filter(m => (m.get("coinType") == coinType && m.get("buy_at") >= 300000 && m.get("buy_at") < 500000)))
-
-  return machinesChamber[coinType]
-}
-
-const ordersChamber = {}
-function getOrders(coinType){
-  if (!ordersChamber[coinType])
-    ordersChamber[coinType] = new Orders(global.rabbit.orders.filter(o => o.get("coinType") == coinType))
-  return ordersChamber[coinType]
-}
-
-
 module.exports = async function(options){
-  const TICK_STARTED = new Date()
-  const count = options.count
-  const coinType = options.coinType
-  const KORBIT = global.rabbit.constants[coinType].MARKET || true,
+  const TICK_STARTED = new Date(),
+    COUNT = options.count,
+    coinType = options.coinType,
+    KORBIT = global.rabbit.constants[coinType].MARKET || true,
     COINONE = global.rabbit.constants[coinType] || true
  
-  const machines = getMachines(coinType)
-  const orders = getOrders(coinType)
+  const arbitrages = options.arbitrages,
+    machines = options.machines,
+    orders = options.orders
+  // const machines = getMachines(coinType)
+  // const orders = getOrders(coinType)
 
-  console.log("-- ", coinType, "Tick no.", count, "with", machines.length, "machines. ",
+  console.log("-- ", coinType, "Tick no.", COUNT, "with", machines.length, "machines. ",
     TICK_STARTED.toLocaleString(), "It's been", ((new Date() - global.rabbit.constants[coinType].STARTED)/ 86400000).toFixed(1),
     "days. ", ((new Date() - global.rabbit.BORN) / 86400000).toFixed(1), "days old")
 
@@ -155,7 +113,7 @@ module.exports = async function(options){
   }
 
   // Arbitrages
-  if (global.rabbit.constants[coinType].ARBITRAGE_STARTED && machines.length > 1000){
+  if (global.rabbit.constants[coinType].ARBITRAGE_STARTED && machines.length > 5000){
     results = arbitrages.mind({
       korbit: korbit,
       coinone: coinone
@@ -237,12 +195,10 @@ module.exports = async function(options){
   })
 
   ////// Presentation /////// :will move to index.js
-  // global.rabbit.machines.presentation({
   machines.presentation({
     // coinType: coinType,
     orderbook: coinoneOrderbook
   })
-  // await global.rabbit.arbitrages.presentation()
 } // End of module.exports
 
 

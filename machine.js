@@ -39,8 +39,9 @@ exports.Machine = Backbone.Model.extend({
       let mind = {} //  will be new mind of this machine
 
       if (this.get("status") == "KRW") {
-        const AU = global.rabbit.constants[this.get("coinType")].ADDITIONAL_BUY_AT || 0
-        if (options.minAskPrice == this.get("buy_at") || options.minAskPrice == this.get("buy_at") - AU)
+        // const AU = global.rabbit.constants[this.get("coinType")].ADDITIONAL_BUY_AT || 0
+        if (options.minAskPrice == this.get("buy_at"))
+        // if (options.minAskPrice == this.get("buy_at") || options.minAskPrice == this.get("buy_at") - AU)
         // if (options.minAskPrice >= this.get("buy_at") - AU && options.minAskPrice <= this.get("buy_at"))
           mind = {
             type: "BID",
@@ -280,8 +281,8 @@ exports.Machines = Backbone.Collection.extend({
         total_traded = 0,
         coin_sum = 0,
         krw_damage = 0,
-        profit_rate_each_craving = [0,0,0,0,0, 0,0,0,0,0],
-        traded_count_each_craving = [0,0,0,0,0, 0,0,0,0,0]
+        profit_rate_each_craving = global.rabbit.constants[coinType].PREVIOUS_PROFIT_RATE_EACH_CRAVING || [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        traded_count_each_craving = global.rabbit.constants[coinType].PREVIOUS_TRADED_COUNT_EACH_CRAVING || [0,0,0,0,0, 0,0,0,0,0]
 
       for (let m of this.models){
         profit_krw_sum += m.get("profit_krw")

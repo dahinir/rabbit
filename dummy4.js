@@ -22,7 +22,7 @@ const coinoneAPI = require("./coinone.js"),
     }()
     console.log(`A:${AA} haha`)
     const o = new Order({orderId:"HAHAHAHAHAHAH"})
-console.log(`"CANCELED" event called. The order ${o.get("orderId")}will be removed from the orders. remain in db`)
+    if(false) console.log(`"CANCELED" event called. The order ${o.get("orderId")}will be removed from the orders. remain in db`)
 return
 
     //     const startTime = ["A","BB"]
