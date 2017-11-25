@@ -27,7 +27,7 @@ global.rabbit.constants = {
   BTC: {
     PRECISION: 3,  // Actually It's 4. but I decided to use only 3 places after the decimal
     MIN_KRW_UNIT: 500,  // Minimum unit of KRW
-    BUY_AT_UNIT: 1000,
+    BUY_AT_UNIT: 10000,
     PREVIOUS_PROFIT_SUM: 0,
     BORN: new Date('November 17, 2017 14:45:00'), // 1 btc == 8,740,500 krw
     STARTED: new Date('November 17, 2017 14:45:00') 
@@ -35,7 +35,7 @@ global.rabbit.constants = {
   BCH: {
     PRECISION: 2,
     MIN_KRW_UNIT: 500,
-    BUY_AT_UNIT: 1000,
+    BUY_AT_UNIT: 10000,
     PREVIOUS_PROFIT_SUM: 0,
     BORN: new Date('November 17, 2017 16:45:00'), // 1 bch == 1,291,000 krw
     STARTED: new Date('November 17, 2017 16:45:00')
@@ -44,7 +44,7 @@ global.rabbit.constants = {
     MARKET: ["COINONE", "KORBIT"],
     PRECISION: 2,
     MIN_KRW_UNIT: 50,
-    BUY_AT_UNIT: 100,
+    BUY_AT_UNIT: 1000,
     PREVIOUS_PROFIT_SUM: 0, // 68,000,000? 49752085,
     PREVIOUS_PROFIT_RATE_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     PREVIOUS_TRADED_COUNT_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -52,8 +52,7 @@ global.rabbit.constants = {
     STARTED: new Date('September 22, 2017 11:00:00'), // 1 eth == 300,000 krw
     ARBITRAGE_STARTED: new Date('July 26, 2017 13:20:00'),
     MACHINE_SETTING: {
-      CAPACITY: 0.01,
-      CAPACITY_EACH_CRAVING: [0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01],
+      CAPACITY_EACH_CRAVING: [0.01, 0.05, 0.03, 0.02, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01],
       MIN_CRAVING_PERCENTAGE: 2
     }
   },

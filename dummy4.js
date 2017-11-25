@@ -28,11 +28,14 @@ const coinoneAPI = require("./coinone.js"),
 const startTime = ["A", "BB"]
 const a = startTime.indexOf("BdB") || false
 console.log(a)
-let coinoneInfo, korbitInfo = 1234, fetchingTime = Infinity
-const BU = 10
+let coinoneInfo, korbitInfo = 1251, fetchingTime = Infinity
+korbitInfo = (function(){
+    return a+14
+})()
+const BU = 50
 // let snapedPrice = (minAskPrice / BU).toFixed(0) * BU 
 // let snapedPrice = ()()
-console.log(Math.floor(korbitInfo / BU) * BU, korbitInfo)
+console.log(Math.ceil(korbitInfo / BU) * BU, korbitInfo)
 return
 async function go(ed) {
     try {

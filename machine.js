@@ -39,8 +39,10 @@ exports.Machine = Backbone.Model.extend({
       let mind = {} //  will be new mind of this machine
 
       if (this.get("status") == "KRW") {
-        const BU = global.rabbit.constants[this.get("coinType")].BUY_AT_UNIT || 1
-        const snapedPrice = Math.floor(options.minAskPrice / BU) * BU 
+        const snapedPrice = (function () {
+          const BU = global.rabbit.constants[this.get("coinType")].BUY_AT_UNIT || 1
+          return Math.ceil(options.minAskPrice / BU) * BU
+        })()
         if (snapedPrice == this.get("buy_at"))
           mind = {
             type: "BID",
@@ -48,7 +50,7 @@ exports.Machine = Backbone.Model.extend({
             at: new Date()
           }
       } else if (this.get("status") == "COIN") {
-        if (options.maxBidPrice >= this.get("craving_krw") + this.get("buy_at"))
+        if (options.maxBidPrice >= (this.get("last_traded_price") * this.get("craving_percentage") / 100) + this.get("last_traded_price"))
           mind = {
             type: "ASK",
             price: options.maxBidPrice,
@@ -92,7 +94,7 @@ exports.Machine = Backbone.Model.extend({
       // Use order.get("price") than this.get("mind").price cuz of the internal trade
       return new Promise(resolve => {
         // console.log("  accomplish() called!! id:", this.id)
-
+        const coinType = this.get("coinType")
         const changed = {
             traded_count: this.get("traded_count") + 1,
             last_traded_price: order.get("price"),
@@ -110,46 +112,16 @@ exports.Machine = Backbone.Model.extend({
           })
 
           // FOR BIGGIE PROFIT //
-          switch (this.get("coinType")) {
-            case "ETH":
-              // db.machines.updateMany({coinType:"ETH", craving_percentage: 4, status:"KRW"}, {$set:{capacity: 0.18}})
-              // db.machines.findOne({craving_krw: 6000, status:"KRW", capacity: {$ne: 0.01}})
-              // sum: 0.60 eth
-              if (this.get("craving_percentage") == 2)
-                changed.capacity = 0.01
-              else if (this.get("craving_percentage") == 4)
-                changed.capacity = 0.18
-              else if (this.get("craving_percentage") == 6)
-                changed.capacity = 0.02
-              else if (this.get("craving_percentage") == 8)
-                changed.capacity = 0.03
-              else if (this.get("craving_percentage") == 10)
-                changed.capacity = 0.04
-              else if (this.get("craving_percentage") == 12)
-                changed.capacity = 0.10
-              else if (this.get("craving_percentage") == 14)
-                changed.capacity = 0.09
-              else if (this.get("craving_percentage") == 16)
-                changed.capacity = 0.06
-              else if (this.get("craving_percentage") == 18)
-                changed.capacity = 0.05
-              else if (this.get("craving_percentage") == 20)
-                changed.capacity = 0.02
-              break
-            case "ETC":
-              // db.machines.updateMany({coinType:"ETC", status:"KRW"}, {$set:{capacity: 0.2}})
-              changed.capacity = 0.2
-              break
-            case "XRP":
-              // db.machines.updateMany({coinType:"XRP", status:"KRW"}, {$set:{capacity: 100}})
-              changed.capacity = 100
-              break
-          }
-          
+          changed.capacity = (function(){
+            const MIN_CRAVING_PERCENTAGE = global.rabbit.constants[coinType].MACHINE_SETTING.MIN_CRAVING_PERCENTAGE
+            const INDEX = Math.round(this.get("craving_percentage") / MIN_CRAVING_PERCENTAGE) - 1
+            return global.rabbit.constants[coinType].MACHINE_SETTING.CAPACITY_EACH_CRAVING[INDEX]
+          })()
+
           console.log("[machine.js] A machine", this.id, "accomplish with profit", thisProfit * this.get("capacity"), "krw. craving_percentage:", this.get("craving_percentage"))
         }else if (this.get("mind").type == "BID"){
           changed.status = "COIN"
-          console.log("[machine.js] A machine accomplish", this.id ,"bid at", order.get("price"), "I'm usually buy_at", this.get("buy_at"), "craving_krw", this.get("craving_krw"))
+          console.log("[machine.js] A machine accomplish", this.id, "bid at", order.get("price"), "I'm usually buy_at", this.get("buy_at"), "craving_percentage", this.get("craving_percentage"))
         }
 
         // console.log("[machine.js] save with changed:", changed)
@@ -383,24 +355,25 @@ exports.Machines = Backbone.Collection.extend({
       console.log("[machines.mind()] maxBid:", maxBidPrice, " minAsk:", minAskPrice)
 
       ///// Find or Create //////
-      const BU = global.rabbit.constants[coinType].BUY_AT_UNIT || 1
-      const snapedPrice = Math.floor(minAskPrice / BU) * BU 
-      console.log("&&7777", minAskPrice, BU, snapedPrice)
-      // if (this.where({buy_at: minAskPrice}).length == 0){
+      const snapedPrice = (function(){
+        const BU = global.rabbit.constants[coinType].BUY_AT_UNIT || 1
+        return Math.ceil(minAskPrice / BU) * BU 
+      })()
       if (this.where({ buy_at: snapedPrice}).length == 0){
         console.log(`There is no machine for ${minAskPrice} krw in ${this.length} machines, so I will create`)
         const MIN_CRAVING_PERCENTAGE = global.rabbit.constants[coinType].MACHINE_SETTING.MIN_CRAVING_PERCENTAGE
+        const CAPACITY_EACH_CRAVING = global.rabbit.constants[coinType].MACHINE_SETTING.CAPACITY_EACH_CRAVING
         
         for (let i = 1; i <= 10; i++){
           this.add({
             coinType: coinType,
-            capacity: global.rabbit.constants[coinType].MACHINE_SETTING.CAPACITY,
+            capacity: CAPACITY_EACH_CRAVING[i - 1],
             buy_at: snapedPrice,
-            craving_percentage: MIN_CRAVING_PERCENTAGE * i,
-            craving_krw: Math.round(minAskPrice * MIN_CRAVING_PERCENTAGE * i / 100)
+            craving_percentage: MIN_CRAVING_PERCENTAGE * i
+            // craving_krw: Math.round(snapedPrice * MIN_CRAVING_PERCENTAGE * i / 100)
           })
         }
-        console.log(`Now ${coinType} machines are ${this.length}`)
+        console.log(`Now "buy_at" as ${snapedPrice} added. ${coinType} machines are ${this.length}`)
       }
 
       ///// Mind /////
