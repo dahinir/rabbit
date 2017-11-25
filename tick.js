@@ -168,13 +168,13 @@ module.exports = async function(options){
     //   }
     // }
 
-    // results = machines.mind({
-    //   coinType: coinType,
-    //   // korbit: altKorbit,
-    //   // coinone: altCoinone
-    //   korbit: KORBIT ? korbit: coinone,
-    //   coinone: coinone
-    // })
+    results = machines.mind({
+      coinType: coinType,
+      // korbit: altKorbit,
+      // coinone: altCoinone
+      korbit: KORBIT ? korbit: coinone,
+      coinone: coinone
+    })
   }
   // console.log("[tick.js]", machinesResult.participants.length, "machinesResult want to deal")
   console.log("[tick.js] machine's results", results)
@@ -197,7 +197,7 @@ module.exports = async function(options){
 
   ////// Presentation /////// :will move to index.js
   machines.presentation({
-    // coinType: coinType,
+    coinType: coinType,
     orderbook: coinoneOrderbook
   })
 } // End of module.exports

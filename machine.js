@@ -16,8 +16,7 @@ exports.Machine = Backbone.Model.extend({
         coinType: "",  // "ETH" or "BTC"
         profit_krw: 0,
         profit_rate: 0, //	profit_krw/capacity
-        traded_count: 0,
-        last_traded_price: 0
+        traded_count: 0
     },
     initialize: function(attributes, options) {
       this.on("change:orderId", function(e){
@@ -39,7 +38,7 @@ exports.Machine = Backbone.Model.extend({
       let mind = {} //  will be new mind of this machine
 
       if (this.get("status") == "KRW") {
-        const snapedPrice = (function () {
+        const snapedPrice = (() => {
           const BU = global.rabbit.constants[this.get("coinType")].BUY_AT_UNIT || 1
           return Math.ceil(options.minAskPrice / BU) * BU
         })()
@@ -252,8 +251,8 @@ exports.Machines = Backbone.Collection.extend({
         total_traded = 0,
         coin_sum = 0,
         krw_damage = 0,
-        profit_rate_each_craving = global.rabbit.constants[coinType].PREVIOUS_PROFIT_RATE_EACH_CRAVING || [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        traded_count_each_craving = global.rabbit.constants[coinType].PREVIOUS_TRADED_COUNT_EACH_CRAVING || [0,0,0,0,0, 0,0,0,0,0]
+        profit_rate_each_craving = Array.from(global.rabbit.constants[coinType].PREVIOUS_PROFIT_RATE_EACH_CRAVING) || [0,0,0,0,0, 0,0,0,0,0],
+        traded_count_each_craving = Array.from(global.rabbit.constants[coinType].PREVIOUS_TRADED_COUNT_EACH_CRAVING) || [0,0,0,0,0, 0,0,0,0,0]
 
       for (let m of this.models){
         profit_krw_sum += m.get("profit_krw")
@@ -354,8 +353,10 @@ exports.Machines = Backbone.Collection.extend({
           maxBidPrice = bestOrderbook.bid[0].price
       console.log("[machines.mind()] maxBid:", maxBidPrice, " minAsk:", minAskPrice)
 
+
+      
       ///// Find or Create //////
-      const snapedPrice = (function(){
+      const snapedPrice = (() => {
         const BU = global.rabbit.constants[coinType].BUY_AT_UNIT || 1
         return Math.ceil(minAskPrice / BU) * BU 
       })()
@@ -365,6 +366,7 @@ exports.Machines = Backbone.Collection.extend({
         const CAPACITY_EACH_CRAVING = global.rabbit.constants[coinType].MACHINE_SETTING.CAPACITY_EACH_CRAVING
         
         for (let i = 1; i <= 10; i++){
+          /// Create new machine! ///
           this.add({
             coinType: coinType,
             capacity: CAPACITY_EACH_CRAVING[i - 1],
@@ -375,6 +377,7 @@ exports.Machines = Backbone.Collection.extend({
         }
         console.log(`Now "buy_at" as ${snapedPrice} added. ${coinType} machines are ${this.length}`)
       }
+
 
       ///// Mind /////
       let bidParticipants = [], askParticipants = [],

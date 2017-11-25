@@ -33,12 +33,19 @@ global.rabbit.constants = {
     STARTED: new Date('November 17, 2017 14:45:00') 
   },
   BCH: {
+    MARKET: ["COINONE", "KORBIT"],
     PRECISION: 2,
     MIN_KRW_UNIT: 500,
     BUY_AT_UNIT: 10000,
     PREVIOUS_PROFIT_SUM: 0,
+    PREVIOUS_PROFIT_RATE_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    PREVIOUS_TRADED_COUNT_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     BORN: new Date('November 17, 2017 16:45:00'), // 1 bch == 1,291,000 krw
-    STARTED: new Date('November 17, 2017 16:45:00')
+    STARTED: new Date('November 17, 2017 16:45:00'),
+    MACHINE_SETTING: {
+      CAPACITY_EACH_CRAVING: [0.01, 0.02, 0.03, 0.02, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01],
+      MIN_CRAVING_PERCENTAGE: 3
+    }
   },
   ETH: {
     MARKET: ["COINONE", "KORBIT"],
@@ -52,7 +59,7 @@ global.rabbit.constants = {
     STARTED: new Date('September 22, 2017 11:00:00'), // 1 eth == 300,000 krw
     ARBITRAGE_STARTED: new Date('July 26, 2017 13:20:00'),
     MACHINE_SETTING: {
-      CAPACITY_EACH_CRAVING: [0.01, 0.05, 0.03, 0.02, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01],
+      CAPACITY_EACH_CRAVING: [0.01, 0.01, 0.03, 0.02, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01],
       MIN_CRAVING_PERCENTAGE: 2
     }
   },
@@ -195,7 +202,7 @@ machines.fetchAll({
 
 
 // const runningCoinType = ["BTC", "BCH", "ETH", "ETC", "XRP"],  // It's gonna be tick order.
-const runningCoinType = ["ETH"],
+const runningCoinType = ["BCH"],
   MIN_TERM = 10000,  // ms ..minimum I think 2700~2900 ms
   ERROR_BUFFER = 60000  // A minute
 let count = -1

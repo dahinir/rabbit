@@ -26,6 +26,12 @@ const coinoneAPI = require("./coinone.js"),
 // return
 
 const startTime = ["A", "BB"]
+const bb = Array.from(startTime)
+bb[0] = "aaaaa"
+console.log(startTime)
+console.log(bb)
+return
+
 const a = startTime.indexOf("BdB") || false
 console.log(a)
 let coinoneInfo, korbitInfo = 1251, fetchingTime = Infinity
