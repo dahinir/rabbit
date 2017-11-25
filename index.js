@@ -27,7 +27,7 @@ global.rabbit.constants = {
   BTC: {
     PRECISION: 3,  // Actually It's 4. but I decided to use only 3 places after the decimal
     MIN_KRW_UNIT: 500,  // Minimum unit of KRW
-    // ADDITIONAL_BUY_AT: 500, // using within mind()
+    BUY_AT_UNIT: 1000,
     PREVIOUS_PROFIT_SUM: 0,
     BORN: new Date('November 17, 2017 14:45:00'), // 1 btc == 8,740,500 krw
     STARTED: new Date('November 17, 2017 14:45:00') 
@@ -35,7 +35,7 @@ global.rabbit.constants = {
   BCH: {
     PRECISION: 2,
     MIN_KRW_UNIT: 500,
-    // ADDITIONAL_BUY_AT: 500, // using within mind(), Set as 900 for full sampling at Coinone
+    BUY_AT_UNIT: 1000,
     PREVIOUS_PROFIT_SUM: 0,
     BORN: new Date('November 17, 2017 16:45:00'), // 1 bch == 1,291,000 krw
     STARTED: new Date('November 17, 2017 16:45:00')
@@ -44,7 +44,7 @@ global.rabbit.constants = {
     MARKET: ["COINONE", "KORBIT"],
     PRECISION: 2,
     MIN_KRW_UNIT: 50,
-    // ADDITIONAL_BUY_AT: 50,
+    BUY_AT_UNIT: 100,
     PREVIOUS_PROFIT_SUM: 0, // 68,000,000? 49752085,
     PREVIOUS_PROFIT_RATE_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     PREVIOUS_TRADED_COUNT_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -60,7 +60,7 @@ global.rabbit.constants = {
   ETC: {
     PRECISION: 1,
     MIN_KRW_UNIT: 10,
-    // ADDITIONAL_BUY_AT: 0, // ETC doesn't need
+    BUY_AT_UNIT: 1,
     PREVIOUS_PROFIT_SUM: 0,
     BORN: new Date('November 18, 2017 13:10:00'), // 1 etc == 19,190 krw
     STARTED: new Date('November 18, 2017 13:10:00')
@@ -68,7 +68,7 @@ global.rabbit.constants = {
   XRP:{
     PRECISION: 0,
     MIN_KRW_UNIT: 1,
-    // ADDITIONAL_BUY_AT: 0,
+    BUY_AT_UNIT: 1,
     PREVIOUS_PROFIT_SUM: 0,
     BORN: new Date('November 18, 2017 13:35:00'), // 1 xrp == 247 krw
     STARTED: new Date('November 18, 2017 13:35:00')

@@ -39,10 +39,9 @@ exports.Machine = Backbone.Model.extend({
       let mind = {} //  will be new mind of this machine
 
       if (this.get("status") == "KRW") {
-        // const AU = global.rabbit.constants[this.get("coinType")].ADDITIONAL_BUY_AT || 0
-        if (options.minAskPrice == this.get("buy_at"))
-        // if (options.minAskPrice == this.get("buy_at") || options.minAskPrice == this.get("buy_at") - AU)
-        // if (options.minAskPrice >= this.get("buy_at") - AU && options.minAskPrice <= this.get("buy_at"))
+        const BU = global.rabbit.constants[this.get("coinType")].BUY_AT_UNIT || 1
+        const snapedPrice = Math.floor(options.minAskPrice / BU) * BU 
+        if (snapedPrice == this.get("buy_at"))
           mind = {
             type: "BID",
             price: options.minAskPrice,
@@ -383,9 +382,12 @@ exports.Machines = Backbone.Collection.extend({
           maxBidPrice = bestOrderbook.bid[0].price
       console.log("[machines.mind()] maxBid:", maxBidPrice, " minAsk:", minAskPrice)
 
-
       ///// Find or Create //////
-      if (this.where({buy_at: minAskPrice}).length == 0){
+      const BU = global.rabbit.constants[coinType].BUY_AT_UNIT || 1
+      const snapedPrice = Math.floor(minAskPrice / BU) * BU 
+      console.log("&&7777", minAskPrice, BU, snapedPrice)
+      // if (this.where({buy_at: minAskPrice}).length == 0){
+      if (this.where({ buy_at: snapedPrice}).length == 0){
         console.log(`There is no machine for ${minAskPrice} krw in ${this.length} machines, so I will create`)
         const MIN_CRAVING_PERCENTAGE = global.rabbit.constants[coinType].MACHINE_SETTING.MIN_CRAVING_PERCENTAGE
         
@@ -393,7 +395,7 @@ exports.Machines = Backbone.Collection.extend({
           this.add({
             coinType: coinType,
             capacity: global.rabbit.constants[coinType].MACHINE_SETTING.CAPACITY,
-            buy_at: minAskPrice,
+            buy_at: snapedPrice,
             craving_percentage: MIN_CRAVING_PERCENTAGE * i,
             craving_krw: Math.round(minAskPrice * MIN_CRAVING_PERCENTAGE * i / 100)
           })
