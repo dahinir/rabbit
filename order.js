@@ -334,7 +334,7 @@ exports.Orders = Backbone.Collection.extend({
         return
 
       const coinType = options.coinType || this.at(0).get("coinType"),
-        lastPrice = options.orderbook.bid[0].price  // or ask[0] whatever
+        lastPrice = options.lastPrice
         
         // Array.filter() return [] if there is no order. not undefined
         const coinoneOrders = this.models.filter(order => order.get("coinType") == coinType).filter(order => order.get("marketName") == "COINONE")

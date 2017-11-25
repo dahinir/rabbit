@@ -9,8 +9,8 @@ module.exports = async function(options){
   const TICK_STARTED = new Date(),
     COUNT = options.count,
     coinType = options.coinType,
-    KORBIT = global.rabbit.constants[coinType].MARKET || true,
-    COINONE = global.rabbit.constants[coinType] || true
+    KORBIT = (global.rabbit.constants[coinType].MARKET.indexOf("KORBIT") >= 0) ? true : false,
+    COINONE = (global.rabbit.constants[coinType].MARKET.indexOf("COINONE") >= 0) ? true : false
  
   const arbitrages = options.arbitrages,
     machines = options.machines,
@@ -34,24 +34,24 @@ module.exports = async function(options){
   try {
     // Act like Promise.all()
     // Less important in time domain
-    const coinoneInfoPromise = fetcher.getCoinoneInfo(coinType),
-      korbitInfoPromise = fetcher.getKorbitInfo(coinType),
-      coinoneBalancePromise = fetcher.getCoinoneBalance(),
-      korbitBalancePromise = fetcher.getKorbitBalance(),
-      coinoneRecentCompleteOrdersPromise = fetcher.getCoinoneRecentCompleteOrders(coinType)
-    coinoneInfo = await coinoneInfoPromise
-    korbitInfo = await korbitInfoPromise
-    coinoneBalance = await coinoneBalancePromise
-    korbitBalance = await korbitBalancePromise
-    coinoneRecentCompleteOrders = await coinoneRecentCompleteOrdersPromise
+    const coinoneInfoPromise = COINONE ? fetcher.getCoinoneInfo(coinType) : "",
+      korbitInfoPromise = KORBIT ? fetcher.getKorbitInfo(coinType) : "",
+      coinoneBalancePromise = COINONE ? fetcher.getCoinoneBalance() : "",
+      korbitBalancePromise = KORBIT ? fetcher.getKorbitBalance() : "",
+      coinoneRecentCompleteOrdersPromise = COINONE ? fetcher.getCoinoneRecentCompleteOrders(coinType) : ""
+    if (COINONE) coinoneInfo = await coinoneInfoPromise
+    if (KORBIT) korbitInfo = await korbitInfoPromise
+    if (COINONE) coinoneBalance = await coinoneBalancePromise
+    if (KORBIT) korbitBalance = await korbitBalancePromise
+    if (COINONE) coinoneRecentCompleteOrders = await coinoneRecentCompleteOrdersPromise
     // console.log("Fetching some info takes", ((new Date() - TICK_STARTED) / 1000).toFixed(2), "sec")
 
     // More important in time domain
     const FETCH_STARTED = new Date()
-    const coinoneOrderbookPromise = fetcher.getCoinoneOrderbook(coinType),
-      korbitOrderbookPromise = fetcher.getKorbitOrderbook(coinType)
-    coinoneOrderbook = await coinoneOrderbookPromise
-    korbitOrderbook = await korbitOrderbookPromise
+    const coinoneOrderbookPromise = COINONE ? fetcher.getCoinoneOrderbook(coinType) : "",
+      korbitOrderbookPromise = KORBIT ? fetcher.getKorbitOrderbook(coinType) : ""
+    if (COINONE) coinoneOrderbook = await coinoneOrderbookPromise
+    if (KORBIT) korbitOrderbook = await korbitOrderbookPromise
     fetchingTime = ((new Date() - FETCH_STARTED) / 1000).toFixed(2) // sec
     console.log("Fetching Orderbooks takes", fetchingTime, "sec")
   } catch (e) {
@@ -71,7 +71,7 @@ module.exports = async function(options){
       }
   const coinone = {
         name: "COINONE",
-        // info: coinoneInfo,
+        info: coinoneInfo,
         orderbook: coinoneOrderbook,
         balance: coinoneBalance
       }
@@ -81,7 +81,7 @@ module.exports = async function(options){
   global.rabbit.coinone.balance = coinoneBalance
   global.rabbit.coinone[coinType] = {
     name: "COINONE",
-    // info: coinoneInfo,
+    info: coinoneInfo,
     orderbook: coinoneOrderbook
   }
   global.rabbit.korbit = global.rabbit.korbit || {}
@@ -92,14 +92,17 @@ module.exports = async function(options){
     orderbook: korbitOrderbook
   }
 
+  global.rabbit.markets = global.rabbit.markets || {}
+  let totalCoin = COINONE ? coinoneBalance[coinType].balance : 0
+  totalCoin += KORBIT ? korbitBalance[coinType].balance : 0
+  let lastPrice = COINONE ? coinoneInfo.last : (KORBIT ? korbitInfo.last : -1)
   
-  console.log("-- In 24 hrs", coinoneInfo.volume, coinType, "traded at Coinone:", coinoneInfo.low, "~", coinoneInfo.high, ":", coinoneInfo.last, "(", ((coinoneInfo.last - coinoneInfo.low) / (coinoneInfo.high - coinoneInfo.low) * 100).toFixed(2), "% )----")
-  console.log("coin:", (korbitBalance[coinType].balance + coinoneBalance[coinType].balance).toFixed(2), coinType,
-    "is now about \u20A9", new Intl.NumberFormat().format(((korbitBalance[coinType].balance + coinoneBalance[coinType].balance) * coinoneOrderbook.bid[0].price).toFixed(0)))
-  console.log("Coinone", coinType + ":", coinoneBalance[coinType].available.toFixed(2))
-  console.log("Korbit", coinType + ":", korbitBalance[coinType].available.toFixed(2))
-  console.log("--(coinone", coinType + ")-----max bid:", coinoneOrderbook.bid[0], "min ask:", coinoneOrderbook.ask[0])
-  console.log("--(korbit", coinType + ")------max bid:", korbitOrderbook.bid[0], "min ask:", korbitOrderbook.ask[0])
+  if (COINONE) console.log("-- In 24 hrs", coinoneInfo.volume, coinType, "traded at Coinone:", coinoneInfo.low, "~", coinoneInfo.high, ":", coinoneInfo.last, "(", ((coinoneInfo.last - coinoneInfo.low) / (coinoneInfo.high - coinoneInfo.low) * 100).toFixed(2), "% )----")
+  console.log("coin:", (totalCoin).toFixed(2), coinType, "is now about \u20A9", new Intl.NumberFormat().format(((totalCoin) * lastPrice).toFixed(0)))
+  if (COINONE) console.log("Coinone", coinType + ":", coinoneBalance[coinType].available.toFixed(2))
+  if (KORBIT) console.log("Korbit", coinType + ":", korbitBalance[coinType].available.toFixed(2))
+  if (COINONE) console.log("--(coinone", coinType + ")-----max bid:", coinoneOrderbook.bid[0], "min ask:", coinoneOrderbook.ask[0])
+  if (KORBIT) console.log("--(korbit", coinType + ")------max bid:", korbitOrderbook.bid[0], "min ask:", korbitOrderbook.ask[0])
 
 
   /////// TIME TO MIND ////////
@@ -110,7 +113,7 @@ module.exports = async function(options){
   }
 
   // Arbitrages
-  if (global.rabbit.constants[coinType].ARBITRAGE_STARTED && machines.length > 5000){
+  if (global.rabbit.constants[coinType].ARBITRAGE_STARTED && machines.length > 5000 && global.rabbit.constants[coinType].MARKET.length >= 1){
     results = arbitrages.mind({
       korbit: korbit,
       coinone: coinone
@@ -169,7 +172,7 @@ module.exports = async function(options){
       coinType: coinType,
       // korbit: altKorbit,
       // coinone: altCoinone
-      korbit: korbit,
+      korbit: KORBIT ? korbit: coinone,
       coinone: coinone
     })
   }
@@ -188,7 +191,8 @@ module.exports = async function(options){
 
   ////// Time to Cancel a useless order ////
   await orders.cancel({
-    orderbook: coinoneOrderbook
+    coinType: coinType,
+    lastPrice: lastPrice
   })
 
   ////// Presentation /////// :will move to index.js

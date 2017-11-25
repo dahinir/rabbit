@@ -17,18 +17,20 @@ const coinoneAPI = require("./coinone.js"),
 
 
 // for (let )   
-    const AA = function(){
-        return "d"
-    }()
-    console.log(`A:${AA} haha`)
-    const o = new Order({orderId:"HAHAHAHAHAHAH"})
-    if(false) console.log(`"CANCELED" event called. The order ${o.get("orderId")}will be removed from the orders. remain in db`)
-return
-
-    //     const startTime = ["A","BB"]
-//     console.log(startTime.indexOf("BB"))
-
+//     const AA = function(){
+//         return "d"
+//     }()
+//     console.log(`A:${AA} haha`)
+//     const o = new Order({orderId:"HAHAHAHAHAHAH"})
+//     if(false) console.log(`"CANCELED" event called. The order ${o.get("orderId")}will be removed from the orders. remain in db`)
 // return
+
+const startTime = ["A", "BB"]
+const a = startTime.indexOf("BdB") || false
+console.log(a)
+let coinoneInfo, korbitInfo, fetchingTime = Infinity
+console.log(korbitInfo, fetchingTime)
+return
 async function go(ed) {
     try {
 

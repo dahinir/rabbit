@@ -263,7 +263,7 @@ exports.Machines = Backbone.Collection.extend({
     sync: backsync.mongodb(),
     model: exports.Machine,
     initialize: function(attributes, options) {
-      console.log("Machines init")
+      console.log("machines init")
     },
     presentation: function(options){
       const maxBidPrice = options.orderbook.bid[0].price,

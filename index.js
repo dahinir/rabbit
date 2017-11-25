@@ -41,6 +41,7 @@ global.rabbit.constants = {
     STARTED: new Date('November 17, 2017 16:45:00')
   },
   ETH: {
+    MARKET: ["COINONE", "KORBIT"],
     PRECISION: 2,
     MIN_KRW_UNIT: 50,
     // ADDITIONAL_BUY_AT: 50,
