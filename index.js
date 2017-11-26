@@ -26,12 +26,19 @@ global.rabbit = {}
 // db.machines.findOne({craving_krw: 6000, status:"KRW", capacity: {$ne: 0.01}})
 global.rabbit.constants = {
   BTC: {
+    MARKET: ["COINONE", "KORBIT"],
     PRECISION: 3,  // How many places after the decimal separator
     MIN_KRW_UNIT: 500,  // Minimum unit of KRW
     BUY_AT_UNIT: 10000,
     PREVIOUS_PROFIT_SUM: 0,
+    PREVIOUS_PROFIT_RATE_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    PREVIOUS_TRADED_COUNT_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     BORN: new Date('November 17, 2017 14:45:00'), // 1 btc == 8,740,500 krw
-    STARTED: new Date('November 17, 2017 14:45:00') 
+    STARTED: new Date('November 17, 2017 14:45:00'),
+    MACHINE_SETTING: {
+      CAPACITY_EACH_CRAVING: [0.002, 0.009, 0.009, 0.007, 0.006, 0.005, 0.004, 0.003, 0.002, 0.002],
+      MIN_CRAVING_PERCENTAGE: 3
+    } 
   },
   BCH: {
     MARKET: ["COINONE", "KORBIT"],
@@ -79,6 +86,21 @@ global.rabbit.constants = {
     PREVIOUS_PROFIT_SUM: 0,
     BORN: new Date('November 18, 2017 13:35:00'), // 1 xrp == 247 krw
     STARTED: new Date('November 18, 2017 13:35:00')
+  },
+  QTUM:{
+    MARKET: ["COINONE"],
+    PRECISION: 1,
+    MIN_KRW_UNIT: 10,
+    BUY_AT_UNIT: 100,
+    PREVIOUS_PROFIT_SUM: 0, // 68,000,000? 49752085,
+    PREVIOUS_PROFIT_RATE_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    PREVIOUS_TRADED_COUNT_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    BORN: new Date('July 4, 2017 13:20:00'),  // 1 eth == 337,500 krw
+    STARTED: new Date('September 22, 2017 11:00:00'), // 1 eth == 300,000 krw
+    MACHINE_SETTING: {
+      CAPACITY_EACH_CRAVING: [0.2, 0.7, 0.5, 0.4, 0.5, 0.4, 0.3, 0.2, 0.2, 0.1],
+      MIN_CRAVING_PERCENTAGE: 2
+    }
   }
 }
 global.rabbit.INVESTED_KRW = 110000000
@@ -203,7 +225,7 @@ machines.fetchAll({
 
 
 // const runningCoinType = ["BTC", "BCH", "ETH", "ETC", "XRP"],  // It's gonna be tick order.
-const runningCoinType = ["BCH", "ETH"],
+const runningCoinType = ["BCH", "ETH", "QTUM"],
   MIN_TERM = 10000,  // ms ..minimum I think 2700~2900 ms
   ERROR_BUFFER = 60000  // A minute
 let count = -1
@@ -260,8 +282,11 @@ async function run() {
           balanceSum = korbitBalance.KRW.balance + coinoneBalance.KRW.balance
 
         for (const ct of runningCoinType) {
-          balanceSum += korbitBalance[ct].balance * korbit[ct].orderbook.bid[0].price
-            + coinoneBalance[ct].balance * coinone[ct].orderbook.bid[0].price
+          const KORBIT = (global.rabbit.constants[ct].MARKET.indexOf("KORBIT") >= 0) ? true : false,
+            COINONE = (global.rabbit.constants[ct].MARKET.indexOf("COINONE") >= 0) ? true : false
+
+          balanceSum += KORBIT ? korbitBalance[ct].balance * korbit[ct].orderbook.bid[0].price : 0
+          balanceSum += COINONE ? coinoneBalance[ct].balance * coinone[ct].orderbook.bid[0].price : 0
           const profit = global.rabbit.constants[ct].profit_krw_sum || 0
           const damage = global.rabbit.constants[ct].krw_damage || 0
           console.log(ct, "machines maid: \u20A9", new Intl.NumberFormat().format(profit), "\t\u20A9", new Intl.NumberFormat().format(-damage))

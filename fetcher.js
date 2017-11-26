@@ -174,10 +174,6 @@ exports.getKorbitBalance = async function(){
       available: result.xrp.available * 1,
       balance: result.xrp.available * 1 + result.xrp.trade_in_use * 1
     },
-    LTC: {
-      available: result.ltc.available * 1,
-      balance: result.ltc.available * 1 + result.ltc.trade_in_use * 1
-    },
     KRW: {
       available: result.krw.available * 1,
       balance: result.krw.available * 1 + result.krw.trade_in_use * 1
@@ -294,6 +290,10 @@ exports.getCoinoneBalance = async function(){
     XRP: {
       available: result.xrp.avail * 1,
       balance: result.xrp.balance * 1
+    },
+    QTUM: {
+      available: result.qtum.avail * 1,
+      balance: result.qtum.balance * 1
     },
     LTC: {
       available: result.ltc.avail * 1,

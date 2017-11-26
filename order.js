@@ -278,29 +278,38 @@ exports.Orders = Backbone.Collection.extend({
       }
     },
     // Refresh All of this orders. no matter what marketName or coinType. All of them.
-    refresh: async function () {
+    refresh: async function (options) {
       if (this.length == 0)
         return
-      const coinType = this.at(0).get("coinType")
+      const coinType = options.coinType || this.at(0).get("coinType"),
+        KORBIT = (global.rabbit.constants[coinType].MARKET.indexOf("KORBIT") >= 0) ? true : false,
+        COINONE = (global.rabbit.constants[coinType].MARKET.indexOf("COINONE") >= 0) ? true : false
       console.log("100 [order.js] Will refresh", this.length, "the local", coinType, "orders")
+      
 
       // Fetch uncompleted orders from markets
       let uncompletedOrderIds
       try {
-        let coinonePromise = coinoneAPI({
-          type: "UNCOMPLETED_ORDERS",
-          coinType: coinType
-        })
-        let korbitPromise = korbitAPI({
-          type: "UNCOMPLETED_ORDERS",
-          coinType: coinType
-        })
-        let coinoneUncompletedOrderIds = (await coinonePromise).limitOrders.map(o => o.orderId) // string
-        let korbitUncompletedOrderIds = (await korbitPromise).map(o => o.id + "")  // string.. unbelievable.. so I add "" to 
-        // let korbitUncompletedOrderIds = []
+        let coinoneUncompletedOrderIds = [], korbitUncompletedOrderIds = []
+
+        if (COINONE){
+          let coinonePromise = coinoneAPI({
+            type: "UNCOMPLETED_ORDERS",
+            coinType: coinType
+          })
+          coinoneUncompletedOrderIds = (await coinonePromise).limitOrders.map(o => o.orderId) // string
+        }
+
+        if (KORBIT){
+          let korbitPromise = korbitAPI({
+            type: "UNCOMPLETED_ORDERS",
+            coinType: coinType
+          })
+          korbitUncompletedOrderIds = (await korbitPromise).map(o => o.id + "")  // string.. unbelievable.. so I add "" to 
+        }
+          
         uncompletedOrderIds = coinoneUncompletedOrderIds.concat(korbitUncompletedOrderIds)
 
-        // console.log("101 [order.js] korbitUncompletedOrderIds:", korbitUncompletedOrderIds)
         console.log("101 [order.js] remote uncompletedOrderIds:\n", uncompletedOrderIds)
       } catch (e) {
         console.log("101 [order.js] One or two of uncompleted orders fetch is failed. Skip this refresh.")

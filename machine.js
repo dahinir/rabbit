@@ -576,8 +576,8 @@ exports.Arbitrages = exports.Machines.extend({
     quantity = (quantity > LIMIT) ? LIMIT : quantity  // Limit
     quantity = quantity.toFixed(global.rabbit.constants[coinType].PRECISION) * 1
 
-    if (prPerPrice < 0.7 || quantity < Math.pow(0.1, global.rabbit.constants[coinType].PRECISION).toFixed(global.rabbit.constants[coinType].PRECISION) * 1){
-      console.log("Pass arbitrage. profitRate:", profitRate, "prPerPrice:", prPerPrice, "quantity:", quantity)
+    if (prPerPrice < 0.6 || quantity < Math.pow(0.1, global.rabbit.constants[coinType].PRECISION).toFixed(global.rabbit.constants[coinType].PRECISION) * 1){
+      console.log("Pass arbitrage. profitRate: \u20A9", profitRate, "prPerPrice(min 0.6):", prPerPrice, "quantity:", quantity)
       return []
     }
 
@@ -588,7 +588,7 @@ exports.Arbitrages = exports.Machines.extend({
 
     //// Validate balance ////
     if (lowMarket.balance[coinType].available + highMarket.balance[coinType].available < 1000000){
-      console.log(`[arbitrages.mind] Not enough ${coinType} yet..`)
+      console.log(`[arbitrages.mind] Not enough ${coinType} to arbitrage yet..`)
       return []
     }
     if (lowMarket.balance.KRW.available - 100000 < lowMarket.orderbook.ask[0].price * quantity){

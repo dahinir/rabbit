@@ -15,7 +15,8 @@ const coinoneAPI = require("./coinone.js"),
     moment = require('moment'),
     brain = require('brain.js')
 
-if (true) console.log(Math.pow(0.1, 3).toFixed(3)*1)
+// if (true) console.log(Math.pow(0.1, 3).toFixed(3)*1)
+console.log([1].map(o => o))
     return
 // for (let )   
 //     const AA = function(){

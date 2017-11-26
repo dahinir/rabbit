@@ -15,16 +15,16 @@ module.exports = async function(options){
   const arbitrages = options.arbitrages,
     machines = options.machines,
     orders = options.orders
-  // const machines = getMachines(coinType)
-  // const orders = getOrders(coinType)
 
   console.log("-- ", coinType, "Tick no.", COUNT, "with", machines.length, "machines. ",
     TICK_STARTED.toLocaleString(), "It's been", ((new Date() - global.rabbit.constants[coinType].STARTED)/ 86400000).toFixed(1),
     "days. ", ((new Date() - global.rabbit.BORN) / 86400000).toFixed(1), "days old")
 
-  // Check previous orders out
-  // console.log("--refresh orders------")
-  await orders.refresh()
+
+  //// Check previous orders out ////
+  await orders.refresh({
+    coinType: coinType
+  })
 
 
   /////// FETCHING //////////
@@ -78,18 +78,22 @@ module.exports = async function(options){
       
   // Some data needs to go global
   global.rabbit.coinone = global.rabbit.coinone || {}
-  global.rabbit.coinone.balance = coinoneBalance
-  global.rabbit.coinone[coinType] = {
-    name: "COINONE",
-    info: coinoneInfo,
-    orderbook: coinoneOrderbook
+  if (COINONE){
+    global.rabbit.coinone.balance = coinoneBalance
+    global.rabbit.coinone[coinType] = {
+      name: "COINONE",
+      info: coinoneInfo,
+      orderbook: coinoneOrderbook
+    }
   }
   global.rabbit.korbit = global.rabbit.korbit || {}
-  global.rabbit.korbit.balance = korbitBalance
-  global.rabbit.korbit[coinType] = {
-    name: "KORBIT",
-    info: korbitInfo,
-    orderbook: korbitOrderbook
+  if (KORBIT){
+    global.rabbit.korbit.balance = korbitBalance
+    global.rabbit.korbit[coinType] = {
+      name: "KORBIT",
+      info: korbitInfo,
+      orderbook: korbitOrderbook
+    }
   }
 
   global.rabbit.markets = global.rabbit.markets || {}
@@ -113,7 +117,7 @@ module.exports = async function(options){
   }
 
   // Arbitrages
-  if (global.rabbit.constants[coinType].ARBITRAGE_STARTED && global.rabbit.constants[coinType].MARKET.length >= 1){
+  if (global.rabbit.constants[coinType].ARBITRAGE_STARTED && global.rabbit.constants[coinType].MARKET.length >= 2){
     results = arbitrages.mind({
       coinType: coinType,
       korbit: korbit,
