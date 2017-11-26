@@ -22,10 +22,11 @@ process.on('SIGINT', function() {
 
 global.rabbit = {}
 
-// How many places after the decimal separator
+// db.machines.updateMany({coinType:"ETH", craving_percentage: 4, status:"KRW"}, {$set:{capacity: 0.18}})
+// db.machines.findOne({craving_krw: 6000, status:"KRW", capacity: {$ne: 0.01}})
 global.rabbit.constants = {
   BTC: {
-    PRECISION: 3,  // Actually It's 4. but I decided to use only 3 places after the decimal
+    PRECISION: 3,  // How many places after the decimal separator
     MIN_KRW_UNIT: 500,  // Minimum unit of KRW
     BUY_AT_UNIT: 10000,
     PREVIOUS_PROFIT_SUM: 0,
@@ -59,7 +60,7 @@ global.rabbit.constants = {
     STARTED: new Date('September 22, 2017 11:00:00'), // 1 eth == 300,000 krw
     ARBITRAGE_STARTED: new Date('July 26, 2017 13:20:00'),
     MACHINE_SETTING: {
-      CAPACITY_EACH_CRAVING: [0.01, 0.01, 0.03, 0.02, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01],
+      CAPACITY_EACH_CRAVING: [0.02, 0.05, 0.05, 0.04, 0.05, 0.04, 0.03, 0.02, 0.02, 0.01],
       MIN_CRAVING_PERCENTAGE: 2
     }
   },
@@ -202,7 +203,7 @@ machines.fetchAll({
 
 
 // const runningCoinType = ["BTC", "BCH", "ETH", "ETC", "XRP"],  // It's gonna be tick order.
-const runningCoinType = ["BCH"],
+const runningCoinType = ["BCH", "ETH"],
   MIN_TERM = 10000,  // ms ..minimum I think 2700~2900 ms
   ERROR_BUFFER = 60000  // A minute
 let count = -1
@@ -218,7 +219,7 @@ async function run() {
 
     // HERE BABE HERE IT IS //
     await require("./tick.js")({
-      arbitrages: arbitrages,
+      arbitrages: getArbitrages(coinType),
       machines: getMachines(coinType),
       orders: getOrders(coinType),
       coinType: coinType,
@@ -287,10 +288,19 @@ async function run() {
 const machinesChamber = {}
 function getMachines(coinType) {
   if (!machinesChamber[coinType]) {
-    console.log("This is first tic of", coinType, "IF IT'S NOT, IT'S A PROBLEM. STOP THIS SHIT!")
+    console.log("MachinesChamber created. This is first tic of", coinType, "IF IT'S NOT, IT'S A PROBLEM. STOP THIS SHIT!")
     machinesChamber[coinType] = new Machines(machines.where({ coinType: coinType }))
   }
   return machinesChamber[coinType]
+}
+
+const arbitragesChamber = {}
+function getArbitrages(coinType) {
+  if (!arbitragesChamber[coinType]) {
+    console.log("ArbitragesChamber created. This is first tic of", coinType, "IF IT'S NOT, IT'S A PROBLEM. STOP THIS SHIT!")
+    arbitragesChamber[coinType] = new Arbitrages(arbitrages.where({ coinType: coinType }))
+  }
+  return arbitragesChamber[coinType]
 }
 
 const ordersChamber = {}

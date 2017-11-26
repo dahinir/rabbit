@@ -113,8 +113,9 @@ module.exports = async function(options){
   }
 
   // Arbitrages
-  if (global.rabbit.constants[coinType].ARBITRAGE_STARTED && machines.length > 5000 && global.rabbit.constants[coinType].MARKET.length >= 1){
+  if (global.rabbit.constants[coinType].ARBITRAGE_STARTED && global.rabbit.constants[coinType].MARKET.length >= 1){
     results = arbitrages.mind({
+      coinType: coinType,
       korbit: korbit,
       coinone: coinone
     })  // It's Array
