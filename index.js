@@ -29,14 +29,14 @@ global.rabbit.constants = {
     MARKET: ["COINONE", "KORBIT"],
     PRECISION: 3,  // How many places after the decimal separator
     MIN_KRW_UNIT: 500,  // Minimum unit of KRW
-    BUY_AT_UNIT: 10000,
+    BUY_AT_UNIT: 10000, // Snap to 10000
     PREVIOUS_PROFIT_SUM: 0,
     PREVIOUS_PROFIT_RATE_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     PREVIOUS_TRADED_COUNT_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     BORN: new Date('November 17, 2017 14:45:00'), // 1 btc == 8,740,500 krw
     STARTED: new Date('November 17, 2017 14:45:00'),
     MACHINE_SETTING: {
-      CAPACITY_EACH_CRAVING: [0.002, 0.009, 0.009, 0.007, 0.006, 0.005, 0.004, 0.003, 0.002, 0.002],
+      CAPACITY_EACH_CRAVING: [0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001],
       MIN_CRAVING_PERCENTAGE: 3
     } 
   },
@@ -72,20 +72,49 @@ global.rabbit.constants = {
     }
   },
   ETC: {
+    MARKET: ["COINONE", "KORBIT"],
     PRECISION: 1,
     MIN_KRW_UNIT: 10,
-    BUY_AT_UNIT: 1,
+    BUY_AT_UNIT: 100,
     PREVIOUS_PROFIT_SUM: 0,
+    PREVIOUS_PROFIT_RATE_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    PREVIOUS_TRADED_COUNT_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     BORN: new Date('November 18, 2017 13:10:00'), // 1 etc == 19,190 krw
-    STARTED: new Date('November 18, 2017 13:10:00')
+    STARTED: new Date('November 18, 2017 13:10:00'),
+    MACHINE_SETTING: {
+      CAPACITY_EACH_CRAVING: [0.2, 0.5, 0.5, 0.4, 0.5, 0.4, 0.3, 0.2, 0.2, 0.1],
+      MIN_CRAVING_PERCENTAGE: 2
+    }
   },
   XRP:{
+    MARKET: ["COINONE", "KORBIT"],
     PRECISION: 0,
     MIN_KRW_UNIT: 1,
     BUY_AT_UNIT: 1,
     PREVIOUS_PROFIT_SUM: 0,
+    PREVIOUS_PROFIT_RATE_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    PREVIOUS_TRADED_COUNT_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     BORN: new Date('November 18, 2017 13:35:00'), // 1 xrp == 247 krw
-    STARTED: new Date('November 18, 2017 13:35:00')
+    STARTED: new Date('November 18, 2017 13:35:00'),
+    MACHINE_SETTING: {
+      CAPACITY_EACH_CRAVING: [20, 50, 50, 50, 40, 40, 30, 20, 20, 10],
+      MIN_CRAVING_PERCENTAGE: 2
+    }
+  },
+  LTC: {
+    MARKET: ["COINONE"],
+    PRECISION: 1,
+    MIN_KRW_UNIT: 50,
+    BUY_AT_UNIT: 100,
+    PREVIOUS_PROFIT_SUM: 0, // 68,000,000? 49752085,
+    PREVIOUS_PROFIT_RATE_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    PREVIOUS_TRADED_COUNT_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    BORN: new Date('July 4, 2017 13:20:00'),  // 1 eth == 337,500 krw
+    STARTED: new Date('September 22, 2017 11:00:00'), // 1 eth == 300,000 krw
+    MACHINE_SETTING: {
+      CAPACITY_EACH_CRAVING: [0.2, 0.3, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.1],
+      MIN_CRAVING_PERCENTAGE: 3
+    }
   },
   QTUM:{
     MARKET: ["COINONE"],
@@ -224,8 +253,7 @@ machines.fetchAll({
 })
 
 
-// const runningCoinType = ["BTC", "BCH", "ETH", "ETC", "XRP"],  // It's gonna be tick order.
-const runningCoinType = ["BCH", "ETH", "QTUM"],
+const runningCoinType = ["BTC", "BCH", "ETH", "ETC", "XRP", "LTC", "QTUM"],  // It's gonna be tick order.
   MIN_TERM = 10000,  // ms ..minimum I think 2700~2900 ms
   ERROR_BUFFER = 60000  // A minute
 let count = -1

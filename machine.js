@@ -365,7 +365,7 @@ exports.Machines = Backbone.Collection.extend({
       ///// Find or Create //////
       const snapedPrice = (() => {
         const BU = global.rabbit.constants[coinType].BUY_AT_UNIT || 1
-        return Math.ceil(minAskPrice / BU) * BU 
+        return Math.round(Math.ceil(minAskPrice / BU) * BU )
       })()
       if (this.where({ buy_at: snapedPrice}).length == 0){
         console.log(`There is no machine for ${minAskPrice} krw in ${this.length} machines, so I will create`)
@@ -442,7 +442,7 @@ exports.Machines = Backbone.Collection.extend({
           coinType: coinType,
           bidQuantity: totalBid,
           askQuantity: totalAsk,
-          bidPrice: (marketName == "KORBIT") ? bestOrderbook.ask[0].price - MIN_KRW_UNIT: bestOrderbook.ask[0].price,  // Buy at minAskPrice
+          bidPrice: bestOrderbook.ask[0].price - MIN_KRW_UNIT,  // Buy at minAskPrice
           askPrice: (marketName == "KORBIT") ? bestOrderbook.bid[0].price + MIN_KRW_UNIT : bestOrderbook.bid[0].price,
           participants: bidParticipants.concat(askParticipants),
           machineIds: bidMachineIds.concat(askMachineIds)
@@ -467,7 +467,7 @@ exports.Machines = Backbone.Collection.extend({
           coinType: coinType,
           bidQuantity: totalBid,
           askQuantity: 0,
-          bidPrice: (lowAskMarket.name == "KORBIT") ? bestOrderbook.ask[0].price - MIN_KRW_UNIT: bestOrderbook.ask[0].price,  // Buy at minAskPrice
+          bidPrice: bestOrderbook.ask[0].price - MIN_KRW_UNIT,  // Buy at minAskPrice
           // askPrice: bestOrderbook.bid[0].price,
           participants: bidParticipants,
           machineIds: bidMachineIds
