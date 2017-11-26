@@ -36,7 +36,7 @@ global.rabbit.constants = {
     BORN: new Date('November 17, 2017 14:45:00'), // 1 btc == 8,740,500 krw
     STARTED: new Date('November 17, 2017 14:45:00'),
     MACHINE_SETTING: {
-      CAPACITY_EACH_CRAVING: [0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001],
+      CAPACITY_EACH_CRAVING: [0.001, 0.003, 0.002, 0.002, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001],
       MIN_CRAVING_PERCENTAGE: 3
     } 
   },
@@ -67,7 +67,7 @@ global.rabbit.constants = {
     STARTED: new Date('September 22, 2017 11:00:00'), // 1 eth == 300,000 krw
     ARBITRAGE_STARTED: new Date('July 26, 2017 13:20:00'),
     MACHINE_SETTING: {
-      CAPACITY_EACH_CRAVING: [0.02, 0.05, 0.05, 0.04, 0.05, 0.04, 0.03, 0.02, 0.02, 0.01],
+      CAPACITY_EACH_CRAVING: [0.02, 0.07, 0.06, 0.05, 0.05, 0.04, 0.03, 0.02, 0.02, 0.01],
       MIN_CRAVING_PERCENTAGE: 2
     }
   },
@@ -82,7 +82,7 @@ global.rabbit.constants = {
     BORN: new Date('November 18, 2017 13:10:00'), // 1 etc == 19,190 krw
     STARTED: new Date('November 18, 2017 13:10:00'),
     MACHINE_SETTING: {
-      CAPACITY_EACH_CRAVING: [0.2, 0.5, 0.5, 0.4, 0.5, 0.4, 0.3, 0.2, 0.2, 0.1],
+      CAPACITY_EACH_CRAVING: [0.2, 0.9, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2],
       MIN_CRAVING_PERCENTAGE: 2
     }
   },
@@ -97,7 +97,22 @@ global.rabbit.constants = {
     BORN: new Date('November 18, 2017 13:35:00'), // 1 xrp == 247 krw
     STARTED: new Date('November 18, 2017 13:35:00'),
     MACHINE_SETTING: {
-      CAPACITY_EACH_CRAVING: [20, 50, 50, 50, 40, 40, 30, 20, 20, 10],
+      CAPACITY_EACH_CRAVING: [20, 70, 70, 60, 60, 50, 40, 30, 20, 20],
+      MIN_CRAVING_PERCENTAGE: 2
+    }
+  },
+  QTUM: {
+    MARKET: ["COINONE"],
+    PRECISION: 1,
+    MIN_KRW_UNIT: 10,
+    BUY_AT_UNIT: 100,
+    PREVIOUS_PROFIT_SUM: 0, // 68,000,000? 49752085,
+    PREVIOUS_PROFIT_RATE_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    PREVIOUS_TRADED_COUNT_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    BORN: new Date('July 4, 2017 13:20:00'),  // 1 eth == 337,500 krw
+    STARTED: new Date('September 22, 2017 11:00:00'), // 1 eth == 300,000 krw
+    MACHINE_SETTING: {
+      CAPACITY_EACH_CRAVING: [0.6, 2.1, 1.7, 1.5, 1.2, 0.8, 0.7, 0.3, 0.3, 0.3],
       MIN_CRAVING_PERCENTAGE: 2
     }
   },
@@ -114,21 +129,6 @@ global.rabbit.constants = {
     MACHINE_SETTING: {
       CAPACITY_EACH_CRAVING: [0.2, 0.3, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.1],
       MIN_CRAVING_PERCENTAGE: 3
-    }
-  },
-  QTUM:{
-    MARKET: ["COINONE"],
-    PRECISION: 1,
-    MIN_KRW_UNIT: 10,
-    BUY_AT_UNIT: 100,
-    PREVIOUS_PROFIT_SUM: 0, // 68,000,000? 49752085,
-    PREVIOUS_PROFIT_RATE_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    PREVIOUS_TRADED_COUNT_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    BORN: new Date('July 4, 2017 13:20:00'),  // 1 eth == 337,500 krw
-    STARTED: new Date('September 22, 2017 11:00:00'), // 1 eth == 300,000 krw
-    MACHINE_SETTING: {
-      CAPACITY_EACH_CRAVING: [0.2, 0.7, 0.5, 0.4, 0.5, 0.4, 0.3, 0.2, 0.2, 0.1],
-      MIN_CRAVING_PERCENTAGE: 2
     }
   }
 }

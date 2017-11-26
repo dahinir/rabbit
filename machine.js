@@ -43,11 +43,6 @@ exports.Machine = Backbone.Model.extend({
           return Math.ceil(options.minAskPrice / BU) * BU
         })()
         if (snapedPrice == this.get("buy_at")){
-          mind = {
-            type: "BID",
-            price: options.minAskPrice,
-            at: new Date()
-          }
           // FOR BIGGIE PROFIT //
           this.set({
             capacity: (() => {
@@ -56,6 +51,11 @@ exports.Machine = Backbone.Model.extend({
               return global.rabbit.constants[this.get("coinType")].MACHINE_SETTING.CAPACITY_EACH_CRAVING[INDEX]
             })()
           })
+          mind = {
+            type: "BID",
+            price: options.minAskPrice,
+            at: new Date()
+          }
         }
       } else if (this.get("status") == "COIN") {
         if (options.maxBidPrice >= (this.get("last_traded_price") * this.get("craving_percentage") / 100) + this.get("last_traded_price"))

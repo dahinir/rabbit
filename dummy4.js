@@ -16,7 +16,15 @@ const coinoneAPI = require("./coinone.js"),
     brain = require('brain.js')
 
 // if (true) console.log(Math.pow(0.1, 3).toFixed(3)*1)
-console.log([1].map(o => o))
+let sum = 0
+let arrr = [0.6, 2.1, 1.7, 1.5, 1.2, 0.8, 0.7, 0.3, 0.3, 0.3]
+arrr.forEach(o => sum += o)
+console.log(sum*1.6)
+console.log({
+    asdf: (() =>{
+        return "haha"
+    })()
+})
     return
 // for (let )   
 //     const AA = function(){
