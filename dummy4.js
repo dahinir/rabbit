@@ -15,11 +15,20 @@ const coinoneAPI = require("./coinone.js"),
     moment = require('moment'),
     brain = require('brain.js')
 
+
+console.log(5 / 3)
+console.log(Math.ceil(5/3))
+const highMarket = {
+    name: "hahah98"
+}
+console.log(`[arbitrages.mind] Not enough  ${highMarket.name} GIVE ME THE MONEY!`)
+return
+
 // if (true) console.log(Math.pow(0.1, 3).toFixed(3)*1)
 let sum = 0
-let arrr = [0.6, 2.1, 1.7, 1.5, 1.2, 0.8, 0.7, 0.3, 0.3, 0.3]
+let arrr = [0.2, 0.3, 0.3, 0.3, 0.2, 0.2, 0.2, 0.2, 0.2, 0.1]
 arrr.forEach(o => sum += o)
-console.log(sum*1.6)
+console.log(sum*9.5)
 console.log({
     asdf: (() =>{
         return "haha"

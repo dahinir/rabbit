@@ -47,7 +47,7 @@ exports.Machine = Backbone.Model.extend({
           this.set({
             capacity: (() => {
               const MIN_CRAVING_PERCENTAGE = global.rabbit.constants[this.get("coinType")].MACHINE_SETTING.MIN_CRAVING_PERCENTAGE
-              const INDEX = Math.round(this.get("craving_percentage") / MIN_CRAVING_PERCENTAGE) - 1
+              const INDEX = Math.round(this.get("craving_percentage") / MIN_CRAVING_PERCENTAGE - 1)
               return global.rabbit.constants[this.get("coinType")].MACHINE_SETTING.CAPACITY_EACH_CRAVING[INDEX]
             })()
           })
@@ -566,7 +566,8 @@ exports.Arbitrages = exports.Machines.extend({
     //// Decide quantity ////
     const prPerPrice = (profitRate / highMarket.orderbook.ask[0].price) * 100
     const LIMIT = (() => {
-      const coinFor600000 = 600000 / highMarket.orderbook.ask[0].price // FOR BIGGIE PROFIT
+      // FOR BIGGIE PROFIT
+      const coinFor600000 = 600000 / highMarket.orderbook.ask[0].price // about 600,000 krw value coin
       return prPerPrice * coinFor600000
     })()
     // const LIMIT = (profitRate > 4000) ? 2.0 : 0.5 // 2.0 or 0.5
@@ -576,7 +577,7 @@ exports.Arbitrages = exports.Machines.extend({
     quantity = (quantity > LIMIT) ? LIMIT : quantity  // Limit
     quantity = quantity.toFixed(global.rabbit.constants[coinType].PRECISION) * 1
 
-    if (prPerPrice < 0.6 || quantity < Math.pow(0.1, global.rabbit.constants[coinType].PRECISION).toFixed(global.rabbit.constants[coinType].PRECISION) * 1){
+    if (profitRate < 4 || prPerPrice < 0.6 || quantity < Math.pow(0.1, global.rabbit.constants[coinType].PRECISION).toFixed(global.rabbit.constants[coinType].PRECISION) * 1){
       console.log("Pass arbitrage. profitRate: \u20A9", profitRate, "prPerPrice(min 0.6):", prPerPrice, "quantity:", quantity)
       return []
     }
@@ -587,16 +588,16 @@ exports.Arbitrages = exports.Machines.extend({
 
 
     //// Validate balance ////
-    if (lowMarket.balance[coinType].available + highMarket.balance[coinType].available < 1000000){
+    if (lowMarket.balance[coinType].available + highMarket.balance[coinType].available < 2000000){
       console.log(`[arbitrages.mind] Not enough ${coinType} to arbitrage yet..`)
       return []
     }
-    if (lowMarket.balance.KRW.available - 100000 < lowMarket.orderbook.ask[0].price * quantity){
+    if (lowMarket.balance.KRW.available - 1000000 < lowMarket.orderbook.ask[0].price * quantity){
       console.log("[arbitrages.mind] Not enough krw at", lowMarket.name, "GIVE ME THE MONEY!!")
       return []
     }
-    if (highMarket.balance[coinType].available - 1.0 < quantity){
-      console.log("[arbitrages.mind] Not enough eth", highMarket.name, "GIVE ME THE MONEY!")
+    if (highMarket.balance[coinType].available < quantity * 1.1){ // 0.1% headroom for fee
+      console.log(`[arbitrages.mind] Not enough ${coinType} at ${highMarket.name} GIVE ME THE MONEY!`)
       return []
     }
 

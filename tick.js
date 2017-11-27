@@ -131,8 +131,6 @@ module.exports = async function(options){
   // results = []
 
   if (results.length != 2){
-  // isInclined(coinoneRecentCompleteOrders)
-  // if (false) {
     console.log("-- No arbitrages so mind machines --")
     if (isInclined(coinoneRecentCompleteOrders)){
       console.log("Wait.. It looks like inclined")
