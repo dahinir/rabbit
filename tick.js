@@ -137,41 +137,7 @@ module.exports = async function(options){
       return
     }
 
-    // let altKorbit = korbit,
-    //   altCoinone = coinone
-    // if (machines.length > 1000){
-    //   const MINS = {
-    //     "BTC": 0.1,
-    //     "BCH": 0.5,
-    //     "ETH": 2.0,
-    //     "ETC": 50,
-    //     "XRP": 1000,
-    //     "QTUM": 30,
-    //     "LTC": 6
-    //   }
-    //   if (coinone.balance.KRW.available < 600000){
-    //     console.log("[tick.js] not enough krw at coinone.")
-    //     altCoinone = (korbit.orderbook.bid[0].price <= coinone.orderbook.bid[0].price) ? coinone : korbit
-    //   }
-    //   if (korbit.balance.KRW.available < 600000){
-    //     console.log("[tick.js] not enough krw at korbit.")
-    //     altKorbit = (coinone.orderbook.bid[0].price <= korbit.orderbook.bid[0].price) ? korbit : coinone
-    //   }
-    //   if (coinone.balance[coinType].available < MINS[coinType]){
-    //     console.log("[tick.js] not enough",coinType ,"at coinone.")
-    //     altCoinone = (korbit.orderbook.ask[0].price >= coinone.orderbook.ask[0].price) ? coinone : korbit
-    //   }
-    //   if (korbit.balance[coinType].available < MINS[coinType]){
-    //     console.log("[tick.js] not enough",coinType ,"at korbit.")
-    //     altKorbit = (coinone.orderbook.ask[0].price >= korbit.orderbook.ask[0].price) ? korbit : coinone
-    //   }
-    //   console.log("altCoinone:", altCoinone.name, "\taltKorbit:", altKorbit.name)
-    //   if (altKorbit.name == "COINONE" && altCoinone.name == "KORBIT"){
-    //     console.log("altCoinone is korbit, altKorbit is coinone. so pass this tick")
-    //     // throw new Error("KILL_ME")
-    //     return
-    //   }
-    // }
+
 
     results = machines.mind({
       coinType: coinType,

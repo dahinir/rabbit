@@ -351,13 +351,12 @@ exports.Machines = Backbone.Collection.extend({
 
       ///// Validate balance: pre .mind /////
       const valueOfCoinSum = (highBidMarket.balance[coinType].available + lowAskMarket.balance[coinType].available) * highBidMarket.orderbook.bid[0].price
-      if (valueOfCoinSum > 1000000){
-        const coinFor600000 = 600000 / highBidMarket.orderbook.ask[0].price // about 600,000 krw value coin
-        if (highBidMarket.balance[coinType].available < coinFor600000){
+      if (valueOfCoinSum > 3000000){
+        // using one market
+        if (highBidMarket.balance[coinType].available * highBidMarket.orderbook.bid[0].price < 500000){
           highBidMarket = lowAskMarket
-        }
-        if (lowAskMarket.balance.KRW.available < 600000){
-          // I think this won't happen
+        }else if (lowAskMarket.balance.KRW.available < 500000){
+          lowAskMarket = highBidMarket
         }
       }
 
@@ -577,10 +576,11 @@ exports.Arbitrages = exports.Machines.extend({
 
     //// Decide quantity ////
     const prPerPrice = (profitRate / highMarket.orderbook.ask[0].price) * 100
-    const LIMIT = (() => {
+    const LIMIT = (() => {  // quantity
       // FOR BIGGIE PROFIT
-      const coinFor600000 = 600000 / highMarket.orderbook.ask[0].price // about 600,000 krw value coin
-      return prPerPrice * coinFor600000
+      const COIN_FOR_600000 = 600000 / highMarket.orderbook.ask[0].price // about 600,000 krw value coin
+      // If prPerPrice were 1%, then Deal about 600,000 krw value coin
+      return prPerPrice * COIN_FOR_600000
     })()
     // const LIMIT = (profitRate > 4000) ? 2.0 : 0.5 // 2.0 or 0.5
     quantity = (lowMarket.orderbook.ask[0].qty < highMarket.orderbook.bid[0].qty) ?
