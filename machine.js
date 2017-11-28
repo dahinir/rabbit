@@ -339,7 +339,6 @@ exports.Machines = Backbone.Collection.extend({
 
       let highBidMarket, lowAskMarket
       if (coinone.orderbook.bid[0].price > korbit.orderbook.bid[0].price){
-        // if (coinoneBalance.ETH.available > MIN_ETH)
         highBidMarket = coinone
       }else {
         highBidMarket = korbit
@@ -349,6 +348,19 @@ exports.Machines = Backbone.Collection.extend({
       }else {
         lowAskMarket = korbit
       }
+
+      ///// Validate balance: pre .mind /////
+      const valueOfCoinSum = (highBidMarket.balance[coinType].available + lowAskMarket.balance[coinType].available) * highBidMarket.orderbook.bid[0].price
+      if (valueOfCoinSum > 1000000){
+        const coinFor600000 = 600000 / highBidMarket.orderbook.ask[0].price // about 600,000 krw value coin
+        if (highBidMarket.balance[coinType].available < coinFor600000){
+          highBidMarket = lowAskMarket
+        }
+        if (lowAskMarket.balance.KRW.available < 600000){
+          // I think this won't happen
+        }
+      }
+
       const bestOrderbook = {
         bid: highBidMarket.orderbook.bid,
         ask: lowAskMarket.orderbook.ask
@@ -414,7 +426,8 @@ exports.Machines = Backbone.Collection.extend({
       totalBid = totalBid.toFixed(PRECISION) * 1
       totalAsk = totalAsk.toFixed(PRECISION) * 1
 
-      ///// Validate and Make a result
+      ///// Validate balance: after .mind /////
+      ///// And Make a result /////
       let result  // will return this result
       if (totalAsk == 0 && totalBid == 0)
         return []
@@ -428,7 +441,7 @@ exports.Machines = Backbone.Collection.extend({
             return []
           }
         }else{
-          if (totalAsk - totalBid < highBidMarket.balance[coinType].available - 0.1){ // 0.1 is buffer for fee
+          if ((totalAsk - totalBid) * 1.1 < highBidMarket.balance[coinType].available) { // 0.1% headroom for fee
             console.log("[machine.js] I have coin to ask at", highBidMarket.name)
           }else{
             console.log("[machine.js] Not enough coin at", highBidMarket.name, "hurry up!!!!!")
@@ -455,7 +468,7 @@ exports.Machines = Backbone.Collection.extend({
           console.log("[machine.js] Put money at", lowAskMarket.name, "hurry up!!!!!!")
           totalBid = 0, bidMachineIds = [], bidParticipants = []
         }
-        if (totalAsk < highBidMarket.balance[coinType].available - 0.1){
+        if (totalAsk * 1.1 < highBidMarket.balance[coinType].available) {  // 0.1% headroom for fee
           console.log("[machine.js] Enough",coinType ,"at", highBidMarket.name)
         }else {
           console.log("[machine.js] Put",coinType ,"at", highBidMarket.name, "hurry up!!!!!!")
@@ -522,7 +535,6 @@ exports.Arbitrages = exports.Machines.extend({
             quantity_sum += a.get("quantity")
           })
           console.log("Arbitrage Profit: \u20A9", new Intl.NumberFormat().format(profit_sum))
-          // console.log(new Intl.NumberFormat().format((profit_sum / ((new Date() - global.rabbit.constants["ETH"].ARBITRAGE_STARTED)/ 86400000)).toFixed(0)), "per day")
           console.log("quantity_sum:", new Intl.NumberFormat().format(quantity_sum))
           resolve()
         }
@@ -588,16 +600,16 @@ exports.Arbitrages = exports.Machines.extend({
 
 
     //// Validate balance ////
-    if (lowMarket.balance[coinType].available + highMarket.balance[coinType].available < 2000000){
+    if ((lowMarket.balance[coinType].available + highMarket.balance[coinType].available) * lowMarket.orderbook.ask[0].price < 2000000){
       console.log(`[arbitrages.mind] Not enough ${coinType} to arbitrage yet..`)
       return []
     }
-    if (lowMarket.balance.KRW.available - 1000000 < lowMarket.orderbook.ask[0].price * quantity){
+    if (lowMarket.balance.KRW.available < lowMarket.orderbook.ask[0].price * quantity * 1.1) { // 0.1% headroom for fee
       console.log("[arbitrages.mind] Not enough krw at", lowMarket.name, "GIVE ME THE MONEY!!")
       return []
     }
     if (highMarket.balance[coinType].available < quantity * 1.1){ // 0.1% headroom for fee
-      console.log(`[arbitrages.mind] Not enough ${coinType} at ${highMarket.name} GIVE ME THE MONEY!`)
+      console.log(`[arbitrages.mind] Not enough ${coinType} at ${highMarket.name} MOVE THE COIN!`)
       return []
     }
 

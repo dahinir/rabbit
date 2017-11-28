@@ -145,7 +145,9 @@ module.exports = async function(options){
     //     "BCH": 0.5,
     //     "ETH": 2.0,
     //     "ETC": 50,
-    //     "XRP": 1000
+    //     "XRP": 1000,
+    //     "QTUM": 30,
+    //     "LTC": 6
     //   }
     //   if (coinone.balance.KRW.available < 600000){
     //     console.log("[tick.js] not enough krw at coinone.")

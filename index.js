@@ -85,7 +85,7 @@ global.rabbit.constants = {
     STARTED: new Date('November 26, 2017 22:25:00'),
     ARBITRAGE_STARTED: new Date('November 27, 2017 15:50:00'),
     MACHINE_SETTING: {
-      CAPACITY_EACH_CRAVING: [0.5, 1.5, 1.9, 1.8, 0.9, 0.7, 0.7, 0.6, 0.5, 0.4],
+      CAPACITY_EACH_CRAVING: [0.5, 1.5, 1.9, 1.8, 0.9, 0.7, 0.7, 0.6, 0.6, 0.5],
       MIN_CRAVING_PERCENTAGE: 2
     }
   },
