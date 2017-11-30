@@ -16,17 +16,40 @@ const coinoneAPI = require("./coinone.js"),
     brain = require('brain.js')
 
 
+
 // if (true) console.log(Math.pow(0.1, 3).toFixed(3)*1)
 let sum = 0
-let arrr = [1.6, 2.1, 1.9, 1.8, 1.3, 1.2, 1.8, 1.7, 1.6, 1.5]
+let arrr = [0.1, 0.1, 0.2, 0.2, 0.2, 0.3, 0.1, 0.1, 0.1, 0.1]
 arrr.forEach(o => sum += o)
-console.log(sum*1.6)
+console.log(sum*9.9)
 console.log({
     asdf: (() =>{
         return "haha"
     })()
 })
-    return
+return
+
+async function g2o(ed) {
+    try {
+        // const coinoneRecentCompleteOrders = await fetcher.getCoinoneRecentCompleteOrders("IOTA")
+        const bb = await fetcher.getCoinoneBalance()
+        console.log(bb)
+    } catch (e) {
+        // console.log("catch")
+        // console.log(e)
+        // if (e.errorCode == "104")
+        //   console.log("haah")
+        // if only coinone!
+        // if ( e.errorCode == "1015") // Cancel more than available. maybe..
+    }
+
+    // console.log("--")
+}
+g2o()
+// go().then(r => console.log("result:", r)).catch(e => console.log("catch",e))
+return
+
+
 // for (let )   
 //     const AA = function(){
 //         return "d"

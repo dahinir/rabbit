@@ -37,7 +37,7 @@ global.rabbit.constants = {
     STARTED: new Date('November 26, 2017 22:25:00'),
     ARBITRAGE_STARTED: new Date('November 27, 2017 15:50:00'),
     MACHINE_SETTING: {
-      CAPACITY_EACH_CRAVING: [0.003, 0.004, 0.003, 0.003, 0.002, 0.001, 0.001, 0.001, 0.001, 0.001],
+      CAPACITY_EACH_CRAVING: [0.002, 0.002, 0.002, 0.003, 0.002, 0.002, 0.002, 0.002, 0.001, 0.001],
       MIN_CRAVING_PERCENTAGE: 3
     } 
   },
@@ -57,6 +57,8 @@ global.rabbit.constants = {
       MIN_CRAVING_PERCENTAGE: 3
     }
   },
+  BTG: {
+  },
   ETH: {
     MARKET: ["COINONE", "KORBIT"],
     PRECISION: 2,
@@ -69,7 +71,7 @@ global.rabbit.constants = {
     STARTED: new Date('November 26, 2017 22:25:00'), // 1 eth == 300,000 krw
     ARBITRAGE_STARTED: new Date('July 26, 2017 13:20:00'),
     MACHINE_SETTING: {
-      CAPACITY_EACH_CRAVING: [0.02, 0.09, 0.07, 0.07, 0.07, 0.06, 0.03, 0.03, 0.02, 0.02],
+      CAPACITY_EACH_CRAVING: [0.02, 0.08, 0.09, 0.09, 0.08, 0.06, 0.03, 0.03, 0.02, 0.02],
       MIN_CRAVING_PERCENTAGE: 2
     }
   },
@@ -85,7 +87,7 @@ global.rabbit.constants = {
     STARTED: new Date('November 26, 2017 22:25:00'),
     ARBITRAGE_STARTED: new Date('November 27, 2017 15:50:00'),
     MACHINE_SETTING: {
-      CAPACITY_EACH_CRAVING: [0.5, 1.5, 1.9, 1.8, 0.9, 0.7, 0.7, 0.6, 0.6, 0.5],
+      CAPACITY_EACH_CRAVING: [0.5, 0.5, 0.6, 0.6, 0.7, 1.8, 1.8, 1.5, 0.7, 0.6],
       MIN_CRAVING_PERCENTAGE: 2
     }
   },
@@ -101,7 +103,7 @@ global.rabbit.constants = {
     STARTED: new Date('November 26, 2017 22:25:00'),
     ARBITRAGE_STARTED: new Date('November 27, 2017 15:50:00'),
     MACHINE_SETTING: {
-      CAPACITY_EACH_CRAVING: [70, 90, 100, 90, 80, 70, 70, 60, 60, 60],
+      CAPACITY_EACH_CRAVING: [60, 80, 80, 90, 80, 80, 70, 70, 60, 60],
       MIN_CRAVING_PERCENTAGE: 2
     }
   },
@@ -131,12 +133,27 @@ global.rabbit.constants = {
     BORN: new Date('November 26, 2017 22:25:00'),  // 1 eth == 337,500 krw
     STARTED: new Date('November 26, 2017 22:25:00'), // 1 eth == 300,000 krw
     MACHINE_SETTING: {
-      CAPACITY_EACH_CRAVING: [0.2, 0.5, 0.3, 0.2, 0.2, 0.2, 0.2, 0.2, 0.1, 0.1],
+      CAPACITY_EACH_CRAVING: [0.1, 0.1, 0.2, 0.2, 0.2, 0.3, 0.1, 0.1, 0.1, 0.1],
       MIN_CRAVING_PERCENTAGE: 3
+    }
+  },
+  IOTA: {
+    MARKET: ["COINONE"],
+    PRECISION: 0,
+    MIN_KRW_UNIT: 1,
+    BUY_AT_UNIT: 10,
+    PREVIOUS_PROFIT_SUM: 0, // 68,000,000? 49752085,
+    PREVIOUS_PROFIT_RATE_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    PREVIOUS_TRADED_COUNT_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    BORN: new Date('November 30, 2017 00:53:00'),  //1,785 krw
+    STARTED: new Date('November 30, 2017 00:53:00'),
+    MACHINE_SETTING: {
+      CAPACITY_EACH_CRAVING: [5, 5, 5, 6, 7, 7, 6, 6, 5, 4],
+      MIN_CRAVING_PERCENTAGE: 5
     }
   }
 }
-global.rabbit.INVESTED_KRW = 110000000
+global.rabbit.INVESTED_KRW = 120000000
 global.rabbit.BORN = new Date('July 4, 2017 13:20:00')
 
 
@@ -257,8 +274,8 @@ machines.fetchAll({
 })
 
 
-const runningCoinType = ["BTC", "BCH", "ETH", "ETC", "XRP", "QTUM", "LTC"],  // It's gonna be tick order.
-  MIN_TERM = 8000,  // ms ..minimum I think 2700~2900 ms
+const runningCoinType = ["BTC", "BCH", "ETH", "ETC", "XRP", "QTUM", "LTC", "IOTA"],  // It's gonna be tick order.
+  MIN_TERM = 6000,  // ms ..minimum I think 2700~2900 ms
   ERROR_BUFFER = 60000  // A minute
 let count = -1
 

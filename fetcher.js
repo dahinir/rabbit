@@ -270,6 +270,15 @@ exports.getCoinoneBalance = async function(){
   const result = await coinoneAPI({
     type: "BALANCE"
   })
+  
+  // const coinTypes = []
+  // console.log("ASddasdf")
+  // console.log(global.rabbit.constants)
+  // for (const name in global.rabbit.constants){
+  //   console.log(name)
+  //   coinTypes.push(name)
+  // }
+  // return coinTypes
   return {
     BTC: {
       available: result.btc.avail * 1,
@@ -298,6 +307,10 @@ exports.getCoinoneBalance = async function(){
     LTC: {
       available: result.ltc.avail * 1,
       balance: result.ltc.balance * 1
+    },
+    IOTA: {
+      available: result.iota.avail * 1,
+      balance: result.iota.balance * 1
     },
     KRW: {
       available: result.krw.avail * 1,

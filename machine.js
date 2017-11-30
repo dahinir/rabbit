@@ -354,8 +354,10 @@ exports.Machines = Backbone.Collection.extend({
       if (valueOfCoinSum > 3000000){
         // using one market
         if (highBidMarket.balance[coinType].available * highBidMarket.orderbook.bid[0].price < 500000){
+          console.log(`[machines.mind()] Not enough coin at ${highBidMarket.name}.. so won't deal with at.....`)
           highBidMarket = lowAskMarket
         }else if (lowAskMarket.balance.KRW.available < 500000){
+          console.log(`[machines.mind()] Not enough krw at ${lowAskMarket.name}.. so won't deal with at.....`)
           lowAskMarket = highBidMarket
         }
       }
