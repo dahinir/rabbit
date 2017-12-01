@@ -157,7 +157,7 @@ global.rabbit.constants = {
     BORN: new Date('November 30, 2017 00:53:00'),  // 1,785 krw
     STARTED: new Date('November 30, 2017 00:53:00'),
     MACHINE_SETTING: {
-      CAPACITY_EACH_CRAVING: [2, 3, 3, 5, 5, 3, 3, 3, 2, 2],
+      CAPACITY_EACH_CRAVING: [5, 5, 3, 3, 3, 3, 3, 2, 2, 2],
       MIN_CRAVING_PERCENTAGE: 5
     }
   }

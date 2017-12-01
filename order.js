@@ -351,7 +351,7 @@ exports.Orders = Backbone.Collection.extend({
         
         for (let orders of [coinoneOrders, korbitOrders]) {
           // console.log("[order.js] orders.length", orders.length)
-          if (orders.length > 5) {
+          if (orders.length > 7) {
             console.log("[order.js] Time to cancel order.", coinType, "lastPrice:", lastPrice)
             console.log("[order.js] Mo than 5", coinType, "orders at", orders[0].get("marketName"))
             // The most far from current price

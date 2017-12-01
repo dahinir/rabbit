@@ -555,7 +555,7 @@ exports.Arbitrages = exports.Machines.extend({
       korbit = options.korbit
     
     console.log(`[arbitrages.mind] ${coinType} arbitrages length ${this.length}`)
-    if (this.length > 6){
+    if (this.length > 8){
       return []
     }
 
