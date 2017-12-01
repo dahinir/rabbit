@@ -36,19 +36,20 @@ exports.Machine = Backbone.Model.extend({
         return {type: "PENDING"}
 
       let mind = {} //  will be new mind of this machine
+      const coinType = this.get("coinType")
 
       if (this.get("status") == "KRW") {
         const snapedPrice = (() => {
-          const BU = global.rabbit.constants[this.get("coinType")].BUY_AT_UNIT || 1
+          const BU = global.rabbit.constants[coinType].BUY_AT_UNIT || 1
           return Math.ceil(options.minAskPrice / BU) * BU
         })()
-        if (snapedPrice == this.get("buy_at")){
+        if (snapedPrice == this.get("buy_at")) {
           // FOR BIGGIE PROFIT //
           this.set({
             capacity: (() => {
-              const MIN_CRAVING_PERCENTAGE = global.rabbit.constants[this.get("coinType")].MACHINE_SETTING.MIN_CRAVING_PERCENTAGE
+              const MIN_CRAVING_PERCENTAGE = global.rabbit.constants[coinType].MACHINE_SETTING.MIN_CRAVING_PERCENTAGE
               const INDEX = Math.round(this.get("craving_percentage") / MIN_CRAVING_PERCENTAGE - 1)
-              return global.rabbit.constants[this.get("coinType")].MACHINE_SETTING.CAPACITY_EACH_CRAVING[INDEX]
+              return global.rabbit.constants[coinType].MACHINE_SETTING.CAPACITY_EACH_CRAVING[INDEX]
             })()
           })
           mind = {
@@ -354,10 +355,10 @@ exports.Machines = Backbone.Collection.extend({
       if (valueOfCoinSum > 3000000){
         // using one market
         if (highBidMarket.balance[coinType].available * highBidMarket.orderbook.bid[0].price < 500000){
-          console.log(`[machines.mind()] Not enough coin at ${highBidMarket.name}.. so won't deal with at.....`)
+          console.log(`[machines.mind()] Not enough coin at ${highBidMarket.name}.. so won't sell here`)
           highBidMarket = lowAskMarket
         }else if (lowAskMarket.balance.KRW.available < 500000){
-          console.log(`[machines.mind()] Not enough krw at ${lowAskMarket.name}.. so won't deal with at.....`)
+          console.log(`[machines.mind()] Not enough krw at ${lowAskMarket.name}.. so won't buy here`)
           lowAskMarket = highBidMarket
         }
       }
@@ -381,21 +382,26 @@ exports.Machines = Backbone.Collection.extend({
         return Math.round(Math.ceil(minAskPrice / BU) * BU )
       })()
       if (this.where({ buy_at: snapedPrice}).length == 0){
-        console.log(`There is no machine for ${minAskPrice} krw in ${this.length} machines, so I will create`)
-        const MIN_CRAVING_PERCENTAGE = global.rabbit.constants[coinType].MACHINE_SETTING.MIN_CRAVING_PERCENTAGE
-        const CAPACITY_EACH_CRAVING = global.rabbit.constants[coinType].MACHINE_SETTING.CAPACITY_EACH_CRAVING
-        
-        for (let i = 1; i <= 10; i++){
-          /// Create new machine! ///
-          this.add({
-            coinType: coinType,
-            capacity: CAPACITY_EACH_CRAVING[i - 1],
-            buy_at: snapedPrice,
-            craving_percentage: MIN_CRAVING_PERCENTAGE * i
-            // craving_krw: Math.round(snapedPrice * MIN_CRAVING_PERCENTAGE * i / 100)
-          })
+        const PHP = global.rabbit.constants[coinType].PREVIOUS_HIGH_PRICE || Infinity
+        if (snapedPrice < PHP){
+          console.log(`There is no machine for ${minAskPrice} krw in ${this.length} machines, so I will create`)
+          const MIN_CRAVING_PERCENTAGE = global.rabbit.constants[coinType].MACHINE_SETTING.MIN_CRAVING_PERCENTAGE
+          const CAPACITY_EACH_CRAVING = global.rabbit.constants[coinType].MACHINE_SETTING.CAPACITY_EACH_CRAVING
+          
+          for (let i = 1; i <= 10; i++){
+            /// Create new machine! ///
+            this.add({
+              coinType: coinType,
+              capacity: CAPACITY_EACH_CRAVING[i - 1],
+              buy_at: snapedPrice,
+              craving_percentage: MIN_CRAVING_PERCENTAGE * i
+              // craving_krw: Math.round(snapedPrice * MIN_CRAVING_PERCENTAGE * i / 100)
+            })
+          }
+          console.log(`Now "buy_at" as ${snapedPrice} added. ${coinType} machines are ${this.length}`)
+        } else {
+          console.log(`Wow! previous high price of ${coinType} is ${PHP} Now I'm higher! I won't buy anymore!`)
         }
-        console.log(`Now "buy_at" as ${snapedPrice} added. ${coinType} machines are ${this.length}`)
       }
 
 

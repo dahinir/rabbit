@@ -19,9 +19,9 @@ const coinoneAPI = require("./coinone.js"),
 
 // if (true) console.log(Math.pow(0.1, 3).toFixed(3)*1)
 let sum = 0
-let arrr = [0.1, 0.1, 0.2, 0.2, 0.2, 0.3, 0.1, 0.1, 0.1, 0.1]
+let arrr = [2, 3, 3, 5, 5, 3, 3, 3, 2, 2]
 arrr.forEach(o => sum += o)
-console.log(sum*9.9)
+console.log(arrr.length, sum * 1500)
 console.log({
     asdf: (() =>{
         return "haha"
