@@ -220,10 +220,10 @@ function isInclined(coinoneRecentCompleteOrders) {
   
   // console.log((candles[0].body == candles[1].body) ? "wait" : "action")
   for (let i = 0; i < 5; i++)
-  console.log(candles[i])
+    console.log(candles[i])
   // console.log(candles.length, candles[0].length, candles[1].length, candles[2].length, candles[3].length, candles[4].length)
   // console.log( candles[candles.length - 1])
-  if (candles[0].open == candles[0].close)
+  if (candles[0].open == candles[0].close || _.isUndefined(candles[0]) || _.isUndefined(candles[1]))
     return false
   return (candles[0].body == candles[1].body) ? true : false
 }

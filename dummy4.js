@@ -15,15 +15,13 @@ const coinoneAPI = require("./coinone.js"),
     moment = require('moment'),
     brain = require('brain.js')
 
-
-
 // if (true) console.log(Math.pow(0.1, 3).toFixed(3)*1)
 let sum = 0
-let arrr = [2, 3, 3, 5, 5, 3, 3, 3, 2, 2]
+let arrr = [0.01, 0.03, 0.08, 0.09, 0.07, 0.05, 0.03, 0.02, 0.02, 0.02]
 arrr.forEach(o => sum += o)
-console.log(arrr.length, sum * 1500)
+console.log(arrr.length, sum * 50)
 console.log({
-    asdf: (() =>{
+    asdf: (() => {
         return "haha"
     })()
 })
@@ -32,7 +30,7 @@ return
 async function g2o(ed) {
     try {
         // const coinoneRecentCompleteOrders = await fetcher.getCoinoneRecentCompleteOrders("IOTA")
-        const bb = await fetcher.getCoinoneBalance()
+        const bb = await fetcher.getKorbitBalance()
         console.log(bb)
     } catch (e) {
         // console.log("catch")
@@ -42,12 +40,16 @@ async function g2o(ed) {
         // if only coinone!
         // if ( e.errorCode == "1015") // Cancel more than available. maybe..
     }
-
     // console.log("--")
 }
 g2o()
 // go().then(r => console.log("result:", r)).catch(e => console.log("catch",e))
 return
+
+
+
+
+
 
 
 // for (let )   

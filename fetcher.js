@@ -153,32 +153,42 @@ exports.getKorbitBalance = async function(){
     type: "BALANCE"
   })
 
-  return {
-    BTC: {
-      available: result.btc.available * 1,
-      balance: result.btc.available * 1 + result.btc.trade_in_use * 1
-    },
-    BCH: {
-      available: result.bch.available * 1,
-      balance: result.bch.available * 1 + result.bch.trade_in_use * 1
-    },
-    ETH: {
-      available: result.eth.available * 1,
-      balance: result.eth.available * 1 + result.eth.trade_in_use * 1
-    },
-    ETC: {
-      available: result.etc.available * 1,
-      balance: result.etc.available * 1 + result.etc.trade_in_use * 1
-    },
-    XRP: {
-      available: result.xrp.available * 1,
-      balance: result.xrp.available * 1 + result.xrp.trade_in_use * 1
-    },
-    KRW: {
-      available: result.krw.available * 1,
-      balance: result.krw.available * 1 + result.krw.trade_in_use * 1
-    }
+  let bals = {}
+  for (const name in result) {
+    if (result[name].available)
+      bals[name.toUpperCase()] = {
+        available: result[name].available * 1,
+        balance: result[name].available * 1 + result[name].trade_in_use * 1
+      }
   }
+  return bals
+
+  // return {
+  //   BTC: {
+  //     available: result.btc.available * 1,
+  //     balance: result.btc.available * 1 + result.btc.trade_in_use * 1
+  //   },
+  //   BCH: {
+  //     available: result.bch.available * 1,
+  //     balance: result.bch.available * 1 + result.bch.trade_in_use * 1
+  //   },
+  //   ETH: {
+  //     available: result.eth.available * 1,
+  //     balance: result.eth.available * 1 + result.eth.trade_in_use * 1
+  //   },
+  //   ETC: {
+  //     available: result.etc.available * 1,
+  //     balance: result.etc.available * 1 + result.etc.trade_in_use * 1
+  //   },
+  //   XRP: {
+  //     available: result.xrp.available * 1,
+  //     balance: result.xrp.available * 1 + result.xrp.trade_in_use * 1
+  //   },
+  //   KRW: {
+  //     available: result.krw.available * 1,
+  //     balance: result.krw.available * 1 + result.krw.trade_in_use * 1
+  //   }
+  // }
 }
 
 exports.getCoinoneRecentCompleteOrders = function (coinType) {
@@ -271,50 +281,51 @@ exports.getCoinoneBalance = async function(){
     type: "BALANCE"
   })
   
-  // const coinTypes = []
-  // console.log("ASddasdf")
-  // console.log(global.rabbit.constants)
-  // for (const name in global.rabbit.constants){
-  //   console.log(name)
-  //   coinTypes.push(name)
-  // }
-  // return coinTypes
-  return {
-    BTC: {
-      available: result.btc.avail * 1,
-      balance: result.btc.balance * 1
-    },
-    BCH: {
-      available: result.bch.avail * 1,
-      balance: result.bch.balance * 1
-    },
-    ETH: {
-      available: result.eth.avail * 1,
-      balance: result.eth.balance * 1
-    },
-    ETC: {
-      available: result.etc.avail * 1,
-      balance: result.etc.balance * 1
-    },
-    XRP: {
-      available: result.xrp.avail * 1,
-      balance: result.xrp.balance * 1
-    },
-    QTUM: {
-      available: result.qtum.avail * 1,
-      balance: result.qtum.balance * 1
-    },
-    LTC: {
-      available: result.ltc.avail * 1,
-      balance: result.ltc.balance * 1
-    },
-    IOTA: {
-      available: result.iota.avail * 1,
-      balance: result.iota.balance * 1
-    },
-    KRW: {
-      available: result.krw.avail * 1,
-      balance: result.krw.balance * 1
-    }
+  let bals = {}
+  for (const name in result){
+    if (result[name].balance)
+      bals[name.toUpperCase()] = {
+        available: result[name].avail * 1,
+        balance: result[name].balance * 1
+      }
   }
+  return bals
+  // return {
+  //   BTC: {
+  //     available: result.btc.avail * 1,
+  //     balance: result.btc.balance * 1
+  //   },
+  //   BCH: {
+  //     available: result.bch.avail * 1,
+  //     balance: result.bch.balance * 1
+  //   },
+  //   ETH: {
+  //     available: result.eth.avail * 1,
+  //     balance: result.eth.balance * 1
+  //   },
+  //   ETC: {
+  //     available: result.etc.avail * 1,
+  //     balance: result.etc.balance * 1
+  //   },
+  //   XRP: {
+  //     available: result.xrp.avail * 1,
+  //     balance: result.xrp.balance * 1
+  //   },
+  //   QTUM: {
+  //     available: result.qtum.avail * 1,
+  //     balance: result.qtum.balance * 1
+  //   },
+  //   LTC: {
+  //     available: result.ltc.avail * 1,
+  //     balance: result.ltc.balance * 1
+  //   },
+  //   IOTA: {
+  //     available: result.iota.avail * 1,
+  //     balance: result.iota.balance * 1
+  //   },
+  //   KRW: {
+  //     available: result.krw.avail * 1,
+  //     balance: result.krw.balance * 1
+  //   }
+  // }
 }

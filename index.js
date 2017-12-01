@@ -39,7 +39,7 @@ global.rabbit.constants = {
     STARTED: new Date('November 26, 2017 22:25:00'),
     ARBITRAGE_STARTED: new Date('November 27, 2017 15:50:00'),
     MACHINE_SETTING: {
-      CAPACITY_EACH_CRAVING: [0.001, 0.001, 0.003, 0.003, 0.002, 0.001, 0.001, 0.001, 0.001, 0.001],
+      CAPACITY_EACH_CRAVING: [0.001, 0.001, 0.003, 0.005, 0.003, 0.001, 0.001, 0.001, 0.001, 0.001],
       MIN_CRAVING_PERCENTAGE: 3
     } 
   },
@@ -92,7 +92,7 @@ global.rabbit.constants = {
     STARTED: new Date('November 26, 2017 22:25:00'),
     ARBITRAGE_STARTED: new Date('November 27, 2017 15:50:00'),
     MACHINE_SETTING: {
-      CAPACITY_EACH_CRAVING: [0.1, 0.2, 0.3, 0.3, 0.5, 0.7, 0.6, 0.3, 0.2, 0.1],
+      CAPACITY_EACH_CRAVING: [0.1, 0.2, 0.3, 0.3, 0.5, 0.7, 0.6, 0.4, 0.2, 0.1],
       MIN_CRAVING_PERCENTAGE: 2
     }
   },
@@ -162,7 +162,7 @@ global.rabbit.constants = {
     }
   }
 }
-global.rabbit.INVESTED_KRW = 130000000
+global.rabbit.INVESTED_KRW = 150000000
 global.rabbit.BORN = new Date('July 4, 2017 13:20:00')
 
 
@@ -284,7 +284,7 @@ machines.fetchAll({
 
 
 const runningCoinType = ["BTC", "BCH", "ETH", "ETC", "XRP", "QTUM", "LTC", "IOTA"],  // It's gonna be tick order.
-  MIN_TERM = 6000,  // ms ..minimum I think 2700~2900 ms
+  MIN_TERM = 5000,  // ms ..minimum I think 2700~2900 ms
   ERROR_BUFFER = 60000  // A minute
 let count = -1
 
