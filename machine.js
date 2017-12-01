@@ -382,8 +382,8 @@ exports.Machines = Backbone.Collection.extend({
         return Math.round(Math.ceil(minAskPrice / BU) * BU )
       })()
       if (this.where({ buy_at: snapedPrice}).length == 0){
-        const PHP = global.rabbit.constants[coinType].PREVIOUS_HIGH_PRICE || Infinity
-        if (snapedPrice < PHP){
+        const MB = global.rabbit.constants[coinType].MAX_BUY_AT || Infinity
+        if (snapedPrice < MB){
           console.log(`There is no machine for ${minAskPrice} krw in ${this.length} machines, so I will create`)
           const MIN_CRAVING_PERCENTAGE = global.rabbit.constants[coinType].MACHINE_SETTING.MIN_CRAVING_PERCENTAGE
           const CAPACITY_EACH_CRAVING = global.rabbit.constants[coinType].MACHINE_SETTING.CAPACITY_EACH_CRAVING
@@ -400,7 +400,7 @@ exports.Machines = Backbone.Collection.extend({
           }
           console.log(`Now "buy_at" as ${snapedPrice} added. ${coinType} machines are ${this.length}`)
         } else {
-          console.log(`Wow! previous high price of ${coinType} is ${PHP} Now I'm higher! I won't buy anymore!`)
+          console.log(`Wow~ MAX_BUY_AT of ${coinType} is ${MB} And now I'm higher~ I won't buy anymore ~~ ~  ~    ~`)
         }
       }
 
