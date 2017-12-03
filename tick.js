@@ -30,7 +30,7 @@ module.exports = async function(options){
   /////// FETCHING //////////
   let coinoneInfo, korbitInfo, fetchingTime = Infinity
   let coinoneOrderbook, coinoneBalance, coinoneRecentCompleteOrders
-  let korbitOrderbook, korbitBalance
+  let korbitOrderbook, korbitBalance, korbitRecentCompleteOrders
   try {
     // Act like Promise.all()
     // Less important in time domain
@@ -38,12 +38,14 @@ module.exports = async function(options){
       korbitInfoPromise = KORBIT ? fetcher.getKorbitInfo(coinType) : "",
       coinoneBalancePromise = COINONE ? fetcher.getCoinoneBalance() : "",
       korbitBalancePromise = KORBIT ? fetcher.getKorbitBalance() : "",
-      coinoneRecentCompleteOrdersPromise = COINONE ? fetcher.getCoinoneRecentCompleteOrders(coinType) : ""
+      coinoneRecentCompleteOrdersPromise = COINONE ? fetcher.getCoinoneRecentCompleteOrders(coinType) : "",
+      korbitRecentCompleteOrdersPromise = KORBIT ? fetcher.getKorbitRecentCompleteOrders(coinType) : ""
     if (COINONE) coinoneInfo = await coinoneInfoPromise
     if (KORBIT) korbitInfo = await korbitInfoPromise
     if (COINONE) coinoneBalance = await coinoneBalancePromise
     if (KORBIT) korbitBalance = await korbitBalancePromise
     if (COINONE) coinoneRecentCompleteOrders = await coinoneRecentCompleteOrdersPromise
+    if (KORBIT) korbitRecentCompleteOrders = await korbitRecentCompleteOrdersPromise
     // console.log("Fetching some info takes", ((new Date() - TICK_STARTED) / 1000).toFixed(2), "sec")
 
     // More important in time domain
@@ -132,7 +134,7 @@ module.exports = async function(options){
 
   if (results.length != 2){
     console.log("-- No arbitrages so mind machines --")
-    if (isInclined(coinoneRecentCompleteOrders)){
+    if (isInclined(coinoneRecentCompleteOrders || korbitRecentCompleteOrders)){
       console.log("Wait.. It looks like inclined")
       return
     }
@@ -143,8 +145,8 @@ module.exports = async function(options){
       coinType: coinType,
       // korbit: altKorbit,
       // coinone: altCoinone
-      korbit: KORBIT ? korbit: coinone,
-      coinone: coinone
+      korbit: KORBIT ? korbit : coinone,
+      coinone: COINONE ? coinone : korbit
     })
   }
   // console.log("[tick.js]", machinesResult.participants.length, "machinesResult want to deal")
@@ -183,19 +185,19 @@ function ignoreMoreRejectsFrom(...promises) {
     }));
 }
 
-function isInclined(coinoneRecentCompleteOrders) {
-  coinoneRecentCompleteOrders = coinoneRecentCompleteOrders.reverse()
+function isInclined(recentCompleteOrders) {
+  recentCompleteOrders = recentCompleteOrders.reverse()
 
-  const lastTimestamp = coinoneRecentCompleteOrders[0].timestamp * 1
+  const lastTimestamp = recentCompleteOrders[0].timestamp * 1
   const TERM = 60 * 3  // 3 mins
-  // console.log(coinoneRecentCompleteOrders[0], coinoneRecentCompleteOrders[1])
-  let candles = coinoneRecentCompleteOrders.reduce((candles, o) => {
+  // console.log(recentCompleteOrders[0], recentCompleteOrders[1])
+  let candles = recentCompleteOrders.reduce((candles, o) => {
     const index = Math.floor((lastTimestamp - (o.timestamp * 1)) / TERM)
 
     if (_.isArray(candles[index]))
       candles[index].push(o)
     else
-      candles[index] = [o]
+      candles[index] = [o]  // It's new Array
     return candles
   }, [])
   candles = candles.map(c => {
@@ -203,7 +205,7 @@ function isInclined(coinoneRecentCompleteOrders) {
     const open = c[lastIndex].price * 1,
       close = c[0].price * 1,
       volume = c.reduce((sum, el) => {
-        return sum + el.qty * 1
+        return sum + (el.qty || 0) * 1
       }, 0)
 
     return {

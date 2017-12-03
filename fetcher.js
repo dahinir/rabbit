@@ -190,6 +190,39 @@ exports.getKorbitBalance = async function(){
   //   }
   // }
 }
+exports.getKorbitRecentCompleteOrders = function (coinType) {
+  return new Promise((resolve, reject) => {
+    request({
+        method: "GET",
+        uri: "https://api.korbit.co.kr/v1/transactions",
+        qs: {
+          currency_pair: coinType.toLowerCase() + "_krw",
+          time: 'hour' // 'minite', 'hour', 'day'
+        }
+      },
+      function (error, response, body) {
+        let result
+        try {
+          result = JSON.parse(body).map(o => {
+            return {
+              timestamp: Math.round(o.timestamp/1000),
+              price: o.price * 1,
+              qty: o.amount * 1
+            }
+          })
+        } catch (e) {
+          // throw new Error("[fetcher.js] Maybe not a problem")
+          reject()
+          return
+        }
+
+        if (result.length > 0)
+          resolve(result)
+        else
+          reject(result)
+      })
+  })
+}
 
 exports.getCoinoneRecentCompleteOrders = function (coinType) {
   return new Promise((resolve, reject) => {

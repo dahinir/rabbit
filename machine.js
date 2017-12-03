@@ -586,9 +586,9 @@ exports.Arbitrages = exports.Machines.extend({
     const prPerPrice = (profitRate / highMarket.orderbook.ask[0].price) * 100
     const LIMIT = (() => {  // quantity
       // FOR BIGGIE PROFIT
-      const COIN_FOR_600000 = 600000 / highMarket.orderbook.ask[0].price // about 600,000 krw value coin
-      // If prPerPrice were 1%, then Deal about 600,000 krw value coin
-      return prPerPrice * COIN_FOR_600000
+      const COIN_FOR_700000 = 700000 / highMarket.orderbook.ask[0].price // about 700,000 krw value coin
+      // If prPerPrice were 1%, then Deal about 700,000 krw value coin
+      return prPerPrice * COIN_FOR_700000
     })()
     // const LIMIT = (profitRate > 4000) ? 2.0 : 0.5 // 2.0 or 0.5
     quantity = (lowMarket.orderbook.ask[0].qty < highMarket.orderbook.bid[0].qty) ?

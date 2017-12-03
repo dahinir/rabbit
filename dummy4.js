@@ -15,22 +15,18 @@ const coinoneAPI = require("./coinone.js"),
     moment = require('moment'),
     brain = require('brain.js')
 
-// if (true) console.log(Math.pow(0.1, 3).toFixed(3)*1)
-let sum = 0
-let arrr = [0.01, 0.03, 0.08, 0.09, 0.07, 0.05, 0.03, 0.02, 0.02, 0.02]
-arrr.forEach(o => sum += o)
-console.log(arrr.length, sum * 50)
-console.log({
-    asdf: (() => {
-        return "haha"
-    })()
-})
-return
-
 async function g2o(ed) {
     try {
-        // const coinoneRecentCompleteOrders = await fetcher.getCoinoneRecentCompleteOrders("IOTA")
-        const bb = await fetcher.getKorbitBalance()
+        const bb = await fetcher.getCoinoneRecentCompleteOrders("IOTA")
+        // const bb = await fetcher.getKorbitRecentCompleteOrders("BTG")
+        // const bb = await fetcher.getKorbitBalance()
+        // const bb = await fetcher.getKorbitOrderbook("BTG")
+        // bb = await korbitAPI({
+        //     type: "BID",
+        //     price: 240500,
+        //     qty: 1,
+        //     coinType: "BTG"
+        // })
         console.log(bb)
     } catch (e) {
         // console.log("catch")
@@ -47,7 +43,17 @@ g2o()
 return
 
 
-
+// if (true) console.log(Math.pow(0.1, 3).toFixed(3)*1)
+let sum = 0
+let arrr = [0.02, 0.03, 0.12, 0.09, 0.07, 0.05, 0.03, 0.02, 0.02, 0.02]
+arrr.forEach(o => sum += o)
+console.log(arrr.length, sum * 57.2)
+console.log({
+    asdf: (() => {
+        return "haha"
+    })()
+})
+return
 
 
 
