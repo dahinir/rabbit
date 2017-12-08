@@ -31,7 +31,7 @@ global.rabbit.constants = {
     PRECISION: 3,  // How many places after the decimal separator
     MIN_KRW_UNIT: 500,  // Minimum unit of KRW
     BUY_AT_UNIT: 10000, // Snap to 10000
-    MAX_BUY_AT: 13500000, // Previous high price usally 
+    MAX_BUY_AT: Infinity, // 17200000, // Previous high price usally 
     PREVIOUS_PROFIT_SUM: 0,
     PREVIOUS_PROFIT_RATE_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     PREVIOUS_TRADED_COUNT_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -39,7 +39,7 @@ global.rabbit.constants = {
     STARTED: new Date('November 26, 2017 22:25:00'),
     ARBITRAGE_STARTED: new Date('November 27, 2017 15:50:00'),
     MACHINE_SETTING: {
-      CAPACITY_EACH_CRAVING: [0.001, 0.002, 0.003, 0.005, 0.003, 0.001, 0.001, 0.001, 0.001, 0.001],
+      CAPACITY_EACH_CRAVING: [0.001, 0.002, 0.003, 0.003, 0.003, 0.005, 0.001, 0.001, 0.001, 0.001],
       MIN_CRAVING_PERCENTAGE: 3
     } 
   },
@@ -48,7 +48,7 @@ global.rabbit.constants = {
     PRECISION: 2,
     MIN_KRW_UNIT: 500,
     BUY_AT_UNIT: 10000,
-    MAX_BUY_AT: 1958500,
+    MAX_BUY_AT: Infinity, // 2058500,
     PREVIOUS_PROFIT_SUM: 0,
     PREVIOUS_PROFIT_RATE_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     PREVIOUS_TRADED_COUNT_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -69,7 +69,7 @@ global.rabbit.constants = {
     PREVIOUS_PROFIT_SUM: 0,
     PREVIOUS_PROFIT_RATE_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     PREVIOUS_TRADED_COUNT_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    BORN: new Date('December 3, 2017 21:55:00'), // 371,050 krw
+    BORN: new Date('December 3, 2017 21:55:00'), // 371,050 krw?????
     STARTED: new Date('December 3, 2017 21:55:00'),
     MACHINE_SETTING: {
       CAPACITY_EACH_CRAVING: [0.02, 0.05, 0.07, 0.03, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01],
@@ -81,7 +81,7 @@ global.rabbit.constants = {
     PRECISION: 2,
     MIN_KRW_UNIT: 50,
     BUY_AT_UNIT: 1000,
-    MAX_BUY_AT: 611500,
+    MAX_BUY_AT: Infinity, // 611500,
     PREVIOUS_PROFIT_SUM: 0, // 68,000,000? 49752085,
     PREVIOUS_PROFIT_RATE_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     PREVIOUS_TRADED_COUNT_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -89,7 +89,7 @@ global.rabbit.constants = {
     STARTED: new Date('November 26, 2017 22:25:00'),
     ARBITRAGE_STARTED: new Date('July 26, 2017 13:20:00'),
     MACHINE_SETTING: {
-      CAPACITY_EACH_CRAVING: [0.02, 0.03, 0.12, 0.09, 0.07, 0.05, 0.03, 0.02, 0.02, 0.02],
+      CAPACITY_EACH_CRAVING: [0.02, 0.03, 0.12, 0.12, 0.07, 0.05, 0.03, 0.02, 0.02, 0.02],
       MIN_CRAVING_PERCENTAGE: 2
     }
   },
@@ -98,7 +98,7 @@ global.rabbit.constants = {
     PRECISION: 1,
     MIN_KRW_UNIT: 10,
     BUY_AT_UNIT: 100,
-    MAX_BUY_AT: 39490,
+    MAX_BUY_AT: Infinity, // 42490,
     PREVIOUS_PROFIT_SUM: 0,
     PREVIOUS_PROFIT_RATE_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     PREVIOUS_TRADED_COUNT_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -115,7 +115,7 @@ global.rabbit.constants = {
     PRECISION: 0,
     MIN_KRW_UNIT: 1,
     BUY_AT_UNIT: 1,
-    MAX_BUY_AT: 339,
+    MAX_BUY_AT: Infinity, // 342,
     PREVIOUS_PROFIT_SUM: 0,
     PREVIOUS_PROFIT_RATE_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     PREVIOUS_TRADED_COUNT_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -132,7 +132,7 @@ global.rabbit.constants = {
     PRECISION: 1,
     MIN_KRW_UNIT: 10,
     BUY_AT_UNIT: 100,
-    MAX_BUY_AT: 22000,
+    MAX_BUY_AT: Infinity, // 22000,
     PREVIOUS_PROFIT_SUM: 0,
     PREVIOUS_PROFIT_RATE_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     PREVIOUS_TRADED_COUNT_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -148,14 +148,14 @@ global.rabbit.constants = {
     PRECISION: 1,
     MIN_KRW_UNIT: 50,
     BUY_AT_UNIT: 1000,
-    MAX_BUY_AT: 135550,
+    MAX_BUY_AT: Infinity, // 145550,
     PREVIOUS_PROFIT_SUM: 0,
     PREVIOUS_PROFIT_RATE_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     PREVIOUS_TRADED_COUNT_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     BORN: new Date('November 26, 2017 22:25:00'),  // 96,400 krw
     STARTED: new Date('November 26, 2017 22:25:00'),
     MACHINE_SETTING: {
-      CAPACITY_EACH_CRAVING: [0.1, 0.2, 0.2, 0.3, 0.3, 0.5, 0.2, 0.1, 0.1, 0.1],
+      CAPACITY_EACH_CRAVING: [0.1, 0.2, 0.2, 0.3, 0.3, 0.5, 0.7, 0.1, 0.1, 0.1],
       MIN_CRAVING_PERCENTAGE: 3
     }
   },
@@ -164,19 +164,19 @@ global.rabbit.constants = {
     PRECISION: 0,
     MIN_KRW_UNIT: 1,
     BUY_AT_UNIT: 10,
-    MAX_BUY_AT: 1935,
+    MAX_BUY_AT: Infinity, //6856,
     PREVIOUS_PROFIT_SUM: 0,
     PREVIOUS_PROFIT_RATE_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     PREVIOUS_TRADED_COUNT_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     BORN: new Date('November 30, 2017 00:53:00'),  // 1,785 krw
     STARTED: new Date('November 30, 2017 00:53:00'),
     MACHINE_SETTING: {
-      CAPACITY_EACH_CRAVING: [5, 6, 6, 3, 3, 3, 3, 2, 2, 2],
+      CAPACITY_EACH_CRAVING: [3, 3, 3, 3, 3, 5, 5, 6, 6, 6],
       MIN_CRAVING_PERCENTAGE: 5
     }
   }
 }
-global.rabbit.INVESTED_KRW = 150000000
+global.rabbit.INVESTED_KRW = 180000000
 global.rabbit.BORN = new Date('July 4, 2017 13:20:00')
 
 

@@ -400,7 +400,7 @@ exports.Machines = Backbone.Collection.extend({
           }
           console.log(`Now "buy_at" as ${snapedPrice} added. ${coinType} machines are ${this.length}`)
         } else {
-          console.log(`Wow~ MAX_BUY_AT of ${coinType} is ${MB} And now I'm higher~ I won't buy anymore ~~ ~  ~    ~`)
+          console.log(`Wow~ MAX_BUY_AT of ${coinType} is ${MB} And now I'm higher~ I won't create new machine ~~ ~  ~    ~`)
         }
       }
 
@@ -453,6 +453,16 @@ exports.Machines = Backbone.Collection.extend({
           }else{
             console.log("[machine.js] Not enough coin at", highBidMarket.name, "hurry up!!!!!")
             return []
+            // return [{
+            //   marketName: marketName,
+            //   coinType: coinType,
+            //   bidQuantity: totalBid,
+            //   askQuantity: 0,
+            //   bidPrice: bestOrderbook.ask[0].price - MIN_KRW_UNIT,  // Buy at minAskPrice
+            //   askPrice: (marketName == "KORBIT") ? bestOrderbook.bid[0].price + MIN_KRW_UNIT : bestOrderbook.bid[0].price,
+            //   participants: bidParticipants,
+            //   machineIds: bidMachineIds
+            // }]
           }
         }
         const marketName = (totalBid > totalAsk) ? lowAskMarket.name : highBidMarket.name

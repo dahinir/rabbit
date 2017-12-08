@@ -28,7 +28,7 @@ module.exports = async function(options){
 
 
   /////// FETCHING //////////
-  let coinoneInfo, korbitInfo, fetchingTime = Infinity
+  let coinoneInfo, korbitInfo, FETCH_STARTED
   let coinoneOrderbook, coinoneBalance, coinoneRecentCompleteOrders
   let korbitOrderbook, korbitBalance, korbitRecentCompleteOrders
   try {
@@ -48,14 +48,13 @@ module.exports = async function(options){
     if (KORBIT) korbitRecentCompleteOrders = await korbitRecentCompleteOrdersPromise
     // console.log("Fetching some info takes", ((new Date() - TICK_STARTED) / 1000).toFixed(2), "sec")
 
-    // More important in time domain
-    const FETCH_STARTED = new Date()
+    // More important in time domain //
+    FETCH_STARTED = Date.now() / 1000 // in sec
     const coinoneOrderbookPromise = COINONE ? fetcher.getCoinoneOrderbook(coinType) : "",
       korbitOrderbookPromise = KORBIT ? fetcher.getKorbitOrderbook(coinType) : ""
     if (COINONE) coinoneOrderbook = await coinoneOrderbookPromise
     if (KORBIT) korbitOrderbook = await korbitOrderbookPromise
-    fetchingTime = ((new Date() - FETCH_STARTED) / 1000).toFixed(2) // sec
-    console.log("Fetching Orderbooks takes", fetchingTime, "sec")
+
   } catch (e) {
     // ignoreMoreRejectsFrom(coinoneInfoPromise, coinoneRecentCompleteOrdersPromise,
     //   korbitOrderbookPromise, coinoneOrderbookPromise,
@@ -109,16 +108,42 @@ module.exports = async function(options){
   if (KORBIT) console.log("Korbit", coinType + ":", korbitBalance[coinType].available.toFixed(2))
   if (COINONE) console.log("--(coinone", coinType + ")-----max bid:", coinoneOrderbook.bid[0], "min ask:", coinoneOrderbook.ask[0])
   if (KORBIT) console.log("--(korbit", coinType + ")------max bid:", korbitOrderbook.bid[0], "min ask:", korbitOrderbook.ask[0])
+  
 
-
-  /////// TIME TO MIND ////////
-  let results = []
-  if (fetchingTime > 5.2) {
-    console.log("Fetched too late. Don't buy when the market is busy. pass this tic. fetchingTime:", fetchingTime)
+  //// It's time sensitive ////
+  const NOW = Date.now() / 1000 // in sec
+  const FETCHING_TIME = NOW - FETCH_STARTED // sec
+  console.log("Fetching All Orderbooks takes", FETCHING_TIME, "sec")
+  if (FETCHING_TIME > 3.2) {
+    console.log("Fetched too late. Don't buy when the market is busy. pass this tic. fetchingTime:", FETCHING_TIME)
     return
   }
+  if (COINONE) {
+    const ORDERBOOK_OLD = NOW - coinoneOrderbook.timestamp
+    if (ORDERBOOK_OLD > 5.1) { // sec
+      console.log("Coinone orderbook is too old:", ORDERBOOK_OLD)
+      return
+    }
+    if (ORDERBOOK_OLD < FETCHING_TIME) {
+      console.log("Coinone orderbook has been made after fetching.. I can not belive it:", ORDERBOOK_OLD)
+      return
+    }
+  }
+  if (KORBIT) {
+    const ORDERBOOK_OLD = NOW - korbitOrderbook.timestamp
+    if (ORDERBOOK_OLD > 60) { // Unix timestamp in milliseconds of the last placed order.
+      console.log("Korbit orderbook is too old:", ORDERBOOK_OLD)
+      return
+    }
+    if (ORDERBOOK_OLD < FETCHING_TIME) {
+      console.log("Korbit orderbook has been made after fetching.. I can not belive it:", ORDERBOOK_OLD)
+      return
+    }
+  }
 
-  // Arbitrages
+  
+  //// Arbitrages ////
+  let results = []
   if (global.rabbit.constants[coinType].ARBITRAGE_STARTED && global.rabbit.constants[coinType].MARKET.length >= 2){
     results = arbitrages.mind({
       coinType: coinType,
@@ -134,13 +159,16 @@ module.exports = async function(options){
 
   if (results.length != 2){
     console.log("-- No arbitrages so mind machines --")
-    if (isInclined(coinoneRecentCompleteOrders || korbitRecentCompleteOrders)){
-      console.log("Wait.. It looks like inclined")
+    if (isInclined(coinoneRecentCompleteOrders || korbitRecentCompleteOrders)) {
+      console.log("Wait.. It looks like inclined. order won't be place")
+      machines.presentation({
+        coinType: coinType,
+        orderbook: coinoneOrderbook
+      })
       return
     }
 
-
-
+    /////// TIME TO MIND ////////
     results = machines.mind({
       coinType: coinType,
       // korbit: altKorbit,

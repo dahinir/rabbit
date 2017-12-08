@@ -136,7 +136,8 @@ exports.getKorbitOrderbook = function(coinType) {
             }
 
             const result = {
-              timestamp: data.timestamp * 1,
+              timestamp: Math.round(data.timestamp * 1 / 1000),
+              // timestamp: data.timestamp * 1,
               bid: data.bids.map(([price, qty]) => {return {price: price*1, qty: qty*1}}),
               ask: data.asks.map(([price, qty]) => {return {price: price*1, qty: qty*1}})
             }
@@ -205,7 +206,7 @@ exports.getKorbitRecentCompleteOrders = function (coinType) {
         try {
           result = JSON.parse(body).map(o => {
             return {
-              timestamp: Math.round(o.timestamp/1000),
+              timestamp: o.timestamp / 1000, // Math.round(o.timestamp/1000),
               price: o.price * 1,
               qty: o.amount * 1
             }
@@ -297,6 +298,7 @@ exports.getCoinoneOrderbook = function(coinType) {
                 ask: data.ask.map(({price, qty}) => {return {price: price*1, qty: qty*1}})
               }
             } catch (e) {
+              console.log(e)
               reject("[fetcher.js] Maybe market's problem. not me")
               // resolve() // resolve() with undefined than reject()
               return

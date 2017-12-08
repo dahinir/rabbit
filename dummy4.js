@@ -17,7 +17,7 @@ const coinoneAPI = require("./coinone.js"),
 
 async function g2o(ed) {
     try {
-        const bb = await fetcher.getCoinoneRecentCompleteOrders("IOTA")
+        // const bb = await fetcher.getCoinoneRecentCompleteOrders("IOTA")
         // const bb = await fetcher.getKorbitRecentCompleteOrders("BTG")
         // const bb = await fetcher.getKorbitBalance()
         // const bb = await fetcher.getKorbitOrderbook("BTG")
@@ -27,10 +27,23 @@ async function g2o(ed) {
         //     qty: 1,
         //     coinType: "BTG"
         // })
-        console.log(bb)
+        const FETCH_STARTED = Date.now() / 1000
+        const bb = await fetcher.getCoinoneOrderbook("XRP")
+        // const bb = await fetcher.getKorbitOrderbook("BTC")
+        
+        const now = Date.now() / 1000
+        console.log("now:", now)
+        console.log("orderbook.timestamp:", bb.timestamp)
+        console.log("orderbook old:", now - bb.timestamp)
+        console.log("fetching time:", now - FETCH_STARTED)
+        console.log(bb.bid[0])
+        if (now - bb.timestamp > now - FETCH_STARTED)
+            console.log("orderbook has been made before fetch")
+        else
+            console.log("orderbook has been made after fetch")
     } catch (e) {
         // console.log("catch")
-        // console.log(e)
+        console.log(e)
         // if (e.errorCode == "104")
         //   console.log("haah")
         // if only coinone!
