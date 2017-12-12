@@ -9,66 +9,68 @@ const xcoinAPI = require('./bithumb_modified.js'),
     Machines = require('./machine.js').Machines,
     Arbitrage = require('./machine.js').Arbitrage,
     Arbitrages = require('./machine.js').Arbitrages,
+    RecentCompleteOrder = require('./recentCompleteOrder.js').RecentCompleteOrder,
+    RecentCompleteOrders = require('./recentCompleteOrder.js').RecentCompleteOrders,
     _ = require('underscore'),
     fs = require('fs'),
     moment = require('moment'),
     brain = require('brain.js')
 
-// require("./korbit.js")({ type: "REFRESH_TOKEN" })
-
-// korbitAPI({
-//     type: "BALANCE2"
-// }).then(result => {
-//     console.log(result)
-// })
-
-// fetcher.getKorbitBalance().then(result => {
-//     console.log(result)
-// })
-// return
-
-go()
-async function go() {
-    const startTime = new Date()
-    try {
-        const coinoneRecentCompleteOrdersPromise = fetcher.getCoinoneRecentCompleteOrders()
-        const coinoneRecentCompleteOrders = await coinoneRecentCompleteOrdersPromise
-        // const fetchingTime = ((new Date() - startTime) / 1000).toFixed(2) // sec
-
-        console.log(isGoodTime(coinoneRecentCompleteOrders))
-    } catch (e) {
-        console.log("error")
-        console.log(e)
-    } finally {
+const rcOrders = new RecentCompleteOrders()
+rcOrders.add([{
+        timestamp: "111",
+        price: "1"
+    },
+    {
+        timestamp: "112",
+        price: "33"
     }
+])
+console.log(rcOrders.length)
+re()
+async function re(){
+    await rcOrders.refresh()
+    console.log("end: this should be last")
 }
 
-function isGoodTime(coinoneRecentCompleteOrders){
-    coinoneRecentCompleteOrders = coinoneRecentCompleteOrders.reverse()
 
-    const lastTimestamp = coinoneRecentCompleteOrders[0].timestamp
-    const TERM = 60 * 15  // 15 mins
-    console.log(coinoneRecentCompleteOrders[0], coinoneRecentCompleteOrders[1])
-    console.log("0.800" - "1.001")
-    let candles = coinoneRecentCompleteOrders.reduce((candles, o) => {
-        const index = Math.floor((lastTimestamp - o.timestamp) / TERM)
+
+// go()
+async function go() {
+    const startTime = new Date()
+    const coinoneRecentCompleteOrdersPromise = fetcher.getCoinoneRecentCompleteOrders("ETH", "day")
+    const coinoneRecentCompleteOrders = await coinoneRecentCompleteOrdersPromise
+    // const fetchingTime = ((new Date() - startTime) / 1000).toFixed(2) // sec
+
+    console.log("answer:", isInclined(coinoneRecentCompleteOrders))
+}
+
+
+function isInclined(recentCompleteOrders) {
+    recentCompleteOrders = recentCompleteOrders.reverse()
+    // console.log(recentCompleteOrders)
+
+    const lastTimestamp = recentCompleteOrders[0].timestamp * 1
+    const TERM = 60 * 3  // 3 mins
+
+    const candles = recentCompleteOrders.reduce((candles, o) => {
+        const index = Math.floor((lastTimestamp - (o.timestamp * 1)) / TERM)
 
         if (_.isArray(candles[index]))
             candles[index].push(o)
         else
-            candles[index] = [o]
+            candles[index] = [o]  // It's new Array
         return candles
-    }, [])
-    candles = candles.map(c => {
+    }, []).map(c => {
         const lastIndex = c.length - 1
         const open = c[lastIndex].price * 1,
             close = c[0].price * 1,
             volume = c.reduce((sum, el) => {
-                return sum + el.qty * 1
+                return sum + (el.qty || 0) * 1
             }, 0)
 
         return {
-            volume: Math.round(volume),
+            v: Math.round(volume),
             count: c.length,
             open: open,
             close: close,
@@ -78,10 +80,11 @@ function isGoodTime(coinoneRecentCompleteOrders){
         }
     })
 
-    console.log((candles[0].body == candles[1].body) ? "wait" : "action")
-    console.log(candles)
-    // console.log(candles.length, candles[0].length, candles[1].length, candles[2].length, candles[3].length, candles[4].length)
+
+    for (let i = 0; i < 5; i++)
+        console.log(candles[i])
     // console.log( candles[candles.length - 1])
-    // console.log("All fetchers've take", fetchingTime, "sec", candles.length)
-    return (candles[0].body == candles[1].body) ? false : true
+    if (candles[0].open == candles[0].close || _.isUndefined(candles[0]) || _.isUndefined(candles[1]))
+        return false
+    return (candles[0].body == candles[1].body) ? true : false
 }

@@ -30,7 +30,7 @@ global.rabbit.constants = {
     MARKET: ["COINONE", "KORBIT"],
     PRECISION: 3,  // How many places after the decimal separator
     MIN_KRW_UNIT: 500,  // Minimum unit of KRW
-    BUY_AT_UNIT: 10000, // Snap to 10000
+    BUY_AT_UNIT: 100000, // Snap to 100000
     MAX_BUY_AT: Infinity, // 17200000, // Previous high price usally 
     PREVIOUS_PROFIT_SUM: 0,
     PREVIOUS_PROFIT_RATE_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -39,7 +39,7 @@ global.rabbit.constants = {
     STARTED: new Date('November 26, 2017 22:25:00'),
     ARBITRAGE_STARTED: new Date('November 27, 2017 15:50:00'),
     MACHINE_SETTING: {
-      CAPACITY_EACH_CRAVING: [0.001, 0.002, 0.003, 0.003, 0.003, 0.005, 0.001, 0.001, 0.001, 0.001],
+      CAPACITY_EACH_CRAVING: [0.001, 0.001, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002],
       MIN_CRAVING_PERCENTAGE: 3
     } 
   },
@@ -148,14 +148,14 @@ global.rabbit.constants = {
     PRECISION: 1,
     MIN_KRW_UNIT: 50,
     BUY_AT_UNIT: 1000,
-    MAX_BUY_AT: Infinity, // 145550,
+    MAX_BUY_AT: 280000, // 145550,
     PREVIOUS_PROFIT_SUM: 0,
     PREVIOUS_PROFIT_RATE_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     PREVIOUS_TRADED_COUNT_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     BORN: new Date('November 26, 2017 22:25:00'),  // 96,400 krw
     STARTED: new Date('November 26, 2017 22:25:00'),
     MACHINE_SETTING: {
-      CAPACITY_EACH_CRAVING: [0.1, 0.2, 0.2, 0.3, 0.3, 0.5, 0.7, 0.1, 0.1, 0.1],
+      CAPACITY_EACH_CRAVING: [0.1, 0.2, 0.2, 0.2, 0.2, 0.2, 0.3, 0.1, 0.1, 0.1],
       MIN_CRAVING_PERCENTAGE: 3
     }
   },
@@ -171,12 +171,12 @@ global.rabbit.constants = {
     BORN: new Date('November 30, 2017 00:53:00'),  // 1,785 krw
     STARTED: new Date('November 30, 2017 00:53:00'),
     MACHINE_SETTING: {
-      CAPACITY_EACH_CRAVING: [3, 3, 3, 3, 3, 5, 5, 6, 6, 6],
+      CAPACITY_EACH_CRAVING: [2, 2, 2, 3, 3, 5, 5, 6, 5, 5],
       MIN_CRAVING_PERCENTAGE: 5
     }
   }
 }
-global.rabbit.INVESTED_KRW = 180000000
+global.rabbit.INVESTED_KRW = 200000000
 global.rabbit.BORN = new Date('July 4, 2017 13:20:00')
 
 

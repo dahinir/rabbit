@@ -13,7 +13,26 @@ const coinoneAPI = require("./coinone.js"),
     _ = require('underscore'),
     fs = require('fs'),
     moment = require('moment'),
-    brain = require('brain.js')
+    brain = require('brain.js'),
+    request = require('request')
+    
+request.get('https://api.bitfinex.com/v1/symbols',
+    function (error, response, body) {
+        console.log(body);
+    })
+return
+
+// if (true) console.log(Math.pow(0.1, 3).toFixed(3)*1)
+let sum = 0
+let arrr = [0.1, 0.2, 0.2, 0.2, 0.2, 0.2, 0.3, 0.1, 0.1, 0.1]
+arrr.forEach(o => sum += o)
+console.log(arrr.length, sum * 17)
+console.log({
+    asdf: (() => {
+        return "haha"
+    })()
+})
+return
 
 async function g2o(ed) {
     try {
@@ -28,8 +47,8 @@ async function g2o(ed) {
         //     coinType: "BTG"
         // })
         const FETCH_STARTED = Date.now() / 1000
-        const bb = await fetcher.getCoinoneOrderbook("XRP")
-        // const bb = await fetcher.getKorbitOrderbook("BTC")
+        // const bb = await fetcher.getCoinoneOrderbook("XRP")
+        const bb = await fetcher.getKorbitOrderbook("BTC")
         
         const now = Date.now() / 1000
         console.log("now:", now)
@@ -56,17 +75,7 @@ g2o()
 return
 
 
-// if (true) console.log(Math.pow(0.1, 3).toFixed(3)*1)
-let sum = 0
-let arrr = [0.02, 0.03, 0.12, 0.09, 0.07, 0.05, 0.03, 0.02, 0.02, 0.02]
-arrr.forEach(o => sum += o)
-console.log(arrr.length, sum * 57.2)
-console.log({
-    asdf: (() => {
-        return "haha"
-    })()
-})
-return
+
 
 
 

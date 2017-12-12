@@ -136,7 +136,7 @@ exports.getKorbitOrderbook = function(coinType) {
             }
 
             const result = {
-              timestamp: Math.round(data.timestamp * 1 / 1000),
+              timestamp: data.timestamp / 1000, // Math.round(data.timestamp * 1 / 1000),
               // timestamp: data.timestamp * 1,
               bid: data.bids.map(([price, qty]) => {return {price: price*1, qty: qty*1}}),
               ask: data.asks.map(([price, qty]) => {return {price: price*1, qty: qty*1}})
@@ -225,14 +225,14 @@ exports.getKorbitRecentCompleteOrders = function (coinType) {
   })
 }
 
-exports.getCoinoneRecentCompleteOrders = function (coinType) {
+exports.getCoinoneRecentCompleteOrders = function (coinType, period) {
   return new Promise((resolve, reject) => {
     request({
         method: "GET",
         uri: "https://api.coinone.co.kr/trades/",
         qs: {
           currency: coinType.toLowerCase(),
-          period: 'hour'
+          period: period || 'hour'
         }
       },
       function (error, response, body) {

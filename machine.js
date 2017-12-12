@@ -44,18 +44,23 @@ exports.Machine = Backbone.Model.extend({
           return Math.ceil(options.minAskPrice / BU) * BU
         })()
         if (snapedPrice == this.get("buy_at")) {
-          // FOR BIGGIE PROFIT //
-          this.set({
-            capacity: (() => {
-              const MIN_CRAVING_PERCENTAGE = global.rabbit.constants[coinType].MACHINE_SETTING.MIN_CRAVING_PERCENTAGE
-              const INDEX = Math.round(this.get("craving_percentage") / MIN_CRAVING_PERCENTAGE - 1)
-              return global.rabbit.constants[coinType].MACHINE_SETTING.CAPACITY_EACH_CRAVING[INDEX]
-            })()
-          })
-          mind = {
-            type: "BID",
-            price: options.minAskPrice,
-            at: new Date()
+          const MB = global.rabbit.constants[coinType].MAX_BUY_AT || Infinity
+          if (snapedPrice < MB) {
+            // FOR BIGGIE PROFIT //
+            this.set({
+              capacity: (() => {
+                const MIN_CRAVING_PERCENTAGE = global.rabbit.constants[coinType].MACHINE_SETTING.MIN_CRAVING_PERCENTAGE
+                const INDEX = Math.round(this.get("craving_percentage") / MIN_CRAVING_PERCENTAGE - 1)
+                return global.rabbit.constants[coinType].MACHINE_SETTING.CAPACITY_EACH_CRAVING[INDEX]
+              })()
+            })
+            mind = {
+              type: "BID",
+              price: options.minAskPrice,
+              at: new Date()
+            }
+          } else {
+            console.log(`[machine.mind]Wow~ MAX_BUY_AT of ${coinType} is ${MB} And now I'm higher~ I won't buy ~~ ~  ~    ~`)
           }
         }
       } else if (this.get("status") == "COIN") {
@@ -401,8 +406,34 @@ exports.Machines = Backbone.Collection.extend({
           console.log(`Now "buy_at" as ${snapedPrice} added. ${coinType} machines are ${this.length}`)
         } else {
           console.log(`Wow~ MAX_BUY_AT of ${coinType} is ${MB} And now I'm higher~ I won't create new machine ~~ ~  ~    ~`)
+          return []
         }
       }
+
+      
+      // const MB = global.rabbit.constants[coinType].MAX_BUY_AT || Infinity
+      // if (snapedPrice < MB) {
+      if (this.where({buy_at: snapedPrice}).length == 0) {
+        console.log(`There is no machine for ${minAskPrice} krw in ${this.length} machines, so I will create`)
+        const MIN_CRAVING_PERCENTAGE = global.rabbit.constants[coinType].MACHINE_SETTING.MIN_CRAVING_PERCENTAGE
+        const CAPACITY_EACH_CRAVING = global.rabbit.constants[coinType].MACHINE_SETTING.CAPACITY_EACH_CRAVING
+
+        for (let i = 1; i <= 10; i++) {
+          /// Create new machine! ///
+          this.add({
+            coinType: coinType,
+            capacity: CAPACITY_EACH_CRAVING[i - 1],
+            buy_at: snapedPrice,
+            craving_percentage: MIN_CRAVING_PERCENTAGE * i
+            // craving_krw: Math.round(snapedPrice * MIN_CRAVING_PERCENTAGE * i / 100)
+          })
+        }
+        console.log(`Now "buy_at" as ${snapedPrice} added. ${coinType} machines are ${this.length}`)
+      }
+      // } else {
+      //   console.log(`MAX_BUY_AT of ${coinType} is ${MB} And now I'm higher. I won't create new machine.`)
+      //   return []
+      // }
 
 
       ///// Mind /////
@@ -607,8 +638,8 @@ exports.Arbitrages = exports.Machines.extend({
     quantity = (quantity > LIMIT) ? LIMIT : quantity  // Limit
     quantity = quantity.toFixed(global.rabbit.constants[coinType].PRECISION) * 1
 
-    if (profitRate < 4 || prPerPrice < 0.6 || quantity < Math.pow(0.1, global.rabbit.constants[coinType].PRECISION).toFixed(global.rabbit.constants[coinType].PRECISION) * 1){
-      console.log("Pass arbitrage. profitRate: \u20A9", profitRate, "prPerPrice(min 0.6):", prPerPrice, "quantity:", quantity)
+    if (profitRate < 4 || prPerPrice < 0.7 || quantity < Math.pow(0.1, global.rabbit.constants[coinType].PRECISION).toFixed(global.rabbit.constants[coinType].PRECISION) * 1){
+      console.log("Pass arbitrage. profitRate: \u20A9", profitRate, "prPerPrice(min 0.7):", prPerPrice, "quantity:", quantity)
       return []
     }
 
