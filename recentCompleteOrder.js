@@ -42,7 +42,7 @@ exports.RecentCompleteOrders = Backbone.Collection.extend({
             MARKET_NAME = options.marketName,
             PERIOD = options.periodInDay || 14
         
-        if (this.length > 0 && this.at(0).get("timestamp") > Date.now()/1000 - options.periodInDay * 60 * 60 * 24)
+        if (this.length > 0 && this.at(0).get("timestamp") > Date.now() / 1000 - options.periodInDay * 60 * 60 * 24 * PERIOD)
             console.log(`Not ready to RSI, It just been ${((Date.now()/1000 - this.at(0).get("timestamp")) / 86400).toFixed(3)} days.`)
 
         await this.refresh({
