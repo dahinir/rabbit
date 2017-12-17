@@ -11,7 +11,9 @@ const Machine = require('./machine.js').Machine,
   Arbitrage = require('./machine.js').Arbitrage,
   Arbitrages = require('./machine.js').Arbitrages,
   Order = require('./order.js').Order,
-  Orders = require('./order.js').Orders
+  Orders = require('./order.js').Orders,
+  RecentCompleteOrder = require('./recentCompleteOrder.js').RecentCompleteOrder,
+  RecentCompleteOrders = require('./recentCompleteOrder.js').RecentCompleteOrders
 
 
 let killSign = false
@@ -39,7 +41,7 @@ global.rabbit.constants = {
     STARTED: new Date('November 26, 2017 22:25:00'),
     ARBITRAGE_STARTED: new Date('November 27, 2017 15:50:00'),
     MACHINE_SETTING: {
-      CAPACITY_EACH_CRAVING: [0.001, 0.001, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002],
+      CAPACITY_EACH_CRAVING: [0.001, 0.001, 0.001, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002],
       MIN_CRAVING_PERCENTAGE: 3
     } 
   },

@@ -36,6 +36,12 @@ async function re(){
         periodInDay: 14
     }))
     console.log("---")
+    const candles = rcOrders.getCandles({
+        periodInDay: 0.1,
+        unitTimeInMin: 3
+    })
+    for (let i = candles.length - 5; i < candles.length; i++)
+        console.log("dd", candles[i])
     // for(let i = 0; i < rcOrders.length; i++)
     //     console.log(rcOrders.at(i).attributes.timestamp)
     console.log("end: this should be last", rcOrders.length)

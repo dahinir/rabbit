@@ -32,21 +32,29 @@ module.exports = async function(options){
   let coinoneInfo, korbitInfo, FETCH_STARTED
   let coinoneOrderbook, coinoneBalance, coinoneRecentCompleteOrders
   let korbitOrderbook, korbitBalance, korbitRecentCompleteOrders
+  let rsi
   try {
     // Act like Promise.all()
     // Less important in time domain
     const coinoneInfoPromise = COINONE ? fetcher.getCoinoneInfo(coinType) : "",
       korbitInfoPromise = KORBIT ? fetcher.getKorbitInfo(coinType) : "",
       coinoneBalancePromise = COINONE ? fetcher.getCoinoneBalance() : "",
-      korbitBalancePromise = KORBIT ? fetcher.getKorbitBalance() : "",
-      coinoneRecentCompleteOrdersPromise = COINONE ? fetcher.getCoinoneRecentCompleteOrders(coinType) : "",
-      korbitRecentCompleteOrdersPromise = KORBIT ? fetcher.getKorbitRecentCompleteOrders(coinType) : ""
+      korbitBalancePromise = KORBIT ? fetcher.getKorbitBalance() : ""
+      // coinoneRecentCompleteOrdersPromise = COINONE ? fetcher.getCoinoneRecentCompleteOrders(coinType) : "",
+      // korbitRecentCompleteOrdersPromise = KORBIT ? fetcher.getKorbitRecentCompleteOrders(coinType) : ""
     if (COINONE) coinoneInfo = await coinoneInfoPromise
     if (KORBIT) korbitInfo = await korbitInfoPromise
     if (COINONE) coinoneBalance = await coinoneBalancePromise
     if (KORBIT) korbitBalance = await korbitBalancePromise
-    if (COINONE) coinoneRecentCompleteOrders = await coinoneRecentCompleteOrdersPromise
-    if (KORBIT) korbitRecentCompleteOrders = await korbitRecentCompleteOrdersPromise
+    // if (COINONE) coinoneRecentCompleteOrders = await coinoneRecentCompleteOrdersPromise
+    // if (KORBIT) korbitRecentCompleteOrders = await korbitRecentCompleteOrdersPromise
+
+    rsi = await recentCompleteOrders.getRSI({
+      coinType: coinType,
+      marketName: COINONE ? "COINONE" : "KORBIT",
+      periodInDay: 14
+    })
+
     // console.log("Fetching some info takes", ((new Date() - TICK_STARTED) / 1000).toFixed(2), "sec")
 
     // More important in time domain //
@@ -159,8 +167,16 @@ module.exports = async function(options){
   // results = []
 
   if (results.length != 2){
-    console.log("-- No arbitrages so mind machines --")
-    if (isInclined(coinoneRecentCompleteOrders || korbitRecentCompleteOrders)) {
+    console.log("-- No arbitrages so mind machines -- RSI:", rsi)
+
+    const candles = recentCompleteOrders.getCandles({
+      periodInDay: 0.05,
+      unitTimeInMin: 3
+    })
+    for (let i = candles.length - 5; i < candles.length; i++)
+      console.log("candle:", candles[i])
+
+    if (candles[candles.length - 2].body == candles[candles.length - 1].body) {
       console.log("Wait.. It looks like inclined. order won't be place")
       machines.presentation({
         coinType: coinType,

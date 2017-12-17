@@ -32,9 +32,6 @@ exports.RecentCompleteOrder = Backbone.Model.extend({
 exports.RecentCompleteOrders = Backbone.Collection.extend({
     url: "mongodb://localhost:27017/rabbit/recentCompleteOrders",
     sync: backsync.mongodb(),
-    // comparator: function(o){
-    //   return o.get("timestamp")
-    // },
     comparator: "timestamp",
     initialize: function (attributes, options) {
         console.log("recentCompleteOrders init")
@@ -47,7 +44,8 @@ exports.RecentCompleteOrders = Backbone.Collection.extend({
 
         await this.refresh({
             coinType: COIN_TYPE,
-            marketName: MARKET_NAME
+            marketName: MARKET_NAME,
+            periodInday: PERIOD
         })
 
         const candles = this.getCandles({periodInDay: PERIOD})
@@ -57,8 +55,8 @@ exports.RecentCompleteOrders = Backbone.Collection.extend({
             const diff = candles[i + 1].close - candles[i].close
             if (diff > 0)
                 ups += diff
-            else (diff < 0)
-            downs += -diff
+            else if (diff < 0)
+                downs += -diff
         }
 
         if (!Number.isSafeInteger(ups) || !Number.isSafeInteger(downs))
@@ -66,17 +64,21 @@ exports.RecentCompleteOrders = Backbone.Collection.extend({
 
         const AU = ups / (candles.length - 1),
             AD = downs / (candles.length - 1)
-
+// console.log("AU:", AU)
+// console.log("AD:", AD)
+// console.log("ups:", ups)
+// console.log("downs:", downs)
+// console.log("RSI:", (AU / (AU + AD)) * 100)
         return (AU / (AU + AD)) * 100   // RSI = AU / (AU + AD)
     },
     getCandles: function(options){
         if (this.length == 0) return []
         const PERIOD = 60 * 60 * 24 * (options.periodInDay || 14),   // 14 days
-            UNIT_TIME = 60 * 5  // 5 mins
+            UNIT_TIME = 60 * (options.unitTimeInMin || 5)  // 5 mins
             
         const lastTimestamp = this.last().get("timestamp"),
             startTimestamp = lastTimestamp - PERIOD
-        console.log("s~l:", startTimestamp, lastTimestamp)
+        // console.log("s~l:", startTimestamp, lastTimestamp)
     
         const candles = this.reduce((candles, o) => {   // Order sensitive.. so don't use this.models
             if (o.get('timestamp') <= startTimestamp) return candles
@@ -101,53 +103,56 @@ exports.RecentCompleteOrders = Backbone.Collection.extend({
                 // volumn: c.reduce((sum, el) => sum + el.get("qty"), 0),
                 open: open,
                 close: close,
-                body: close > open ? "+" : (close == open ? "o" : "-")
+                body: close > open ? "+" : (close == open ? "=" : "-")
             })
             return candles
         }, [])
 
-        console.log("candles.length:", candles.length)
-        for(let candle of candles){
-            if (candle) console.log(candle)
-        }
+        // console.log("candles.length:", candles.length)
+        // for(let candle of candles){
+        //     if (candle) console.log(candle)
+        // }
         
         return candles
     },
     refresh: async function (options) {
         const COIN_TYPE = options.coinType,
             MARKET_NAME = options.marketName
-        let PERIOD = options.period || "hour"
+        let period = "hour"
 
         // If this refresh is first time in runtime
         if (this.length == 0){
-            await this.fetchFrom({coinType: COIN_TYPE})
-            console.log("fetched from db end")
-            PERIOD = "day"
+            await this.fetchFrom({
+                coinType: COIN_TYPE,
+                periodInday: options.periodInday
+            })
+            period = "day"
         }
 
-        await removeOlds()
+        await this.removeOlds({
+            periodInday: options.periodInday
+        })
 
         // lastTimestamp in this collection
         const lastTimestamp = (this.length == 0) ? 0 : this.last().get("timestamp")
-        console.log("lastTimestamp:", lastTimestamp)
 
         if (Date.now() / 1000 - lastTimestamp > 60 * 60)    // lastTimestamp is older than an hour
-            PERIOD = "day"
+            period = "day"
         
-        return
-        // PERIOD = "hour"
+        // return
+        // period = "hour"
 
         let recentCompleteOrders 
         try {
             if (MARKET_NAME == "COINONE")
-                recentCompleteOrders = await fetcher.getCoinoneRecentCompleteOrders(COIN_TYPE, PERIOD)
+                recentCompleteOrders = await fetcher.getCoinoneRecentCompleteOrders(COIN_TYPE, period)
             else if (MARKET_NAME == "KORBIT") 
-                recentCompleteOrders = await fetcher.getKorbitRecentCompleteOrders(COIN_TYPE, PERIOD)
+                recentCompleteOrders = await fetcher.getKorbitRecentCompleteOrders(COIN_TYPE, period)
         }catch (e){
             console.log(e)
         }
 
-        console.log("recent length:", recentCompleteOrders.length)
+        // console.log("recent length:", recentCompleteOrders.length)
         for (let o of recentCompleteOrders) {
             // Add only didn't exists
             if (o.timestamp * 1 > lastTimestamp){
@@ -163,14 +168,13 @@ exports.RecentCompleteOrders = Backbone.Collection.extend({
             }
         }
         
-        console.log("end of refresh")
         return
     }, // End of refresh()
     fetchFrom: async function (options){
         const AMOUNT = 100,
             NOW = Date.now() / 1000,    // in sec not ms
             COIN_TYPE = options.coinType,
-            PERIOD = options.periodInSec || 60 * 60 * 24 * 14.1   // 14.1 days in seconds
+            PERIOD = 60 * 60 * 24 * (options.periodInday || 14.1)   // 14.1 days in seconds
             
         const that = this
 
@@ -189,7 +193,6 @@ exports.RecentCompleteOrders = Backbone.Collection.extend({
                         if (rcOrders.length == AMOUNT) {
                         } else {
                             rcOrders.add(loaded)
-                            console.log("chunk end")
                             isRemain = false
                         }
                         resolve()
@@ -205,7 +208,7 @@ exports.RecentCompleteOrders = Backbone.Collection.extend({
         return
     },
     removeOlds: async function(options){
-        const PERIOD = 60 * 60 * 24 * (options.periodInday || 15)  // 15 days in seconds
+        const PERIOD = 60 * 60 * 24 * (options.periodInday || 14.1)  // 14.1 days in seconds
         return
     }
 })
