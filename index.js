@@ -58,7 +58,7 @@ global.rabbit.constants = {
     STARTED: new Date('November 26, 2017 22:25:00'),
     ARBITRAGE_STARTED: new Date('November 27, 2017 15:50:00'),
     MACHINE_SETTING: {
-      CAPACITY_EACH_CRAVING: [0.03, 0.05, 0.05, 0.02, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01],
+      CAPACITY_EACH_CRAVING: [0.01, 0.01, 0.03, 0.01, 0.01, 0.02, 0.03, 0.05, 0.01, 0.01],
       MIN_CRAVING_PERCENTAGE: 3
     }
   },
@@ -108,7 +108,7 @@ global.rabbit.constants = {
     STARTED: new Date('November 26, 2017 22:25:00'),
     ARBITRAGE_STARTED: new Date('November 27, 2017 15:50:00'),
     MACHINE_SETTING: {
-      CAPACITY_EACH_CRAVING: [0.1, 0.2, 0.3, 0.4, 0.5, 0.7, 0.6, 0.6, 0.2, 0.2],
+      CAPACITY_EACH_CRAVING: [0.1, 0.2, 0.2, 0.2, 0.3, 0.4, 0.5, 0.6, 0.6, 0.7],
       MIN_CRAVING_PERCENTAGE: 2
     }
   },
@@ -157,7 +157,7 @@ global.rabbit.constants = {
     BORN: new Date('November 26, 2017 22:25:00'),  // 96,400 krw
     STARTED: new Date('November 26, 2017 22:25:00'),
     MACHINE_SETTING: {
-      CAPACITY_EACH_CRAVING: [0.1, 0.1, 0.1, 0.1, 0.1, 0.2, 0.2, 0.2, 0.2, 0.3],
+      CAPACITY_EACH_CRAVING: [0.1, 0.1, 0.1, 0.1, 0.1, 0.2, 0.2, 0.2, 0.3, 0.2],
       MIN_CRAVING_PERCENTAGE: 3
     }
   },
@@ -173,7 +173,7 @@ global.rabbit.constants = {
     BORN: new Date('November 30, 2017 00:53:00'),  // 1,785 krw
     STARTED: new Date('November 30, 2017 00:53:00'),
     MACHINE_SETTING: {
-      CAPACITY_EACH_CRAVING: [2, 2, 2, 3, 3, 5, 5, 6, 5, 5],
+      CAPACITY_EACH_CRAVING: [1, 1, 2, 3, 3, 5, 5, 6, 5, 5],
       MIN_CRAVING_PERCENTAGE: 5
     }
   }

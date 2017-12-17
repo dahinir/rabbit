@@ -41,6 +41,9 @@ exports.RecentCompleteOrders = Backbone.Collection.extend({
         const COIN_TYPE = options.coinType,
             MARKET_NAME = options.marketName,
             PERIOD = options.periodInDay || 14
+        
+        if (this.length > 0 && this.last().get("timestamp") > Date.now()/1000 - options.periodInDay * 60 * 60 * 24)
+            console.log(`Not ready to RSI, It just been ${((Date.now()/1000 - this.last().get("timestamp")) / 86400).toFixed(3)} days.`)
 
         await this.refresh({
             coinType: COIN_TYPE,
@@ -136,6 +139,7 @@ exports.RecentCompleteOrders = Backbone.Collection.extend({
         // lastTimestamp in this collection
         const lastTimestamp = (this.length == 0) ? 0 : this.last().get("timestamp")
 
+        console.log(`[recentCompleteOrder.refresh] Last timeStamp was ${(Date.now()/1000 - lastTimestamp).toFixed(0)} sec ago.`)
         if (Date.now() / 1000 - lastTimestamp > 60 * 60)    // lastTimestamp is older than an hour
             period = "day"
         
