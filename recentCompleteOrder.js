@@ -18,7 +18,7 @@ exports.RecentCompleteOrder = Backbone.Model.extend({
         // qty: 0,
         // coinType: ""
     },
-    sav: function(){
+    savePromise: function(){
         // console.log("id",this.id)
         return new Promise(resolve => {
             this.save(arguments,
@@ -40,9 +40,38 @@ exports.RecentCompleteOrders = Backbone.Collection.extend({
         console.log("recentCompleteOrders init")
     },
     model: exports.RecentCompleteOrder,
+    getRSI: async function (options) {
+        const COIN_TYPE = options.coinType,
+            MARKET_NAME = options.marketName,
+            PERIOD = options.periodInDay || 14
+
+        await this.refresh({
+            coinType: COIN_TYPE,
+            marketName: MARKET_NAME
+        })
+
+        const candles = this.getCandles({periodInDay: PERIOD})
+        let ups = 0, downs = 0
+
+        for (let i = 0; i < candles.length - 1; i++) {
+            const diff = candles[i + 1].close - candles[i].close
+            if (diff > 0)
+                ups += diff
+            else (diff < 0)
+            downs += -diff
+        }
+
+        if (!Number.isSafeInteger(ups) || !Number.isSafeInteger(downs))
+            throw new Error("[recentCompleteOrder.getRSI] too big number!")
+
+        const AU = ups / (candles.length - 1),
+            AD = downs / (candles.length - 1)
+
+        return (AU / (AU + AD)) * 100   // RSI = AU / (AU + AD)
+    },
     getCandles: function(options){
         if (this.length == 0) return []
-        const PERIOD = 60 * 60 * 24 * 14,   // 14 days
+        const PERIOD = 60 * 60 * 24 * (options.periodInDay || 14),   // 14 days
             UNIT_TIME = 60 * 5  // 5 mins
             
         const lastTimestamp = this.last().get("timestamp"),
@@ -84,31 +113,6 @@ exports.RecentCompleteOrders = Backbone.Collection.extend({
         
         return candles
     },
-    getRSI: async function(options){
-        await this.refresh({
-            coinType: "BTC",
-            marketName: "COINONE"
-        })
-
-        const candles = this.getCandles()
-        let ups = 0, downs = 0
-        
-        for (let i = 0; i < candles.length - 1; i++){
-            const diff = candles[i + 1].close - candles[i].close
-            if (diff > 0)
-                ups += diff
-            else (diff < 0)
-                downs += -diff
-        }
-
-        if (!Number.isSafeInteger(ups) || !Number.isSafeInteger(downs))
-            throw new Error("[recentCompleteOrder.getRSI] too big number!")
-      
-        const AU = ups / (candles.length - 1),
-            AD = downs / (candles.length - 1)
-
-        return (AU / (AU + AD)) * 100   // RSI = AU / (AU + AD)
-    },
     refresh: async function (options) {
         const COIN_TYPE = options.coinType,
             MARKET_NAME = options.marketName
@@ -120,6 +124,8 @@ exports.RecentCompleteOrders = Backbone.Collection.extend({
             console.log("fetched from db end")
             PERIOD = "day"
         }
+
+        await removeOlds()
 
         // lastTimestamp in this collection
         const lastTimestamp = (this.length == 0) ? 0 : this.last().get("timestamp")
@@ -152,7 +158,7 @@ exports.RecentCompleteOrders = Backbone.Collection.extend({
                     qty: o.qty * 1,
                     coinType: COIN_TYPE
                 })
-                await rcOrder.sav()
+                await rcOrder.savePromise()
                 this.push(rcOrder)
             }
         }
@@ -199,7 +205,7 @@ exports.RecentCompleteOrders = Backbone.Collection.extend({
         return
     },
     removeOlds: async function(options){
-        const PERIOD = options.period || 60 * 60 * 24 * 20   // 20 days in seconds
+        const PERIOD = 60 * 60 * 24 * (options.periodInday || 15)  // 15 days in seconds
         return
     }
 })

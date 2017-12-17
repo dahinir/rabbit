@@ -14,7 +14,8 @@ module.exports = async function(options){
  
   const arbitrages = options.arbitrages,
     machines = options.machines,
-    orders = options.orders
+    orders = options.orders,
+    recentCompleteOrders = options.recentCompleteOrders
 
   console.log("-- ", coinType, "Tick no.", COUNT, "with", machines.length, "machines. ",
     TICK_STARTED.toLocaleString(), "It's been", ((new Date() - global.rabbit.constants[coinType].STARTED)/ 86400000).toFixed(1),

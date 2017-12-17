@@ -326,6 +326,7 @@ async function run() {
       arbitrages: getArbitrages(coinType),
       machines: getMachines(coinType),
       orders: getOrders(coinType),
+      recentCompleteOrders: getRecentCompleteOrders(coinType),
       coinType: coinType,
       count: count
     })
@@ -416,4 +417,11 @@ function getOrders(coinType) {
   if (!ordersChamber[coinType])
     ordersChamber[coinType] = new Orders(orders.filter(o => o.get("coinType") == coinType))
   return ordersChamber[coinType]
+}
+
+const rcOrdersChamber = {}
+function getRecentCompleteOrders(coinType) {
+  if (!rcOrdersChamber[coinType])
+    rcOrdersChamber[coinType] = new RecentCompleteOrders()
+  return rcOrdersChamber[coinType]
 }

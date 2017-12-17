@@ -30,7 +30,11 @@ console.log(rcOrders.length)
 re()
 async function re(){
     
-    console.log("RSI:", await rcOrders.getRSI())
+    console.log("RSI:", await rcOrders.getRSI({
+        coinType: "BTC",
+        marketName: "COINONE",
+        periodInDay: 14
+    }))
     console.log("---")
     // for(let i = 0; i < rcOrders.length; i++)
     //     console.log(rcOrders.at(i).attributes.timestamp)
