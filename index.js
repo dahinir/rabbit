@@ -29,7 +29,7 @@ global.rabbit.constants = {
   BTC: {
     MARKET: ["COINONE", "KORBIT"],
     PRECISION: 3,  // How many places after the decimal separator
-    MIN_KRW_UNIT: 500,  // Minimum unit of KRW
+    MIN_KRW_UNIT: 1000,  // Minimum unit of KRW
     BUY_AT_UNIT: 100000, // Snap to 100000
     MAX_BUY_AT: Infinity, // 17200000, // Previous high price usally 
     PREVIOUS_PROFIT_SUM: 0,
@@ -60,26 +60,26 @@ global.rabbit.constants = {
       MIN_CRAVING_PERCENTAGE: 3
     }
   },
-  BTG: {
-    MARKET: ["KORBIT"],
-    PRECISION: 2,
-    MIN_KRW_UNIT: 500,
-    BUY_AT_UNIT: 1000,
-    MAX_BUY_AT: 403000,
-    PREVIOUS_PROFIT_SUM: 0,
-    PREVIOUS_PROFIT_RATE_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    PREVIOUS_TRADED_COUNT_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    BORN: new Date('December 3, 2017 21:55:00'), // 371,050 krw?????
-    STARTED: new Date('December 3, 2017 21:55:00'),
-    MACHINE_SETTING: {
-      CAPACITY_EACH_CRAVING: [0.02, 0.05, 0.07, 0.03, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01],
-      MIN_CRAVING_PERCENTAGE: 3
-    }
-  },
+  // BTG: {
+  //   MARKET: ["COINONE"],
+  //   PRECISION: 2,
+  //   MIN_KRW_UNIT: 50,  // korbit 500, coinone 50
+  //   BUY_AT_UNIT: 1000,
+  //   MAX_BUY_AT: 703000,
+  //   PREVIOUS_PROFIT_SUM: 0,
+  //   PREVIOUS_PROFIT_RATE_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  //   PREVIOUS_TRADED_COUNT_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  //   BORN: new Date('December 14, 2017 21:21:00'), // 300,000 ~ 700,000 krw?
+  //   STARTED: new Date('December 14, 2017 21:21:00'),
+  //   MACHINE_SETTING: {
+  //     CAPACITY_EACH_CRAVING: [0.02, 0.02, 0.02, 0.02, 0.04, 0.05, 0.04, 0.03, 0.02, 0.02],
+  //     MIN_CRAVING_PERCENTAGE: 4
+  //   }
+  // },
   ETH: {
     MARKET: ["COINONE", "KORBIT"],
     PRECISION: 2,
-    MIN_KRW_UNIT: 50,
+    MIN_KRW_UNIT: 100,
     BUY_AT_UNIT: 1000,
     MAX_BUY_AT: Infinity, // 611500,
     PREVIOUS_PROFIT_SUM: 0, // 68,000,000? 49752085,
@@ -123,7 +123,7 @@ global.rabbit.constants = {
     STARTED: new Date('November 26, 2017 22:25:00'),
     ARBITRAGE_STARTED: new Date('November 27, 2017 15:50:00'),
     MACHINE_SETTING: {
-      CAPACITY_EACH_CRAVING: [10, 20, 20, 20, 20, 20, 10, 10, 10, 10],
+      CAPACITY_EACH_CRAVING: [10, 20, 20, 20, 20, 20, 30, 30, 30, 10],
       MIN_CRAVING_PERCENTAGE: 2
     }
   },
@@ -139,7 +139,7 @@ global.rabbit.constants = {
     BORN: new Date('November 26, 2017 22:25:00'),  // 16,110 krw
     STARTED: new Date('November 26, 2017 22:25:00'),
     MACHINE_SETTING: {
-      CAPACITY_EACH_CRAVING: [0.5, 0.4, 0.3, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2],
+      CAPACITY_EACH_CRAVING: [0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.4, 0.5, 0.6, 0.7],
       MIN_CRAVING_PERCENTAGE: 2
     }
   },
@@ -148,21 +148,21 @@ global.rabbit.constants = {
     PRECISION: 1,
     MIN_KRW_UNIT: 50,
     BUY_AT_UNIT: 1000,
-    MAX_BUY_AT: 280000, // 145550,
+    MAX_BUY_AT: Infinity, //375000,
     PREVIOUS_PROFIT_SUM: 0,
     PREVIOUS_PROFIT_RATE_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     PREVIOUS_TRADED_COUNT_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     BORN: new Date('November 26, 2017 22:25:00'),  // 96,400 krw
     STARTED: new Date('November 26, 2017 22:25:00'),
     MACHINE_SETTING: {
-      CAPACITY_EACH_CRAVING: [0.1, 0.2, 0.2, 0.2, 0.2, 0.2, 0.3, 0.1, 0.1, 0.1],
+      CAPACITY_EACH_CRAVING: [0.1, 0.1, 0.1, 0.1, 0.1, 0.2, 0.2, 0.2, 0.2, 0.3],
       MIN_CRAVING_PERCENTAGE: 3
     }
   },
   IOTA: {
     MARKET: ["COINONE"],
     PRECISION: 0,
-    MIN_KRW_UNIT: 1,
+    MIN_KRW_UNIT: 10,
     BUY_AT_UNIT: 10,
     MAX_BUY_AT: Infinity, //6856,
     PREVIOUS_PROFIT_SUM: 0,
@@ -176,7 +176,7 @@ global.rabbit.constants = {
     }
   }
 }
-global.rabbit.INVESTED_KRW = 200000000
+global.rabbit.INVESTED_KRW = 260000000
 global.rabbit.BORN = new Date('July 4, 2017 13:20:00')
 
 
@@ -298,7 +298,8 @@ machines.fetchAll({
 
 
 const runningCoinType = ["BTC", "BCH", "ETH", "ETC", "XRP", "QTUM", "LTC", "IOTA"],  // It's gonna be tick order.
-  MIN_TERM = 3200,  // ms ..minimum I think 2700~2900 ms
+// const runningCoinType = ["QTUM", "LTC", "IOTA"],  // It's gonna be tick order.
+  MIN_TERM = 3300,  // ms ..minimum I think 2700~2900 ms
   ERROR_BUFFER = 60000  // A minute
 let count = -1
 
@@ -310,6 +311,15 @@ async function run() {
   try {
     // Korbit is an idiot //
     await require("./korbit.js")({type: "REFRESH_TOKEN"})
+
+    // const orderss = orders.models
+    // for (let order of orderss){
+    //   if (order.get("marketName") == "KORBIT" && order.get("type") == "BID"){
+    //     console.log(order.get("marketName"), order.get("type"))
+    //     await order.cancel()
+    //   }
+    // }
+    // return
 
     // HERE BABE HERE IT IS //
     await require("./tick.js")({

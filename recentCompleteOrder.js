@@ -1,0 +1,205 @@
+"use strict"
+
+const Backbone = require('backbone'),
+    _ = require('underscore'),
+    backsync = require('backsync'),
+    fetcher = require('./fetcher.js'),
+    coinoneAPI = require("./coinone.js"),
+    korbitAPI = require("./korbit.js")
+
+//  { timestamp: '1512990444', price: '530100', qty: '5.8000' }
+exports.RecentCompleteOrder = Backbone.Model.extend({
+    urlRoot: "mongodb://localhost:27017/rabbit/recentCompleteOrders", // not url. cuz of backsync
+    sync: backsync.mongodb(),
+    idAttribute: "id",   // maybe ..change to "id".. using backsync..
+    defaults: {
+        // timestamp: 0,
+        // price: 0,
+        // qty: 0,
+        // coinType: ""
+    },
+    sav: function(){
+        // console.log("id",this.id)
+        return new Promise(resolve => {
+            this.save(arguments,
+                {success: () => {
+                    resolve()
+                }})
+        })
+    }
+})
+
+exports.RecentCompleteOrders = Backbone.Collection.extend({
+    url: "mongodb://localhost:27017/rabbit/recentCompleteOrders",
+    sync: backsync.mongodb(),
+    // comparator: function(o){
+    //   return o.get("timestamp")
+    // },
+    comparator: "timestamp",
+    initialize: function (attributes, options) {
+        console.log("recentCompleteOrders init")
+    },
+    model: exports.RecentCompleteOrder,
+    getCandles: function(options){
+        if (this.length == 0) return []
+        const PERIOD = 60 * 60 * 24 * 14,   // 14 days
+            UNIT_TIME = 60 * 5  // 5 mins
+            
+        const lastTimestamp = this.last().get("timestamp"),
+            startTimestamp = lastTimestamp - PERIOD
+        console.log("s~l:", startTimestamp, lastTimestamp)
+    
+        const candles = this.reduce((candles, o) => {   // Order sensitive.. so don't use this.models
+            if (o.get('timestamp') <= startTimestamp) return candles
+
+            // const INDEX = Math.floor((o.get("timestamp") - startTimestamp) / UNIT_TIME)
+            const INDEX = Math.ceil((o.get("timestamp") - startTimestamp) / UNIT_TIME) - 1
+
+            if (Array.isArray(candles[INDEX]))
+                candles[INDEX].push(o)
+            else
+                candles[INDEX] = [o]
+            
+            return candles
+        }, []).reduce((candles, c) => {
+            if (!c) return candles
+
+            const open = c[0].get("price"),
+                close = c[c.length - 1].get("price")
+            
+            candles.push({
+                // count: c.length,
+                // volumn: c.reduce((sum, el) => sum + el.get("qty"), 0),
+                open: open,
+                close: close,
+                body: close > open ? "+" : (close == open ? "o" : "-")
+            })
+            return candles
+        }, [])
+
+        console.log("candles.length:", candles.length)
+        for(let candle of candles){
+            if (candle) console.log(candle)
+        }
+        
+        return candles
+    },
+    getRSI: async function(options){
+        await this.refresh({
+            coinType: "BTC",
+            marketName: "COINONE"
+        })
+
+        const candles = this.getCandles()
+        let ups = 0, downs = 0
+        
+        for (let i = 0; i < candles.length - 1; i++){
+            const diff = candles[i + 1].close - candles[i].close
+            if (diff > 0)
+                ups += diff
+            else (diff < 0)
+                downs += -diff
+        }
+
+        if (!Number.isSafeInteger(ups) || !Number.isSafeInteger(downs))
+            throw new Error("[recentCompleteOrder.getRSI] too big number!")
+      
+        const AU = ups / (candles.length - 1),
+            AD = downs / (candles.length - 1)
+
+        return (AU / (AU + AD)) * 100   // RSI = AU / (AU + AD)
+    },
+    refresh: async function (options) {
+        const COIN_TYPE = options.coinType,
+            MARKET_NAME = options.marketName
+        let PERIOD = options.period || "hour"
+
+        // If this refresh is first time in runtime
+        if (this.length == 0){
+            await this.fetchFrom({coinType: COIN_TYPE})
+            console.log("fetched from db end")
+            PERIOD = "day"
+        }
+
+        // lastTimestamp in this collection
+        const lastTimestamp = (this.length == 0) ? 0 : this.last().get("timestamp")
+        console.log("lastTimestamp:", lastTimestamp)
+
+        if (Date.now() / 1000 - lastTimestamp > 60 * 60)    // lastTimestamp is older than an hour
+            PERIOD = "day"
+        
+        return
+        // PERIOD = "hour"
+
+        let recentCompleteOrders 
+        try {
+            if (MARKET_NAME == "COINONE")
+                recentCompleteOrders = await fetcher.getCoinoneRecentCompleteOrders(COIN_TYPE, PERIOD)
+            else if (MARKET_NAME == "KORBIT") 
+                recentCompleteOrders = await fetcher.getKorbitRecentCompleteOrders(COIN_TYPE, PERIOD)
+        }catch (e){
+            console.log(e)
+        }
+
+        console.log("recent length:", recentCompleteOrders.length)
+        for (let o of recentCompleteOrders) {
+            // Add only didn't exists
+            if (o.timestamp * 1 > lastTimestamp){
+                // console.log(o.timestamp)
+                const rcOrder = new exports.RecentCompleteOrder({
+                    timestamp: o.timestamp * 1,
+                    price: o.price * 1,
+                    qty: o.qty * 1,
+                    coinType: COIN_TYPE
+                })
+                await rcOrder.sav()
+                this.push(rcOrder)
+            }
+        }
+        
+        console.log("end of refresh")
+        return
+    }, // End of refresh()
+    fetchFrom: async function (options){
+        const AMOUNT = 100,
+            NOW = Date.now() / 1000,    // in sec not ms
+            COIN_TYPE = options.coinType,
+            PERIOD = options.periodInSec || 60 * 60 * 24 * 14.1   // 14.1 days in seconds
+            
+        const that = this
+
+        for (let skip = 0, loaded = [], isRemain = true; isRemain; skip += AMOUNT)
+            await new Promise(resolve => {
+                that.fetch({
+                    data: {
+                        timestamp: { $gt: NOW - PERIOD },
+                        coinType: COIN_TYPE,
+                        $skip: skip,
+                        $limit: AMOUNT
+                    },
+                    success: rcOrders => {
+                        loaded = loaded.concat(rcOrders.models);
+                        // console.log("chunk:", loaded.length, rcOrders.length, rcOrders.models.length);
+                        if (rcOrders.length == AMOUNT) {
+                        } else {
+                            rcOrders.add(loaded)
+                            console.log("chunk end")
+                            isRemain = false
+                        }
+                        resolve()
+                    },
+                    error: function (c, r, o) {
+                        console.log("[rcOrders.fetchAll()] from db error");
+                        console.log(r);
+                        process.exit()
+                    }
+                })
+            })
+
+        return
+    },
+    removeOlds: async function(options){
+        const PERIOD = options.period || 60 * 60 * 24 * 20   // 20 days in seconds
+        return
+    }
+})

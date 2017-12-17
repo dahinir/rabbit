@@ -17,20 +17,24 @@ const xcoinAPI = require('./bithumb_modified.js'),
     brain = require('brain.js')
 
 const rcOrders = new RecentCompleteOrders()
-rcOrders.add([{
-        timestamp: "111",
-        price: "1"
-    },
-    {
-        timestamp: "112",
-        price: "33"
-    }
-])
+// rcOrders.add([{
+//             timestamp: "111",
+//             price: "1"
+//         },
+//         {
+//                 timestamp: "112",
+//                 price: "33"
+//             }
+//         ])
 console.log(rcOrders.length)
 re()
 async function re(){
-    await rcOrders.refresh()
-    console.log("end: this should be last")
+    
+    console.log("RSI:", await rcOrders.getRSI())
+    console.log("---")
+    // for(let i = 0; i < rcOrders.length; i++)
+    //     console.log(rcOrders.at(i).attributes.timestamp)
+    console.log("end: this should be last", rcOrders.length)
 }
 
 

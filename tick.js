@@ -222,7 +222,7 @@ function isInclined(recentCompleteOrders) {
   let candles = recentCompleteOrders.reduce((candles, o) => {
     const index = Math.floor((lastTimestamp - (o.timestamp * 1)) / TERM)
 
-    if (_.isArray(candles[index]))
+    if (Array.isArray(candles[index]))
       candles[index].push(o)
     else
       candles[index] = [o]  // It's new Array
