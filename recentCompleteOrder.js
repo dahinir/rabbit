@@ -40,7 +40,8 @@ exports.RecentCompleteOrders = Backbone.Collection.extend({
     getRSI: async function (options) {
         const COIN_TYPE = options.coinType,
             MARKET_NAME = options.marketName,
-            PERIOD = options.periodInDay || 14
+            PERIOD = options.periodInDay || 14,
+            UNIT_TIME = 60 * (options.unitTimeInMin || 15)  // 15 mins
         
         if (this.length > 0 && this.at(0).get("timestamp") > Date.now() / 1000 - options.periodInDay * 60 * 60 * 24 * PERIOD)
             console.log(`Not ready to RSI, It just been ${((Date.now()/1000 - this.at(0).get("timestamp")) / 86400).toFixed(3)} days.`)
@@ -51,7 +52,10 @@ exports.RecentCompleteOrders = Backbone.Collection.extend({
             periodInday: PERIOD
         })
 
-        const candles = this.getCandles({periodInDay: PERIOD})
+        const candles = this.getCandles({
+            periodInDay: PERIOD,
+            unitTimeInMin: UNIT_TIME
+        })
         let ups = 0, downs = 0
 
         for (let i = 0; i < candles.length - 1; i++) {

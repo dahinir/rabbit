@@ -52,7 +52,8 @@ module.exports = async function(options){
     rsi = await recentCompleteOrders.getRSI({
       coinType: coinType,
       marketName: COINONE ? "COINONE" : "KORBIT",
-      periodInDay: 14
+      periodInDay: 14,
+      unitTimeInMin: 15
     })
 
     // console.log("Fetching some info takes", ((new Date() - TICK_STARTED) / 1000).toFixed(2), "sec")
