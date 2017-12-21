@@ -177,7 +177,7 @@ module.exports = async function(options){
     for (let i = candles.length - 5; i < candles.length; i++)
       console.log("candle:", candles[i])
 
-    if (candles[candles.length - 2].body == candles[candles.length - 1].body) {
+    if (candles[candles.length - 2].body == candles[candles.length - 1].body && candles[candles.length - 1] != "=") {
       console.log("Wait.. It looks like inclined. order won't be place")
       machines.presentation({
         coinType: coinType,

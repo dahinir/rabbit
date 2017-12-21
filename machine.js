@@ -589,7 +589,7 @@ exports.Arbitrages = exports.Machines.extend({
       korbit = options.korbit
     
     console.log(`[arbitrages.mind] ${coinType} arbitrages length ${this.length}`)
-    if (this.length > 8){
+    if (this.length > 9){
       return []
     }
 
@@ -631,7 +631,9 @@ exports.Arbitrages = exports.Machines.extend({
     quantity = (quantity > LIMIT) ? LIMIT : quantity  // Limit
     quantity = quantity.toFixed(global.rabbit.constants[coinType].PRECISION) * 1
 
-    if (profitRate < 4 || prPerPrice < 0.7 || quantity < Math.pow(0.1, global.rabbit.constants[coinType].PRECISION).toFixed(global.rabbit.constants[coinType].PRECISION) * 1){
+    if (profitRate < 4 || prPerPrice < 0.7 
+      || quantity < Math.pow(0.1, global.rabbit.constants[coinType].PRECISION)
+      || quantity * lowMarket.orderbook.bid[0].price < 10000){
       console.log("Pass arbitrage. profitRate: \u20A9", profitRate, "prPerPrice(min 0.7):", prPerPrice, "quantity:", quantity)
       return []
     }

@@ -30,20 +30,23 @@ console.log(rcOrders.length)
 re()
 async function re(){
     
-    console.log("RSI:", await rcOrders.getRSI({
-        coinType: "BTC",
-        marketName: "COINONE",
-        periodInDay: 14
-    }))
-    console.log("---")
-    const candles = rcOrders.getCandles({
-        periodInDay: 0.1,
-        unitTimeInMin: 3
+    // console.log("RSI:", await rcOrders.getRSI({
+    //     coinType: "BTC",
+    //     marketName: "COINONE",
+    //     periodInDay: 14
+    // }))
+    // console.log("---")
+    // const candles = rcOrders.getCandles({
+    //     periodInDay: 0.1,
+    //     unitTimeInMin: 3
+    // })
+    await rcOrders.fetchFrom({
+        coinType: "BTC"
     })
-    for (let i = candles.length - 5; i < candles.length; i++)
-        console.log("dd", candles[i])
-    // for(let i = 0; i < rcOrders.length; i++)
-    //     console.log(rcOrders.at(i).attributes.timestamp)
+    // for (let i = candles.length - 5; i < candles.length; i++)
+    //     console.log("dd", candles[i])
+    for(let i = 0; i < rcOrders.length; i++)
+        console.log(rcOrders.at(i).attributes.timestamp)
     console.log("end: this should be last", rcOrders.length)
 }
 

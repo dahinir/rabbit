@@ -41,7 +41,7 @@ global.rabbit.constants = {
     STARTED: new Date('November 26, 2017 22:25:00'),
     ARBITRAGE_STARTED: new Date('November 27, 2017 15:50:00'),
     MACHINE_SETTING: {
-      CAPACITY_EACH_CRAVING: [0.001, 0.001, 0.001, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002],
+      CAPACITY_EACH_CRAVING: [0.001, 0.001, 0.001, 0.001, 0.001, 0.002, 0.002, 0.002, 0.002, 0.002],
       MIN_CRAVING_PERCENTAGE: 3
     } 
   },
@@ -58,7 +58,7 @@ global.rabbit.constants = {
     STARTED: new Date('November 26, 2017 22:25:00'),
     ARBITRAGE_STARTED: new Date('November 27, 2017 15:50:00'),
     MACHINE_SETTING: {
-      CAPACITY_EACH_CRAVING: [0.01, 0.01, 0.03, 0.01, 0.01, 0.02, 0.03, 0.05, 0.01, 0.01],
+      CAPACITY_EACH_CRAVING: [0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01],
       MIN_CRAVING_PERCENTAGE: 3
     }
   },
@@ -82,7 +82,7 @@ global.rabbit.constants = {
     MARKET: ["COINONE", "KORBIT"],
     PRECISION: 2,
     MIN_KRW_UNIT: 100,
-    BUY_AT_UNIT: 1000,
+    BUY_AT_UNIT: 10000,
     MAX_BUY_AT: Infinity, // 611500,
     PREVIOUS_PROFIT_SUM: 0, // 68,000,000? 49752085,
     PREVIOUS_PROFIT_RATE_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -91,7 +91,7 @@ global.rabbit.constants = {
     STARTED: new Date('November 26, 2017 22:25:00'),
     ARBITRAGE_STARTED: new Date('July 26, 2017 13:20:00'),
     MACHINE_SETTING: {
-      CAPACITY_EACH_CRAVING: [0.02, 0.03, 0.12, 0.12, 0.07, 0.05, 0.03, 0.02, 0.02, 0.02],
+      CAPACITY_EACH_CRAVING: [0.02, 0.02, 0.02, 0.03, 0.04, 0.05, 0.05, 0.07, 0.09, 0.11],
       MIN_CRAVING_PERCENTAGE: 2
     }
   },
@@ -116,7 +116,7 @@ global.rabbit.constants = {
     MARKET: ["COINONE", "KORBIT"],
     PRECISION: 0,
     MIN_KRW_UNIT: 1,
-    BUY_AT_UNIT: 1,
+    BUY_AT_UNIT: 10,
     MAX_BUY_AT: Infinity, // 342,
     PREVIOUS_PROFIT_SUM: 0,
     PREVIOUS_PROFIT_RATE_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -125,7 +125,7 @@ global.rabbit.constants = {
     STARTED: new Date('November 26, 2017 22:25:00'),
     ARBITRAGE_STARTED: new Date('November 27, 2017 15:50:00'),
     MACHINE_SETTING: {
-      CAPACITY_EACH_CRAVING: [10, 20, 20, 20, 20, 20, 30, 30, 30, 10],
+      CAPACITY_EACH_CRAVING: [10, 10, 10, 20, 20, 20, 30, 30, 40, 50],
       MIN_CRAVING_PERCENTAGE: 2
     }
   },
@@ -141,7 +141,7 @@ global.rabbit.constants = {
     BORN: new Date('November 26, 2017 22:25:00'),  // 16,110 krw
     STARTED: new Date('November 26, 2017 22:25:00'),
     MACHINE_SETTING: {
-      CAPACITY_EACH_CRAVING: [0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.4, 0.5, 0.6, 0.7],
+      CAPACITY_EACH_CRAVING: [0.2, 0.2, 0.3, 0.3, 0.3, 0.3, 0.4, 0.5, 0.6, 0.7],
       MIN_CRAVING_PERCENTAGE: 2
     }
   },
@@ -157,13 +157,13 @@ global.rabbit.constants = {
     BORN: new Date('November 26, 2017 22:25:00'),  // 96,400 krw
     STARTED: new Date('November 26, 2017 22:25:00'),
     MACHINE_SETTING: {
-      CAPACITY_EACH_CRAVING: [0.1, 0.1, 0.1, 0.1, 0.1, 0.2, 0.2, 0.2, 0.3, 0.2],
+      CAPACITY_EACH_CRAVING: [0.1, 0.1, 0.1, 0.1, 0.1, 0.2, 0.2, 0.2, 0.2, 0.3],
       MIN_CRAVING_PERCENTAGE: 3
     }
   },
   IOTA: {
     MARKET: ["COINONE"],
-    PRECISION: 0,
+    PRECISION: 1,
     MIN_KRW_UNIT: 10,
     BUY_AT_UNIT: 10,
     MAX_BUY_AT: Infinity, //6856,
