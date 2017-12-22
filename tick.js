@@ -114,8 +114,8 @@ module.exports = async function(options){
   
   if (COINONE) console.log("-- In 24 hrs", coinoneInfo.volume, coinType, "traded at Coinone:", coinoneInfo.low, "~", coinoneInfo.high, ":", coinoneInfo.last, "(", ((coinoneInfo.last - coinoneInfo.low) / (coinoneInfo.high - coinoneInfo.low) * 100).toFixed(2), "% )----")
   console.log("coin:", (totalCoin).toFixed(2), coinType, "is now about \u20A9", new Intl.NumberFormat().format(((totalCoin) * lastPrice).toFixed(0)))
-  if (COINONE) console.log("Coinone", coinType + ":", coinoneBalance[coinType].available.toFixed(2))
-  if (KORBIT) console.log("Korbit", coinType + ":", korbitBalance[coinType].available.toFixed(2))
+  if (COINONE) console.log("Coinone", coinType + ":", coinoneBalance[coinType].available.toFixed(3))
+  if (KORBIT) console.log("Korbit", coinType + ":", korbitBalance[coinType].available.toFixed(3))
   if (COINONE) console.log("--(coinone", coinType + ")-----max bid:", coinoneOrderbook.bid[0], "min ask:", coinoneOrderbook.ask[0])
   if (KORBIT) console.log("--(korbit", coinType + ")------max bid:", korbitOrderbook.bid[0], "min ask:", korbitOrderbook.ask[0])
   

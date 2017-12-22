@@ -30,8 +30,9 @@ global.rabbit = {}
 global.rabbit.constants = {
   BTC: {
     MARKET: ["COINONE", "KORBIT"],
-    PRECISION: 3,  // How many places after the decimal separator
-    MIN_KRW_UNIT: 1000,  // Minimum unit of KRW
+    COIN_PRECISON: 3,  // How many places after the decimal separator
+    COIN_UNIT: 0.001,
+    KRW_UNIT: 1000,  // Minimum unit of KRW
     BUY_AT_UNIT: 100000, // Snap to 100000
     MAX_BUY_AT: Infinity, // 17200000, // Previous high price usally 
     PREVIOUS_PROFIT_SUM: 0,
@@ -47,8 +48,9 @@ global.rabbit.constants = {
   },
   BCH: {
     MARKET: ["COINONE", "KORBIT"],
-    PRECISION: 2,
-    MIN_KRW_UNIT: 500,
+    COIN_PRECISON: 3,
+    COIN_UNIT: 0.005,
+    KRW_UNIT: 500,
     BUY_AT_UNIT: 10000,
     MAX_BUY_AT: Infinity, // 2058500,
     PREVIOUS_PROFIT_SUM: 0,
@@ -58,14 +60,15 @@ global.rabbit.constants = {
     STARTED: new Date('November 26, 2017 22:25:00'),
     ARBITRAGE_STARTED: new Date('November 27, 2017 15:50:00'),
     MACHINE_SETTING: {
-      CAPACITY_EACH_CRAVING: [0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01],
+      // CAPACITY_EACH_CRAVING: [0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01],
+      CAPACITY_EACH_CRAVING: [0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005],
       MIN_CRAVING_PERCENTAGE: 3
     }
   },
   // BTG: {
   //   MARKET: ["COINONE"],
-  //   PRECISION: 2,
-  //   MIN_KRW_UNIT: 50,  // korbit 500, coinone 50
+  //   COIN_PRECISON: 2,
+  //   KRW_UNIT: 50,  // korbit 500, coinone 50
   //   BUY_AT_UNIT: 1000,
   //   MAX_BUY_AT: 703000,
   //   PREVIOUS_PROFIT_SUM: 0,
@@ -80,8 +83,9 @@ global.rabbit.constants = {
   // },
   ETH: {
     MARKET: ["COINONE", "KORBIT"],
-    PRECISION: 2,
-    MIN_KRW_UNIT: 100,
+    COIN_PRECISON: 2,
+    COIN_UNIT: 0.01,
+    KRW_UNIT: 100,
     BUY_AT_UNIT: 10000,
     MAX_BUY_AT: Infinity, // 611500,
     PREVIOUS_PROFIT_SUM: 0, // 68,000,000? 49752085,
@@ -97,8 +101,9 @@ global.rabbit.constants = {
   },
   ETC: {
     MARKET: ["COINONE", "KORBIT"],
-    PRECISION: 1,
-    MIN_KRW_UNIT: 10,
+    COIN_PRECISON: 1,
+    COIN_UNIT: 0.1,
+    KRW_UNIT: 10,
     BUY_AT_UNIT: 100,
     MAX_BUY_AT: Infinity, // 42490,
     PREVIOUS_PROFIT_SUM: 0,
@@ -114,8 +119,9 @@ global.rabbit.constants = {
   },
   XRP:{
     MARKET: ["COINONE", "KORBIT"],
-    PRECISION: 0,
-    MIN_KRW_UNIT: 1,
+    COIN_PRECISON: 0,
+    COIN_UNIT: 1,
+    KRW_UNIT: 1,
     BUY_AT_UNIT: 10,
     MAX_BUY_AT: Infinity, // 342,
     PREVIOUS_PROFIT_SUM: 0,
@@ -131,8 +137,9 @@ global.rabbit.constants = {
   },
   QTUM: {
     MARKET: ["COINONE"],
-    PRECISION: 1,
-    MIN_KRW_UNIT: 10,
+    COIN_PRECISON: 1,
+    COIN_UNIT: 0.1,
+    KRW_UNIT: 10,
     BUY_AT_UNIT: 100,
     MAX_BUY_AT: Infinity, // 22000,
     PREVIOUS_PROFIT_SUM: 0,
@@ -141,14 +148,15 @@ global.rabbit.constants = {
     BORN: new Date('November 26, 2017 22:25:00'),  // 16,110 krw
     STARTED: new Date('November 26, 2017 22:25:00'),
     MACHINE_SETTING: {
-      CAPACITY_EACH_CRAVING: [0.2, 0.2, 0.3, 0.3, 0.3, 0.3, 0.4, 0.5, 0.6, 0.7],
+      CAPACITY_EACH_CRAVING: [0.1, 0.2, 0.2, 0.3, 0.3, 0.3, 0.4, 0.5, 0.6, 0.6],
       MIN_CRAVING_PERCENTAGE: 2
     }
   },
   LTC: {
     MARKET: ["COINONE"],
-    PRECISION: 1,
-    MIN_KRW_UNIT: 50,
+    COIN_PRECISON: 1,
+    COIN_UNIT: 0.1,
+    KRW_UNIT: 50,
     BUY_AT_UNIT: 1000,
     MAX_BUY_AT: Infinity, //375000,
     PREVIOUS_PROFIT_SUM: 0,
@@ -157,14 +165,15 @@ global.rabbit.constants = {
     BORN: new Date('November 26, 2017 22:25:00'),  // 96,400 krw
     STARTED: new Date('November 26, 2017 22:25:00'),
     MACHINE_SETTING: {
-      CAPACITY_EACH_CRAVING: [0.1, 0.1, 0.1, 0.1, 0.1, 0.2, 0.2, 0.2, 0.2, 0.3],
+      CAPACITY_EACH_CRAVING: [0.1, 0.1, 0.1, 0.1, 0.1, 0.2, 0.2, 0.2, 0.2, 0.2],
       MIN_CRAVING_PERCENTAGE: 3
     }
   },
   IOTA: {
     MARKET: ["COINONE"],
-    PRECISION: 1,
-    MIN_KRW_UNIT: 10,
+    COIN_PRECISON: 1,
+    COIN_UNIT: 0.1,
+    KRW_UNIT: 10,
     BUY_AT_UNIT: 10,
     MAX_BUY_AT: Infinity, //6856,
     PREVIOUS_PROFIT_SUM: 0,
@@ -173,12 +182,12 @@ global.rabbit.constants = {
     BORN: new Date('November 30, 2017 00:53:00'),  // 1,785 krw
     STARTED: new Date('November 30, 2017 00:53:00'),
     MACHINE_SETTING: {
-      CAPACITY_EACH_CRAVING: [1, 1, 2, 3, 3, 5, 5, 6, 5, 5],
+      CAPACITY_EACH_CRAVING: [1, 1, 2, 3, 3, 5, 5, 5, 5, 4],
       MIN_CRAVING_PERCENTAGE: 5
     }
   }
 }
-global.rabbit.INVESTED_KRW = 260000000
+global.rabbit.INVESTED_KRW = 309000000
 global.rabbit.BORN = new Date('July 4, 2017 13:20:00')
 
 

@@ -15,6 +15,8 @@ const xcoinAPI = require('./bithumb_modified.js'),
     brain = require('brain.js'),
     ARBITRAGE_STARTED = new Date('July 26, 2017 13:20:00')
 
+const N = new Date()
+console.log(N.toLocaleString())
 const arbitrages = new Arbitrages()
 arbitrages.fetchAll({
     success: () => {
