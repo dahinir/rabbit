@@ -582,7 +582,8 @@ exports.Arbitrages = exports.Machines.extend({
     const korbit2coinone = coinoneMaxBid - korbitMinAsk,
       coinone2korbit = korbitMaxBid - coinoneMinAsk
 
-    const profitRate = (korbit2coinone > coinone2korbit) ? korbit2coinone : coinone2korbit
+    // const profitRate = ((korbit2coinone > coinone2korbit) ? korbit2coinone : coinone2korbit) - global.rabbit.constants[coinType].KRW_UNIT * 2
+    const profitRate = Math.max(korbit2coinone, coinone2korbit) - global.rabbit.constants[coinType].KRW_UNIT * 2
     // console.log(coinoneMaxBid, coinoneMinAsk, korbitMaxBid, korbitMinAsk)
     console.log("(korbit to coinone:", korbit2coinone, ", coinone to korbit:", coinone2korbit, ")")
 
@@ -601,17 +602,15 @@ exports.Arbitrages = exports.Machines.extend({
     const prPerPrice = (profitRate / highMarket.orderbook.ask[0].price) * 100
     const LIMIT = (() => {  // quantity
       // FOR BIGGIE PROFIT
-      const COIN_FOR_700000 = 700000 / highMarket.orderbook.ask[0].price // about 700,000 krw value coin
-      // If prPerPrice were 1%, then Deal about 700,000 krw value coin
-      return prPerPrice * COIN_FOR_700000
+      const COIN_FOR_800000 = 800000 / highMarket.orderbook.ask[0].price // about 700,000 krw value coin
+      // If prPerPrice were 1%, then Deal about 800,000 krw value coin
+      return prPerPrice * COIN_FOR_800000
     })()
-    // const LIMIT = (profitRate > 4000) ? 2.0 : 0.5 // 2.0 or 0.5
-    quantity = (lowMarket.orderbook.ask[0].qty < highMarket.orderbook.bid[0].qty) ?
-      lowMarket.orderbook.ask[0].qty : highMarket.orderbook.bid[0].qty
-    quantity = (quantity > LIMIT) ? LIMIT : quantity  // Limit
+
+    quantity = Math.min(LIMIT, lowMarket.orderbook.ask[0].qty, highMarket.orderbook.bid[0].qty)
     // quantity = quantity.toFixed(global.rabbit.constants[coinType].PRECISION) * 1
     quantity = Math.round(quantity / global.rabbit.constants[coinType].COIN_UNIT) * global.rabbit.constants[coinType].COIN_UNIT
-    quantity = quantity.toFixed(global.rabbit.constants[coinType].COIN_PRECISON) * 1
+    quantity = quantity.toFixed(global.rabbit.constants[coinType].COIN_PRECISON) * 1  // Round
 
     if (profitRate < 4 || prPerPrice < 0.7 
       // || quantity < Math.pow(0.1, global.rabbit.constants[coinType].PRECISION)
