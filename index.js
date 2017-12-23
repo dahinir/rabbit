@@ -98,7 +98,7 @@ global.rabbit.constants = {
     MACHINE_SETTING: {
       // CAPACITY_EACH_CRAVING: [0.02, 0.02, 0.02, 0.03, 0.04, 0.05, 0.05, 0.07, 0.09, 0.11],
       // MIN_CRAVING_PERCENTAGE: 2
-      CAPACITY_EACH_CRAVING: [0.01, 0.01, 0.03, 0.05, 0.03, 0.02, 0.01, 0.01, 0.01, 0.01],
+      CAPACITY_EACH_CRAVING: [0.01, 0.01, 0.03, 0.03, 0.03, 0.02, 0.01, 0.01, 0.01, 0.01],
       MIN_CRAVING_PERCENTAGE: 5
     }
   },
@@ -118,7 +118,7 @@ global.rabbit.constants = {
     MACHINE_SETTING: {
       // CAPACITY_EACH_CRAVING: [0.1, 0.2, 0.2, 0.2, 0.3, 0.4, 0.5, 0.6, 0.6, 0.7],
       // MIN_CRAVING_PERCENTAGE: 2
-      CAPACITY_EACH_CRAVING: [0.1, 0.1, 0.3, 0.4, 0.5, 0.2, 0.1, 0.1, 0.1, 0.1],
+      CAPACITY_EACH_CRAVING: [0.1, 0.1, 0.2, 0.3, 0.3, 0.2, 0.1, 0.1, 0.1, 0.1],
       MIN_CRAVING_PERCENTAGE: 5
     }
   },
@@ -138,7 +138,7 @@ global.rabbit.constants = {
     MACHINE_SETTING: {
       // CAPACITY_EACH_CRAVING: [10, 10, 10, 20, 20, 20, 30, 30, 40, 50],
       // MIN_CRAVING_PERCENTAGE: 2
-      CAPACITY_EACH_CRAVING: [10, 10, 10, 20, 20, 20, 10, 10, 10, 10],
+      CAPACITY_EACH_CRAVING: [10, 10, 10, 10, 20, 10, 10, 10, 10, 10],
       MIN_CRAVING_PERCENTAGE: 5
     }
   },
@@ -157,7 +157,7 @@ global.rabbit.constants = {
     MACHINE_SETTING: {
       // CAPACITY_EACH_CRAVING: [0.1, 0.2, 0.2, 0.3, 0.3, 0.3, 0.4, 0.5, 0.6, 0.6],
       // MIN_CRAVING_PERCENTAGE: 2
-      CAPACITY_EACH_CRAVING: [0.1, 0.1, 0.2, 0.3, 0.2, 0.1, 0.1, 0.1, 0.1, 0.1],
+      CAPACITY_EACH_CRAVING: [0.1, 0.1, 0.2, 0.2, 0.2, 0.1, 0.1, 0.1, 0.1, 0.1],
       MIN_CRAVING_PERCENTAGE: 5
     }
   },
@@ -176,7 +176,7 @@ global.rabbit.constants = {
     MACHINE_SETTING: {
       // CAPACITY_EACH_CRAVING: [0.1, 0.1, 0.1, 0.1, 0.1, 0.2, 0.2, 0.2, 0.2, 0.2],
       // MIN_CRAVING_PERCENTAGE: 3
-      CAPACITY_EACH_CRAVING: [0.1, 0.1, 0.1, 0.1, 0.1, 0.2, 0.2, 0.1, 0.1, 0.1],
+      CAPACITY_EACH_CRAVING: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1],
       MIN_CRAVING_PERCENTAGE: 5
     }
   },
@@ -195,7 +195,7 @@ global.rabbit.constants = {
     MACHINE_SETTING: {
       // CAPACITY_EACH_CRAVING: [1, 1, 2, 3, 3, 5, 5, 5, 5, 4],
       // MIN_CRAVING_PERCENTAGE: 5
-      CAPACITY_EACH_CRAVING: [1, 1, 1, 1, 1, 1, 1, 2, 3, 2],
+      CAPACITY_EACH_CRAVING: [1, 1, 1, 1, 1, 1, 1, 2, 2, 2],
       MIN_CRAVING_PERCENTAGE: 5
     }
   }

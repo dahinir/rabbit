@@ -203,13 +203,14 @@ exports.RecentCompleteOrders = Backbone.Collection.extend({
                         // console.log("chunk:", loaded.length, rcOrders.length, rcOrders.models.length);
                         if (rcOrders.length == AMOUNT) {
                         } else {
-                            rcOrders.add(loaded)
+                            rcOrders.reset(loaded)
                             isRemain = false
                         }
+                        console.log(`loaded.length: ${loaded.length}\t Last timestamp: ${rcOrders.last().get("timestamp")}\t It was ${(Date.now() / 1000 - rcOrders.last().get("timestamp")).toFixed()} sec ago.`)
                         resolve()
                     },
                     error: function (c, r, o) {
-                        console.log("[rcOrders.fetchAll()] from db error");
+                        console.log("[recentCompleteOrder.fetchFrom] from db error");
                         console.log(r);
                         process.exit()
                     }

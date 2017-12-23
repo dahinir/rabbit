@@ -160,10 +160,10 @@ module.exports = async function(options){
       korbit: korbit,
       coinone: coinone
     })  // It's Array
-    if (results.length == 2 ){
-      results[0].tt = "ARBIT"
-      results[1].tt = "ARBIT"
-    }
+    // if (results.length == 2 ){
+    //   results[0].tt = "ARBIT"
+    //   results[1].tt = "ARBIT"
+    // }
   }
   // results = []
 

@@ -574,11 +574,6 @@ exports.Arbitrages = exports.Machines.extend({
       coinone = options.coinone,
       korbit = options.korbit
     
-    console.log(`[arbitrages.mind] ${coinType} arbitrages length ${this.length}`)
-    if (this.length > 9){
-      return []
-    }
-
     const coinoneMaxBid = coinone.orderbook.bid[0].price,
       coinoneMinAsk = coinone.orderbook.ask[0].price,
       korbitMaxBid = korbit.orderbook.bid[0].price,
@@ -643,6 +638,12 @@ exports.Arbitrages = exports.Machines.extend({
     if (highMarket.balance[coinType].available < quantity * 1.1){ // 0.1% headroom for fee
       console.log(`[arbitrages.mind] Not enough ${coinType} at ${highMarket.name} MOVE THE COIN!`)
       return [{}, {}]
+    }
+
+    /// If There is too many uncompleted arbitrages..
+    console.log(`[arbitrages.mind] ${coinType} arbitrages length ${this.length}`)
+    if (this.length > 9) {
+      return []
     }
 
 
