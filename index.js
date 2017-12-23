@@ -42,8 +42,10 @@ global.rabbit.constants = {
     STARTED: new Date('November 26, 2017 22:25:00'),
     ARBITRAGE_STARTED: new Date('November 27, 2017 15:50:00'),
     MACHINE_SETTING: {
-      CAPACITY_EACH_CRAVING: [0.001, 0.001, 0.001, 0.001, 0.001, 0.002, 0.002, 0.002, 0.002, 0.002],
-      MIN_CRAVING_PERCENTAGE: 3
+      // CAPACITY_EACH_CRAVING: [0.001, 0.001, 0.001, 0.001, 0.001, 0.002, 0.002, 0.002, 0.002, 0.002],
+      // MIN_CRAVING_PERCENTAGE: 3
+      CAPACITY_EACH_CRAVING: [0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001],
+      MIN_CRAVING_PERCENTAGE: 5
     } 
   },
   BCH: {
@@ -60,9 +62,8 @@ global.rabbit.constants = {
     STARTED: new Date('November 26, 2017 22:25:00'),
     ARBITRAGE_STARTED: new Date('November 27, 2017 15:50:00'),
     MACHINE_SETTING: {
-      // CAPACITY_EACH_CRAVING: [0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01],
       CAPACITY_EACH_CRAVING: [0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005],
-      MIN_CRAVING_PERCENTAGE: 3
+      MIN_CRAVING_PERCENTAGE: 5
     }
   },
   // BTG: {
@@ -95,8 +96,10 @@ global.rabbit.constants = {
     STARTED: new Date('November 26, 2017 22:25:00'),
     ARBITRAGE_STARTED: new Date('July 26, 2017 13:20:00'),
     MACHINE_SETTING: {
-      CAPACITY_EACH_CRAVING: [0.02, 0.02, 0.02, 0.03, 0.04, 0.05, 0.05, 0.07, 0.09, 0.11],
-      MIN_CRAVING_PERCENTAGE: 2
+      // CAPACITY_EACH_CRAVING: [0.02, 0.02, 0.02, 0.03, 0.04, 0.05, 0.05, 0.07, 0.09, 0.11],
+      // MIN_CRAVING_PERCENTAGE: 2
+      CAPACITY_EACH_CRAVING: [0.01, 0.01, 0.03, 0.05, 0.03, 0.02, 0.01, 0.01, 0.01, 0.01],
+      MIN_CRAVING_PERCENTAGE: 5
     }
   },
   ETC: {
@@ -113,8 +116,10 @@ global.rabbit.constants = {
     STARTED: new Date('November 26, 2017 22:25:00'),
     ARBITRAGE_STARTED: new Date('November 27, 2017 15:50:00'),
     MACHINE_SETTING: {
-      CAPACITY_EACH_CRAVING: [0.1, 0.2, 0.2, 0.2, 0.3, 0.4, 0.5, 0.6, 0.6, 0.7],
-      MIN_CRAVING_PERCENTAGE: 2
+      // CAPACITY_EACH_CRAVING: [0.1, 0.2, 0.2, 0.2, 0.3, 0.4, 0.5, 0.6, 0.6, 0.7],
+      // MIN_CRAVING_PERCENTAGE: 2
+      CAPACITY_EACH_CRAVING: [0.1, 0.1, 0.3, 0.4, 0.5, 0.2, 0.1, 0.1, 0.1, 0.1],
+      MIN_CRAVING_PERCENTAGE: 5
     }
   },
   XRP:{
@@ -131,8 +136,10 @@ global.rabbit.constants = {
     STARTED: new Date('November 26, 2017 22:25:00'),
     ARBITRAGE_STARTED: new Date('November 27, 2017 15:50:00'),
     MACHINE_SETTING: {
-      CAPACITY_EACH_CRAVING: [10, 10, 10, 20, 20, 20, 30, 30, 40, 50],
-      MIN_CRAVING_PERCENTAGE: 2
+      // CAPACITY_EACH_CRAVING: [10, 10, 10, 20, 20, 20, 30, 30, 40, 50],
+      // MIN_CRAVING_PERCENTAGE: 2
+      CAPACITY_EACH_CRAVING: [10, 10, 10, 20, 20, 20, 10, 10, 10, 10],
+      MIN_CRAVING_PERCENTAGE: 5
     }
   },
   QTUM: {
@@ -148,8 +155,10 @@ global.rabbit.constants = {
     BORN: new Date('November 26, 2017 22:25:00'),  // 16,110 krw
     STARTED: new Date('November 26, 2017 22:25:00'),
     MACHINE_SETTING: {
-      CAPACITY_EACH_CRAVING: [0.1, 0.2, 0.2, 0.3, 0.3, 0.3, 0.4, 0.5, 0.6, 0.6],
-      MIN_CRAVING_PERCENTAGE: 2
+      // CAPACITY_EACH_CRAVING: [0.1, 0.2, 0.2, 0.3, 0.3, 0.3, 0.4, 0.5, 0.6, 0.6],
+      // MIN_CRAVING_PERCENTAGE: 2
+      CAPACITY_EACH_CRAVING: [0.1, 0.1, 0.2, 0.3, 0.2, 0.1, 0.1, 0.1, 0.1, 0.1],
+      MIN_CRAVING_PERCENTAGE: 5
     }
   },
   LTC: {
@@ -165,8 +174,10 @@ global.rabbit.constants = {
     BORN: new Date('November 26, 2017 22:25:00'),  // 96,400 krw
     STARTED: new Date('November 26, 2017 22:25:00'),
     MACHINE_SETTING: {
-      CAPACITY_EACH_CRAVING: [0.1, 0.1, 0.1, 0.1, 0.1, 0.2, 0.2, 0.2, 0.2, 0.2],
-      MIN_CRAVING_PERCENTAGE: 3
+      // CAPACITY_EACH_CRAVING: [0.1, 0.1, 0.1, 0.1, 0.1, 0.2, 0.2, 0.2, 0.2, 0.2],
+      // MIN_CRAVING_PERCENTAGE: 3
+      CAPACITY_EACH_CRAVING: [0.1, 0.1, 0.1, 0.1, 0.1, 0.2, 0.2, 0.1, 0.1, 0.1],
+      MIN_CRAVING_PERCENTAGE: 5
     }
   },
   IOTA: {
@@ -182,12 +193,14 @@ global.rabbit.constants = {
     BORN: new Date('November 30, 2017 00:53:00'),  // 1,785 krw
     STARTED: new Date('November 30, 2017 00:53:00'),
     MACHINE_SETTING: {
-      CAPACITY_EACH_CRAVING: [1, 1, 2, 3, 3, 5, 5, 5, 5, 4],
+      // CAPACITY_EACH_CRAVING: [1, 1, 2, 3, 3, 5, 5, 5, 5, 4],
+      // MIN_CRAVING_PERCENTAGE: 5
+      CAPACITY_EACH_CRAVING: [1, 1, 1, 1, 1, 1, 1, 2, 3, 2],
       MIN_CRAVING_PERCENTAGE: 5
     }
   }
 }
-global.rabbit.INVESTED_KRW = 309000000
+global.rabbit.INVESTED_KRW = 280000000
 global.rabbit.BORN = new Date('July 4, 2017 13:20:00')
 
 
@@ -387,7 +400,7 @@ async function run() {
           profitSum += profit
         }
 
-        profitSum += 68000000 // Previous profitSum
+        profitSum += 178000000 // 68000000 // Previous profitSum
         console.log("IN CASH: \u20A9", new Intl.NumberFormat().format(korbitBalance.KRW.balance + coinoneBalance.KRW.balance),
           "\t( Coinone:", new Intl.NumberFormat().format(coinoneBalance.KRW.balance),
           "  Korbit:", new Intl.NumberFormat().format(korbitBalance.KRW.balance), ")")

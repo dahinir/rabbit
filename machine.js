@@ -41,10 +41,10 @@ exports.Machine = Backbone.Model.extend({
       if (this.get("status") == "KRW") {
 
         // ㅠㅠ
-        this.set({
-          mind: mind
-        })
-        return mind
+        // this.set({
+        //   mind: mind
+        // })
+        // return mind
 
 
         const snapedPrice = (() => {
@@ -634,15 +634,15 @@ exports.Arbitrages = exports.Machines.extend({
     //// Validate balance ////
     if ((lowMarket.balance[coinType].available + highMarket.balance[coinType].available) * lowMarket.orderbook.ask[0].price < 2000000){
       console.log(`[arbitrages.mind] Not enough ${coinType} to arbitrage yet..`)
-      return []
+      return [{},{}]
     }
     if (lowMarket.balance.KRW.available < lowMarket.orderbook.ask[0].price * quantity * 1.1) { // 0.1% headroom for fee
       console.log("[arbitrages.mind] Not enough krw at", lowMarket.name, "GIVE ME THE MONEY!!")
-      return []
+      return [{}, {}]
     }
     if (highMarket.balance[coinType].available < quantity * 1.1){ // 0.1% headroom for fee
       console.log(`[arbitrages.mind] Not enough ${coinType} at ${highMarket.name} MOVE THE COIN!`)
-      return []
+      return [{}, {}]
     }
 
 
