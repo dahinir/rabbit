@@ -1,7 +1,6 @@
 "use strict"
 
 const request = require('request'),
-  crypto = require("crypto"),
   fs = require('fs'),
   _ = require("underscore")
 

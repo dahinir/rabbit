@@ -17,15 +17,6 @@ const xcoinAPI = require('./bithumb_modified.js'),
     brain = require('brain.js')
 
 const rcOrders = new RecentCompleteOrders()
-// rcOrders.add([{
-//             timestamp: "111",
-//             price: "1"
-//         },
-//         {
-//                 timestamp: "112",
-//                 price: "33"
-//             }
-//         ])
 console.log(rcOrders.length)
 re()
 async function re(){
@@ -40,16 +31,50 @@ async function re(){
     //     periodInDay: 0.1,
     //     unitTimeInMin: 3
     // })
-    await rcOrders.fetchFrom({
-        coinType: "BTC"
+    // await rcOrders.fetchOne({
+    //     coinType: "BTC"
+    // })
+    // const lastTimestamp = (rcOrders.length == 0) ? 0 : rcOrders.last().get("timestamp"),
+    //     termInSec = (Date.now() / 1000 - lastTimestamp).toFixed(0),
+    //     termInMin = (termInSec / 60).toFixed(2),
+    //     termInDay = (termInSec / (60 * 60 * 24)).toFixed(5)
+
+    // console.log(`Last timeStamp was ${termInSec} sec (${termInMin} mins, ${termInDay} days) ago.`)
+
+    // for (let i = 0z)
+    // await rcOrders.fetchOne({
+    //     coinType: "BTC",
+    //     timeInMin: lastTimestamp - 60 * 3
+    // })
+    // await rcOrders.fetchOne({
+    //     coinType: "BTC",
+    //     timeInMin: lastTimestamp - 60 * 6
+    // })
+    // await rcOrders.fetchOne({
+    //     coinType: "BTC",
+    //     timeInMin: lastTimestamp - 60 * 9
+    // })
+    // await rcOrders.fetchOne({
+    //     coinType: "BTC",
+    //     timeInMin: lastTimestamp - 60 * 12
+    // })
+    const rsi = await rcOrders.getRSI2({
+        coinType: "QTUM",
+        periodInDay: 1,
+        unitTimeInMin: 60 * 2 // 2 hours
     })
+    // await rcOrders.getRSI2({
+    //     coinType: "BTC",
+    //     timeInSecond: 1514106724
+    // })
+    console.log(`rsi is ${rsi}`)
     // for (let i = candles.length - 5; i < candles.length; i++)
     //     console.log("dd", candles[i])
     for(let i = 0; i < rcOrders.length; i++)
-        console.log(rcOrders.at(i).attributes.timestamp)
-    console.log("end: this should be last", rcOrders.length)
+        console.log(i, rcOrders.at(i).get("price"), rcOrders.at(i).attributes.timestamp, rcOrders.last().get("timestamp") - rcOrders.at(i).get("timestamp"), "sec ago")
+    console.log("end: this should be last", rcOrders.length, Date.now())
 }
-
+return
 
 
 // go()

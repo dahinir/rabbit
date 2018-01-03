@@ -30,8 +30,8 @@ global.rabbit = {}
 global.rabbit.constants = {
   BTC: {
     MARKET: ["COINONE", "KORBIT"],
-    COIN_PRECISON: 3,  // How many places after the decimal separator
-    COIN_UNIT: 0.001,
+    COIN_PRECISON: 4,  // How many places after the decimal separator
+    COIN_UNIT: 0.0001,
     KRW_UNIT: 1000,  // Minimum unit of KRW
     BUY_AT_UNIT: 100000, // Snap to 100000
     MAX_BUY_AT: Infinity, // 17200000, // Previous high price usally 
@@ -51,7 +51,7 @@ global.rabbit.constants = {
   BCH: {
     MARKET: ["COINONE", "KORBIT"],
     COIN_PRECISON: 3,
-    COIN_UNIT: 0.005,
+    COIN_UNIT: 0.001,
     KRW_UNIT: 500,
     BUY_AT_UNIT: 10000,
     MAX_BUY_AT: Infinity, // 2058500,
@@ -69,6 +69,7 @@ global.rabbit.constants = {
   // BTG: {
   //   MARKET: ["COINONE"],
   //   COIN_PRECISON: 2,
+      // COIN_UNIT: 0.01,
   //   KRW_UNIT: 50,  // korbit 500, coinone 50
   //   BUY_AT_UNIT: 1000,
   //   MAX_BUY_AT: 703000,
@@ -157,7 +158,7 @@ global.rabbit.constants = {
     MACHINE_SETTING: {
       // CAPACITY_EACH_CRAVING: [0.1, 0.2, 0.2, 0.3, 0.3, 0.3, 0.4, 0.5, 0.6, 0.6],
       // MIN_CRAVING_PERCENTAGE: 2
-      CAPACITY_EACH_CRAVING: [0.1, 0.1, 0.2, 0.2, 0.2, 0.1, 0.1, 0.1, 0.1, 0.1],
+      CAPACITY_EACH_CRAVING: [0.1, 0.1, 0.1, 0.2, 0.2, 0.1, 0.1, 0.1, 0.1, 0.1],
       MIN_CRAVING_PERCENTAGE: 5
     }
   },
@@ -200,7 +201,7 @@ global.rabbit.constants = {
     }
   }
 }
-global.rabbit.INVESTED_KRW = 280000000
+global.rabbit.INVESTED_KRW = 160000000
 global.rabbit.BORN = new Date('July 4, 2017 13:20:00')
 
 

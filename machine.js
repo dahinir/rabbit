@@ -39,14 +39,11 @@ exports.Machine = Backbone.Model.extend({
       const coinType = this.get("coinType")
 
       if (this.get("status") == "KRW") {
-
         // ㅠㅠ
         // this.set({
         //   mind: mind
         // })
         // return mind
-
-
         const snapedPrice = (() => {
           const BU = global.rabbit.constants[coinType].BUY_AT_UNIT || 1
           return Math.ceil(options.minAskPrice / BU) * BU
@@ -54,18 +51,22 @@ exports.Machine = Backbone.Model.extend({
         if (snapedPrice == this.get("buy_at")) {
           const MB = global.rabbit.constants[coinType].MAX_BUY_AT || Infinity
           if (snapedPrice < MB) {
-            // FOR BIGGIE PROFIT //
-            this.set({
-              capacity: (() => {
-                const MIN_CRAVING_PERCENTAGE = global.rabbit.constants[coinType].MACHINE_SETTING.MIN_CRAVING_PERCENTAGE
-                const INDEX = Math.round(this.get("craving_percentage") / MIN_CRAVING_PERCENTAGE - 1)
-                return global.rabbit.constants[coinType].MACHINE_SETTING.CAPACITY_EACH_CRAVING[INDEX]
-              })()
-            })
-            mind = {
-              type: "BID",
-              price: options.minAskPrice,
-              at: new Date()
+            if (options.rsi < 50 ){
+              // FOR BIGGIE PROFIT //
+              this.set({
+                capacity: (() => {
+                  const MIN_CRAVING_PERCENTAGE = global.rabbit.constants[coinType].MACHINE_SETTING.MIN_CRAVING_PERCENTAGE
+                  const INDEX = Math.round(this.get("craving_percentage") / MIN_CRAVING_PERCENTAGE - 1)
+                  return global.rabbit.constants[coinType].MACHINE_SETTING.CAPACITY_EACH_CRAVING[INDEX]
+                })()
+              })
+              mind = {
+                type: "BID",
+                price: options.minAskPrice,
+                at: new Date()
+              }
+            }else{
+              console.log(`[machine.mind] RSI is ${options.rsi} so I won't buy`)
             }
           } else {
             console.log(`[machine.mind]Wow~ MAX_BUY_AT of ${coinType} is ${MB} And now I'm higher~ I won't buy ~~ ~  ~    ~`)
@@ -302,7 +303,7 @@ exports.Machines = Backbone.Collection.extend({
         ":", new Intl.NumberFormat().format(((profit_krw_sum - krw_damage) / ((new Date() - STARTED)/ 86400000)).toFixed(0)), "per day")
 
       console.log("Total Traded:", new Intl.NumberFormat().format(total_traded),
-        ", Bought Coin:", coin_sum.toFixed(3))
+        coinType, "Bought Coin:", coin_sum.toFixed(3))
 
       console.log("[profit rate]  ", JSON.stringify(profit_rate_each_craving))
       console.log("[traded count] ", JSON.stringify(traded_count_each_craving))
@@ -420,6 +421,7 @@ exports.Machines = Backbone.Collection.extend({
 
       this.each(m => {
         const mind = m.mind({
+          rsi: options.rsi,
           minAskPrice: minAskPrice,
           maxBidPrice: maxBidPrice
         })
@@ -573,6 +575,8 @@ exports.Arbitrages = exports.Machines.extend({
     const coinType = options.coinType,
       coinone = options.coinone,
       korbit = options.korbit
+
+    console.log(`[arbitrages.mind] ${coinType} arbitrages length ${this.length}`)
     
     const coinoneMaxBid = coinone.orderbook.bid[0].price,
       coinoneMinAsk = coinone.orderbook.ask[0].price,
@@ -602,9 +606,9 @@ exports.Arbitrages = exports.Machines.extend({
     const prPerPrice = (profitRate / highMarket.orderbook.ask[0].price) * 100
     const LIMIT = (() => {  // quantity
       // FOR BIGGIE PROFIT
-      const COIN_FOR_800000 = 800000 / highMarket.orderbook.ask[0].price // about 700,000 krw value coin
+      const COIN_FOR_900000 = 900000 / highMarket.orderbook.ask[0].price // about 700,000 krw value coin
       // If prPerPrice were 1%, then Deal about 800,000 krw value coin
-      return prPerPrice * COIN_FOR_800000
+      return prPerPrice * COIN_FOR_900000
     })()
 
     quantity = Math.min(LIMIT, lowMarket.orderbook.ask[0].qty, highMarket.orderbook.bid[0].qty)
@@ -614,8 +618,8 @@ exports.Arbitrages = exports.Machines.extend({
 
     if (profitRate < 4 || prPerPrice < 0.7 
       // || quantity < Math.pow(0.1, global.rabbit.constants[coinType].PRECISION)
-      || quantity < global.rabbit.constants[coinType].COIN_UNIT
-      || quantity * lowMarket.orderbook.bid[0].price < 10000){
+      || quantity < global.rabbit.constants[coinType].COIN_UNIT * 10
+      || quantity * lowMarket.orderbook.ask[0].price < 10000){
       console.log("Pass arbitrage. profitRate: \u20A9", profitRate, "prPerPrice(min 0.7):", prPerPrice, "quantity:", quantity)
       return []
     }
@@ -640,8 +644,8 @@ exports.Arbitrages = exports.Machines.extend({
     }
 
     /// If There is too many uncompleted arbitrages..
-    console.log(`[arbitrages.mind] ${coinType} arbitrages length ${this.length}`)
-    if (this.length > 9) {
+    if (this.length > 11) {
+      console.log(`[arbitrages.mind] Too many arbitrages. length: ${this.length}`)
       return []
     }
 

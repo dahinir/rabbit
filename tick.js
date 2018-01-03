@@ -53,7 +53,7 @@ module.exports = async function(options){
       coinType: coinType,
       marketName: COINONE ? "COINONE" : "KORBIT",
       periodInDay: 14,
-      unitTimeInMin: 15
+      unitTimeInMin: 60 // 60 * 2
     })
 
     // console.log("Fetching some info takes", ((new Date() - TICK_STARTED) / 1000).toFixed(2), "sec")
@@ -90,6 +90,14 @@ module.exports = async function(options){
   // Some data needs to go global
   global.rabbit.coinone = global.rabbit.coinone || {}
   if (COINONE){
+    if (global.rabbit.coinone[coinType] 
+      && global.rabbit.coinone[coinType].orderbook.bid[0].price == coinoneOrderbook.bid[0].price 
+      && global.rabbit.coinone[coinType].orderbook.bid[0].qty == coinoneOrderbook.bid[0].qty
+      && global.rabbit.coinone[coinType].orderbook.ask[0].price == coinoneOrderbook.ask[0].price
+      && global.rabbit.coinone[coinType].orderbook.ask[0].qty == coinoneOrderbook.ask[0].qty){
+      console.log(`COINONE is shit. it's the same orderbook with previous orderbook. Don't believe Coinone.`)
+      return
+    }
     global.rabbit.coinone.balance = coinoneBalance
     global.rabbit.coinone[coinType] = {
       name: "COINONE",
@@ -124,7 +132,7 @@ module.exports = async function(options){
   const NOW = Date.now() / 1000 // in sec
   const FETCHING_TIME = NOW - FETCH_STARTED // sec
   console.log("Fetching All Orderbooks takes", FETCHING_TIME, "sec")
-  if (FETCHING_TIME > 3.2) {
+  if (FETCHING_TIME > 2.2) {
     console.log("Fetched too late. Don't buy when the market is busy. pass this tic. fetchingTime:", FETCHING_TIME)
     return
   }
@@ -168,12 +176,13 @@ module.exports = async function(options){
   // results = []
 
   if (results.length != 2){
-    console.log("-- No arbitrages so mind machines -- RSI:", rsi)
+    console.log(`-- No arbitrages so mind machines -- ${coinType} RSI: ${rsi}`)
 
     const candles = recentCompleteOrders.getCandles({
-      periodInDay: 0.05,
+      periodInDay: 0.05, // 1.2 hours
       unitTimeInMin: 3
     })
+    console.log("candles length:", candles.length)
     for (let i = candles.length - 5; i < candles.length; i++)
       console.log("candle:", candles[i])
 
@@ -188,6 +197,7 @@ module.exports = async function(options){
 
     /////// TIME TO MIND ////////
     results = machines.mind({
+      rsi: rsi,
       coinType: coinType,
       // korbit: altKorbit,
       // coinone: altCoinone
