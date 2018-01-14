@@ -45,7 +45,7 @@ global.rabbit.constants = {
       // CAPACITY_EACH_CRAVING: [0.001, 0.001, 0.001, 0.001, 0.001, 0.002, 0.002, 0.002, 0.002, 0.002],
       // MIN_CRAVING_PERCENTAGE: 3
       CAPACITY_EACH_CRAVING: [0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001],
-      MIN_CRAVING_PERCENTAGE: 5
+      MIN_CRAVING_PERCENTAGE: 10
     } 
   },
   BCH: {
@@ -99,8 +99,8 @@ global.rabbit.constants = {
     MACHINE_SETTING: {
       // CAPACITY_EACH_CRAVING: [0.02, 0.02, 0.02, 0.03, 0.04, 0.05, 0.05, 0.07, 0.09, 0.11],
       // MIN_CRAVING_PERCENTAGE: 2
-      CAPACITY_EACH_CRAVING: [0.01, 0.01, 0.03, 0.03, 0.03, 0.02, 0.01, 0.01, 0.01, 0.01],
-      MIN_CRAVING_PERCENTAGE: 5
+      CAPACITY_EACH_CRAVING: [0.01, 0.01, 0.03, 0.03, 0.04, 0.03, 0.02, 0.01, 0.01, 0.01],
+      MIN_CRAVING_PERCENTAGE: 10
     }
   },
   ETC: {
@@ -120,7 +120,7 @@ global.rabbit.constants = {
       // CAPACITY_EACH_CRAVING: [0.1, 0.2, 0.2, 0.2, 0.3, 0.4, 0.5, 0.6, 0.6, 0.7],
       // MIN_CRAVING_PERCENTAGE: 2
       CAPACITY_EACH_CRAVING: [0.1, 0.1, 0.2, 0.3, 0.3, 0.2, 0.1, 0.1, 0.1, 0.1],
-      MIN_CRAVING_PERCENTAGE: 5
+      MIN_CRAVING_PERCENTAGE: 10
     }
   },
   XRP:{
@@ -140,7 +140,7 @@ global.rabbit.constants = {
       // CAPACITY_EACH_CRAVING: [10, 10, 10, 20, 20, 20, 30, 30, 40, 50],
       // MIN_CRAVING_PERCENTAGE: 2
       CAPACITY_EACH_CRAVING: [10, 10, 10, 10, 20, 10, 10, 10, 10, 10],
-      MIN_CRAVING_PERCENTAGE: 5
+      MIN_CRAVING_PERCENTAGE: 10
     }
   },
   QTUM: {
@@ -159,7 +159,7 @@ global.rabbit.constants = {
       // CAPACITY_EACH_CRAVING: [0.1, 0.2, 0.2, 0.3, 0.3, 0.3, 0.4, 0.5, 0.6, 0.6],
       // MIN_CRAVING_PERCENTAGE: 2
       CAPACITY_EACH_CRAVING: [0.1, 0.1, 0.1, 0.2, 0.2, 0.1, 0.1, 0.1, 0.1, 0.1],
-      MIN_CRAVING_PERCENTAGE: 5
+      MIN_CRAVING_PERCENTAGE: 10
     }
   },
   LTC: {
@@ -389,19 +389,24 @@ async function run() {
         let profitSum = 0,
           balanceSum = korbitBalance.KRW.balance + coinoneBalance.KRW.balance
 
-        for (const ct of runningCoinType) {
-          const KORBIT = (global.rabbit.constants[ct].MARKET.indexOf("KORBIT") >= 0) ? true : false,
-            COINONE = (global.rabbit.constants[ct].MARKET.indexOf("COINONE") >= 0) ? true : false
+        try{
+          for (const ct of runningCoinType) {
+            const KORBIT = (global.rabbit.constants[ct].MARKET.indexOf("KORBIT") >= 0) ? true : false,
+              COINONE = (global.rabbit.constants[ct].MARKET.indexOf("COINONE") >= 0) ? true : false
 
-          balanceSum += KORBIT ? korbitBalance[ct].balance * korbit[ct].orderbook.bid[0].price : 0
-          balanceSum += COINONE ? coinoneBalance[ct].balance * coinone[ct].orderbook.bid[0].price : 0
-          const profit = global.rabbit.constants[ct].profit_krw_sum || 0
-          const damage = global.rabbit.constants[ct].krw_damage || 0
-          console.log(ct, "machines maid: \u20A9", new Intl.NumberFormat().format(profit), "\t\u20A9", new Intl.NumberFormat().format(-damage))
-          profitSum += profit
+            balanceSum += KORBIT ? korbitBalance[ct].balance * korbit[ct].orderbook.bid[0].price : 0
+            balanceSum += COINONE ? coinoneBalance[ct].balance * coinone[ct].orderbook.bid[0].price : 0
+            const profit = global.rabbit.constants[ct].profit_krw_sum || 0
+            const damage = global.rabbit.constants[ct].krw_damage || 0
+            console.log(ct, "machines maid: \u20A9", new Intl.NumberFormat().format(profit), "\t\u20A9", new Intl.NumberFormat().format(-damage))
+            profitSum += profit
+          }
+        }catch(e){
+          console.log("[index.js] Not enough info")
         }
+        
 
-        profitSum += 178000000 // 68000000 // Previous profitSum
+        profitSum += 208000000 // 68000000 // Previous profitSum
         console.log("IN CASH: \u20A9", new Intl.NumberFormat().format(korbitBalance.KRW.balance + coinoneBalance.KRW.balance),
           "\t( Coinone:", new Intl.NumberFormat().format(coinoneBalance.KRW.balance),
           "  Korbit:", new Intl.NumberFormat().format(korbitBalance.KRW.balance), ")")

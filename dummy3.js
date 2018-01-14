@@ -58,10 +58,10 @@ async function re(){
     //     coinType: "BTC",
     //     timeInMin: lastTimestamp - 60 * 12
     // })
-    const rsi = await rcOrders.getRSI2({
-        coinType: "QTUM",
-        periodInDay: 1,
-        unitTimeInMin: 60 * 2 // 2 hours
+    const rsi = await rcOrders.getRSI({
+        coinType: "XRP",
+        periodInDay: 14,
+        unitTimeInMin: 60 * 24
     })
     // await rcOrders.getRSI2({
     //     coinType: "BTC",
@@ -70,8 +70,8 @@ async function re(){
     console.log(`rsi is ${rsi}`)
     // for (let i = candles.length - 5; i < candles.length; i++)
     //     console.log("dd", candles[i])
-    for(let i = 0; i < rcOrders.length; i++)
-        console.log(i, rcOrders.at(i).get("price"), rcOrders.at(i).attributes.timestamp, rcOrders.last().get("timestamp") - rcOrders.at(i).get("timestamp"), "sec ago")
+    // for(let i = 0; i < rcOrders.length; i++)
+    //     console.log(i, rcOrders.at(i).get("price"), rcOrders.at(i).attributes.timestamp, rcOrders.last().get("timestamp") - rcOrders.at(i).get("timestamp"), "sec ago")
     console.log("end: this should be last", rcOrders.length, Date.now())
 }
 return

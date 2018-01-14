@@ -1,6 +1,9 @@
 "use strict"
 // Need to set timestamp as index!!
-// db.recentCompleteOrders.createIndex({timestamp:1})
+// db.recentCompleteOrders.createIndex({timestamp:1})  
+
+// remove old recentCompleteOrders
+// db.recentCompleteOrders.remove({timestamp:{$lt:(Date.now()/1000 - 60*60*24*15)}})
 
 
 const Backbone = require('backbone'),
@@ -81,53 +84,62 @@ exports.RecentCompleteOrders = Backbone.Collection.extend({
         const COIN_TYPE = options.coinType || this.at(0).get("coinType"),
             MARKET_NAME = options.marketName,
             PERIOD_IN_SEC = 60 * 60 * 24 * (options.periodInDay || 14), // default 14 days
-            UNIT_TIME_IN_SEC = 60 * (options.unitTimeInMin || 120)  // defalut 2 hours
+            UNIT_TIME_IN_SEC = 60 * (options.unitTimeInMin || 120),  // defalut 2 hours
+            UNIT_COUNT = Math.floor(PERIOD_IN_SEC / UNIT_TIME_IN_SEC)
 
         await this.refresh({
-            coinType: options.coinType,
-            marketName: options.marketName,
-            periodInday: options.periodInDay
+            coinType: COIN_TYPE,
+            marketName: MARKET_NAME
         })
         // await this.fetchOne({
         //     coinType: COIN_TYPE
         // })
-        
-        const lastTimestamp = this.last().get("timestamp"),
-            startTimestamp = lastTimestamp - PERIOD_IN_SEC
+
+        const lastTimestamp = this.last().get("timestamp")
         console.log(`last timestamp is ${lastTimestamp}`)
+        console.log(`UNIT_COUNT: ${UNIT_COUNT}, ${lastTimestamp - PERIOD_IN_SEC}, ${lastTimestamp - UNIT_TIME_IN_SEC * UNIT_COUNT}`)
         
         let orderArray = []
-        for (let time = lastTimestamp - PERIOD_IN_SEC; time < lastTimestamp; time += UNIT_TIME_IN_SEC)
+        for (let t = lastTimestamp - PERIOD_IN_SEC; t < lastTimestamp; t += UNIT_TIME_IN_SEC){
             orderArray.push(await this.fetchOne({   // .fetchOne() returns raw data
                 coinType: COIN_TYPE,
-                timeInSec: time
+                timeInSec: t
             }))
+        }
         orderArray.push(this.last().attributes)
 
         if (this.length > 0 && this.at(0).get("timestamp") > Date.now() / 1000 - PERIOD_IN_SEC)
             console.log(`Not ready to RSI, It just been ${((Date.now() / 1000 - this.at(0).get("timestamp")) / 86400).toFixed(3)} days.`)
 
         // orderArray.forEach(o => {
-        //     console.log(`orderArray: ${o.timestamp}`)
+        //     console.log(`orderArray: ${o.coinType} ${o.timestamp}, ${o.price}`)
         // })
 
-        let ups = 0, downs = 0
+        let ups = 0, downs = 0, upCount = 0, downCount = 0
         for (let i = 0; i < orderArray.length - 1; i++){
             const diff = orderArray[i + 1].price - orderArray[i].price
             // console.log(`diff is ${diff}`)
-            if (diff > 0)
+            if (diff > 0){
                 ups += diff
-            else if (diff < 0)
+                upCount++
+            }else if (diff < 0){
                 downs += -diff
+                downCount++
+            }
         }
-        console.log(`ups: ${ups}, downs: ${downs}`)
+        
         if (!Number.isSafeInteger(ups) || !Number.isSafeInteger(downs))
             throw new Error("[recentCompleteOrder.getRSI] too big number!")
 
         const AU = ups / (orderArray.length - 1),
             AD = downs / (orderArray.length - 1)
+        // const AU = ups / upCount,
+        //     AD = downs / downCount
         
-        return (AU / (AU + AD)) * 100   // RSI = AU / (AU + AD)
+        const RSI = (AU / (AU + AD)) * 100   // RSI = AU / (AU + AD)
+        console.log(`AU: ${AU}, AD: ${AD},  sampled: ${orderArray.length},\t${COIN_TYPE} RSI: ${RSI.toFixed()}`)
+
+        return RSI
     },
     getCandles: function(options){
         if (this.length == 0) return []
@@ -182,14 +194,11 @@ exports.RecentCompleteOrders = Backbone.Collection.extend({
         if (this.length == 0){
             // Fetch last one. That's enough
             await this.fetchOne({
-                coinType: COIN_TYPE
+                coinType: COIN_TYPE,
+                timeInSec: Date.now() / 1000
             })
             period = "day"
         }
-
-        await this.removeOlds({
-            periodInday: options.periodInday
-        })
 
         // lastTimestamp in this collection
         const LAST_TIMESTAMP = (this.length == 0) ? 0 : this.last().get("timestamp")

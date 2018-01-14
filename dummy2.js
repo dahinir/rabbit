@@ -28,7 +28,7 @@ arbitrages.fetchAll({
             //     console.log(a.get("status"))
             return sum
         }, 0)
-        console.log(sum)
+        console.log(new Intl.NumberFormat().format(sum.toFixed(0)))
 
         console.log(new Intl.NumberFormat().format((sum / ((new Date() - ARBITRAGE_STARTED) / 86400000)).toFixed(0)), "per day" )
     },

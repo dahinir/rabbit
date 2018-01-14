@@ -66,7 +66,7 @@ exports.Machine = Backbone.Model.extend({
                 at: new Date()
               }
             }else{
-              console.log(`[machine.mind] RSI is ${options.rsi} so I won't buy`)
+              console.log(`[machine.mind] ${coinType} RSI is ${options.rsi} so I won't buy`)
             }
           } else {
             console.log(`[machine.mind]Wow~ MAX_BUY_AT of ${coinType} is ${MB} And now I'm higher~ I won't buy ~~ ~  ~    ~`)
@@ -606,9 +606,9 @@ exports.Arbitrages = exports.Machines.extend({
     const prPerPrice = (profitRate / highMarket.orderbook.ask[0].price) * 100
     const LIMIT = (() => {  // quantity
       // FOR BIGGIE PROFIT
-      const COIN_FOR_900000 = 900000 / highMarket.orderbook.ask[0].price // about 700,000 krw value coin
+      const COIN_FOR_120 = 1200000 / highMarket.orderbook.ask[0].price // about 1,200,000 krw value coin
       // If prPerPrice were 1%, then Deal about 800,000 krw value coin
-      return prPerPrice * COIN_FOR_900000
+      return prPerPrice * COIN_FOR_120
     })()
 
     quantity = Math.min(LIMIT, lowMarket.orderbook.ask[0].qty, highMarket.orderbook.bid[0].qty)

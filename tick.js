@@ -53,7 +53,7 @@ module.exports = async function(options){
       coinType: coinType,
       marketName: COINONE ? "COINONE" : "KORBIT",
       periodInDay: 14,
-      unitTimeInMin: 60 // 60 * 2
+      unitTimeInMin: 60 * 2
     })
 
     // console.log("Fetching some info takes", ((new Date() - TICK_STARTED) / 1000).toFixed(2), "sec")
@@ -132,13 +132,13 @@ module.exports = async function(options){
   const NOW = Date.now() / 1000 // in sec
   const FETCHING_TIME = NOW - FETCH_STARTED // sec
   console.log("Fetching All Orderbooks takes", FETCHING_TIME, "sec")
-  if (FETCHING_TIME > 2.2) {
+  if (FETCHING_TIME > 4.2) {
     console.log("Fetched too late. Don't buy when the market is busy. pass this tic. fetchingTime:", FETCHING_TIME)
     return
   }
   if (COINONE) {
     const ORDERBOOK_OLD = NOW - coinoneOrderbook.timestamp
-    if (ORDERBOOK_OLD > 5.1) { // sec
+    if (ORDERBOOK_OLD > 7.1) { // sec
       console.log("Coinone orderbook is too old:", ORDERBOOK_OLD)
       return
     }
