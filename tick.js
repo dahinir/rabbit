@@ -53,7 +53,7 @@ module.exports = async function(options){
       coinType: coinType,
       marketName: COINONE ? "COINONE" : "KORBIT",
       periodInDay: 14,
-      unitTimeInMin: 60 * 2
+      unitTimeInMin: 60 * 24 // maybe It's fixed in RSI...
     })
 
     // console.log("Fetching some info takes", ((new Date() - TICK_STARTED) / 1000).toFixed(2), "sec")
@@ -176,7 +176,7 @@ module.exports = async function(options){
   // results = []
 
   if (results.length != 2){
-    console.log(`-- No arbitrages so mind machines -- ${coinType} RSI: ${rsi}`)
+    console.log(`-- No arbitrages so mind machines -- `)
 
     const candles = recentCompleteOrders.getCandles({
       periodInDay: 0.05, // 1.2 hours

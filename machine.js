@@ -51,7 +51,7 @@ exports.Machine = Backbone.Model.extend({
         if (snapedPrice == this.get("buy_at")) {
           const MB = global.rabbit.constants[coinType].MAX_BUY_AT || Infinity
           if (snapedPrice < MB) {
-            if (options.rsi < 50 ){
+            if (options.rsi < 48 ){
               // FOR BIGGIE PROFIT //
               this.set({
                 capacity: (() => {

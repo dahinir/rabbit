@@ -84,7 +84,7 @@ exports.RecentCompleteOrders = Backbone.Collection.extend({
         const COIN_TYPE = options.coinType || this.at(0).get("coinType"),
             MARKET_NAME = options.marketName,
             PERIOD_IN_SEC = 60 * 60 * 24 * (options.periodInDay || 14), // default 14 days
-            UNIT_TIME_IN_SEC = 60 * (options.unitTimeInMin || 120),  // defalut 2 hours
+            UNIT_TIME_IN_SEC = 60 * (options.unitTimeInMin || 60 * 24),  // defalut 24 hours
             UNIT_COUNT = Math.floor(PERIOD_IN_SEC / UNIT_TIME_IN_SEC)
 
         await this.refresh({
