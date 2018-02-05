@@ -99,7 +99,7 @@ global.rabbit.constants = {
     MACHINE_SETTING: {
       // CAPACITY_EACH_CRAVING: [0.02, 0.02, 0.02, 0.03, 0.04, 0.05, 0.05, 0.07, 0.09, 0.11],
       // MIN_CRAVING_PERCENTAGE: 2
-      CAPACITY_EACH_CRAVING: [0.01, 0.01, 0.03, 0.03, 0.04, 0.03, 0.02, 0.01, 0.01, 0.01],
+      CAPACITY_EACH_CRAVING: [0.01, 0.01, 0.03, 0.04, 0.05, 0.03, 0.02, 0.01, 0.01, 0.01],
       MIN_CRAVING_PERCENTAGE: 10
     }
   },

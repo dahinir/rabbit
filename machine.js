@@ -51,7 +51,7 @@ exports.Machine = Backbone.Model.extend({
         if (snapedPrice == this.get("buy_at")) {
           const MB = global.rabbit.constants[coinType].MAX_BUY_AT || Infinity
           if (snapedPrice < MB) {
-            if (options.rsi < 48 ){
+            if (options.rsi < 35 ){
               // FOR BIGGIE PROFIT //
               this.set({
                 capacity: (() => {
@@ -606,9 +606,9 @@ exports.Arbitrages = exports.Machines.extend({
     const prPerPrice = (profitRate / highMarket.orderbook.ask[0].price) * 100
     const LIMIT = (() => {  // quantity
       // FOR BIGGIE PROFIT
-      const COIN_FOR_120 = 1200000 / highMarket.orderbook.ask[0].price // about 1,200,000 krw value coin
+      const COIN_FOR_130 = 1300000 / highMarket.orderbook.ask[0].price // about 1,300,000 krw value coin
       // If prPerPrice were 1%, then Deal about 800,000 krw value coin
-      return prPerPrice * COIN_FOR_120
+      return prPerPrice * COIN_FOR_130
     })()
 
     quantity = Math.min(LIMIT, lowMarket.orderbook.ask[0].qty, highMarket.orderbook.bid[0].qty)

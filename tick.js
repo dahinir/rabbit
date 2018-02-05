@@ -53,7 +53,7 @@ module.exports = async function(options){
       coinType: coinType,
       marketName: COINONE ? "COINONE" : "KORBIT",
       periodInDay: 14,
-      unitTimeInMin: 60 * 24 // maybe It's fixed in RSI...
+      unitTimeInMin: 60 * 8
     })
 
     // console.log("Fetching some info takes", ((new Date() - TICK_STARTED) / 1000).toFixed(2), "sec")

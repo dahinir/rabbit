@@ -137,7 +137,7 @@ exports.RecentCompleteOrders = Backbone.Collection.extend({
         //     AD = downs / downCount
         
         const RSI = (AU / (AU + AD)) * 100   // RSI = AU / (AU + AD)
-        console.log(`AU: ${AU}, AD: ${AD},  sampled: ${orderArray.length},\t${COIN_TYPE} RSI: ${RSI.toFixed()}`)
+        console.log(`AU: ${AU.toFixed(2)}, AD: ${AD.toFixed(2)},  sampled: ${orderArray.length},\t${COIN_TYPE} RSI: ${RSI.toFixed()}`)
 
         return RSI
     },
