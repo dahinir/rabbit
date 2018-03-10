@@ -8,7 +8,7 @@ const KEYS = require('./credentials/keys.json').COINONE,
 	ROOT_URL = 'https://api.coinone.co.kr/'
 
 // {
-// 	type: "bid",
+// 	type: "BID",
 // 	price: 162400,
 // 	qty: 0.01,
 // 	coinType: "ETH"
@@ -87,6 +87,7 @@ module.exports = function (options) {
 				// console.log(body)
         result = JSON.parse(body)
       } catch (e) {
+				console.log("[coinone.js] parse error.. maybe not my problem..")
         reject(e)
         return
       }

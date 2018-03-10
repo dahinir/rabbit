@@ -2,6 +2,7 @@
 const xcoinAPI = require('./bithumb_modified.js'),
     coinoneAPI = require("./coinone.js"),
     korbitAPI = require("./korbit.js"),
+    bithumbAPI = require("./bithumb.js"),
     fetcher = require('./fetcher.js'),
     Order = require('./order.js').Order,
     Orders = require('./order.js').Orders,
@@ -16,23 +17,31 @@ const xcoinAPI = require('./bithumb_modified.js'),
     moment = require('moment'),
     brain = require('brain.js')
 
-const rcOrders = new RecentCompleteOrders()
-rcOrders.add([{
-        timestamp: "111",
-        price: "1"
-    },
-    {
-        timestamp: "112",
-        price: "33"
-    }
-])
-console.log(rcOrders.length)
+// const rcOrders = new RecentCompleteOrders()
+// console.log(rcOrders.length)
 re()
 async function re(){
-    await rcOrders.refresh()
-    console.log("end: this should be last")
-}
+    // let result = await bithumbAPI.willDo({
+    //     type: "BID",
+    //     price: 20000,
+    //     qty: 0.1,
+    //     coinType: "QTUM"
+    // })
+    let result = await bithumbAPI.willDo({
+        type: "ORDERBOOK",
+        coinType: "QTUM"
+    })
+    console.log(result)
 
+    // const rsi = await rcOrders.getRSI({
+    //     coinType: "XRP",
+    //     periodInDay: 14,
+    //     unitTimeInMin: 60 * 24
+    // })
+    // console.log(`rsi is ${rsi}`)
+    // console.log("end: this should be last", rcOrders.length, Date.now())
+}
+return
 
 
 // go()

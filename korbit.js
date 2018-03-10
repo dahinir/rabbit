@@ -1,7 +1,6 @@
 "use strict"
 
 const request = require('request'),
-  crypto = require("crypto"),
   fs = require('fs'),
   _ = require("underscore")
 
@@ -178,8 +177,10 @@ module.exports = function (options) {
       } catch (e) {
         console.log("[korbit.js] korbit's answer can't parse for JSON. maybe not a problem")
         console.log(body)
-        console.log(response.statusMessage)
-        console.log(response.headers.warning )
+        if (response){
+          console.log(response.statusMessage)
+          console.log(response.headers.warning )
+        }
         reject(e)
         return
       }

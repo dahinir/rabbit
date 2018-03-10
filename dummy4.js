@@ -16,23 +16,26 @@ const coinoneAPI = require("./coinone.js"),
     brain = require('brain.js'),
     request = require('request')
     
-request.get('https://api.bitfinex.com/v1/symbols',
-    function (error, response, body) {
-        console.log(body);
-    })
-return
-
 // if (true) console.log(Math.pow(0.1, 3).toFixed(3)*1)
 let sum = 0
-let arrr = [0.1, 0.2, 0.2, 0.2, 0.2, 0.2, 0.3, 0.1, 0.1, 0.1]
+let arrr = [0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.01, 0.01]
 arrr.forEach(o => sum += o)
-console.log(arrr.length, sum * 17)
+console.log(arrr.length, sum * 422)
 console.log({
     asdf: (() => {
         return "haha"
     })()
 })
 return
+
+
+request.get('https://api.bitfinex.com/v1/symbols',
+    function (error, response, body) {
+        console.log(body);
+    })
+return
+
+
 
 async function g2o(ed) {
     try {

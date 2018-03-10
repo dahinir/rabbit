@@ -15,6 +15,8 @@ const xcoinAPI = require('./bithumb_modified.js'),
     brain = require('brain.js'),
     ARBITRAGE_STARTED = new Date('July 26, 2017 13:20:00')
 
+const N = new Date()
+console.log(N.toLocaleString())
 const arbitrages = new Arbitrages()
 arbitrages.fetchAll({
     success: () => {
@@ -26,7 +28,7 @@ arbitrages.fetchAll({
             //     console.log(a.get("status"))
             return sum
         }, 0)
-        console.log(sum)
+        console.log(new Intl.NumberFormat().format(sum.toFixed(0)))
 
         console.log(new Intl.NumberFormat().format((sum / ((new Date() - ARBITRAGE_STARTED) / 86400000)).toFixed(0)), "per day" )
     },

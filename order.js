@@ -218,7 +218,9 @@ exports.Orders = Backbone.Collection.extend({
         await newOrder.completed()
         return  // doesn't need deal with real market like Coinone
       }
-      quantity = quantity.toFixed(global.rabbit.constants[coinType].PRECISION) * 1
+      // quantity = quantity.toFixed(global.rabbit.constants[coinType].PRECISION) * 1
+      quantity = Math.round(quantity / global.rabbit.constants[coinType].COIN_UNIT) * global.rabbit.constants[coinType].COIN_UNIT
+      quantity = quantity.toFixed(global.rabbit.constants[coinType].COIN_PRECISON) * 1
 
       if (internalTradeQuantity > 0)
         console.log("Whoa! internalTradeQuantity:", internalTradeQuantity)

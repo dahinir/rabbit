@@ -39,6 +39,11 @@ exports.Machine = Backbone.Model.extend({
       const coinType = this.get("coinType")
 
       if (this.get("status") == "KRW") {
+        // ㅠㅠ
+        // this.set({
+        //   mind: mind
+        // })
+        // return mind
         const snapedPrice = (() => {
           const BU = global.rabbit.constants[coinType].BUY_AT_UNIT || 1
           return Math.ceil(options.minAskPrice / BU) * BU
@@ -46,18 +51,22 @@ exports.Machine = Backbone.Model.extend({
         if (snapedPrice == this.get("buy_at")) {
           const MB = global.rabbit.constants[coinType].MAX_BUY_AT || Infinity
           if (snapedPrice < MB) {
-            // FOR BIGGIE PROFIT //
-            this.set({
-              capacity: (() => {
-                const MIN_CRAVING_PERCENTAGE = global.rabbit.constants[coinType].MACHINE_SETTING.MIN_CRAVING_PERCENTAGE
-                const INDEX = Math.round(this.get("craving_percentage") / MIN_CRAVING_PERCENTAGE - 1)
-                return global.rabbit.constants[coinType].MACHINE_SETTING.CAPACITY_EACH_CRAVING[INDEX]
-              })()
-            })
-            mind = {
-              type: "BID",
-              price: options.minAskPrice,
-              at: new Date()
+            if (options.rsi < 35 ){
+              // FOR BIGGIE PROFIT //
+              this.set({
+                capacity: (() => {
+                  const MIN_CRAVING_PERCENTAGE = global.rabbit.constants[coinType].MACHINE_SETTING.MIN_CRAVING_PERCENTAGE
+                  const INDEX = Math.round(this.get("craving_percentage") / MIN_CRAVING_PERCENTAGE - 1)
+                  return global.rabbit.constants[coinType].MACHINE_SETTING.CAPACITY_EACH_CRAVING[INDEX]
+                })()
+              })
+              mind = {
+                type: "BID",
+                price: options.minAskPrice,
+                at: new Date()
+              }
+            }else{
+              console.log(`[machine.mind] ${coinType} RSI is ${options.rsi} so I won't buy`)
             }
           } else {
             console.log(`[machine.mind]Wow~ MAX_BUY_AT of ${coinType} is ${MB} And now I'm higher~ I won't buy ~~ ~  ~    ~`)
@@ -258,7 +267,6 @@ exports.Machines = Backbone.Collection.extend({
 
       // const sameCoinMachines = this.filter(m => m.get("coinType") == coinType)
       // console.log("LENGTH:", this.length, sameCoinMachines.length)
-      // console.log("Is it Array?", _.isArray(sameCoinMachines))
 
       let profit_krw_sum = 0,
         total_traded = 0,
@@ -295,7 +303,7 @@ exports.Machines = Backbone.Collection.extend({
         ":", new Intl.NumberFormat().format(((profit_krw_sum - krw_damage) / ((new Date() - STARTED)/ 86400000)).toFixed(0)), "per day")
 
       console.log("Total Traded:", new Intl.NumberFormat().format(total_traded),
-        ", Bought Coin:", coin_sum.toFixed(3))
+        coinType, "Bought Coin:", coin_sum.toFixed(3))
 
       console.log("[profit rate]  ", JSON.stringify(profit_rate_each_craving))
       console.log("[traded count] ", JSON.stringify(traded_count_each_craving))
@@ -341,7 +349,7 @@ exports.Machines = Backbone.Collection.extend({
       const coinType = options.coinType || this.at(0).get("coinType"),
         korbit = options.korbit,
         coinone = options.coinone,
-        MIN_KRW_UNIT = global.rabbit.constants[coinType].MIN_KRW_UNIT
+        KRW_UNIT = global.rabbit.constants[coinType].KRW_UNIT
 
       let highBidMarket, lowAskMarket
       if (coinone.orderbook.bid[0].price > korbit.orderbook.bid[0].price){
@@ -387,8 +395,6 @@ exports.Machines = Backbone.Collection.extend({
         return Math.round(Math.ceil(minAskPrice / BU) * BU )
       })()
       if (this.where({ buy_at: snapedPrice}).length == 0){
-        const MB = global.rabbit.constants[coinType].MAX_BUY_AT || Infinity
-        if (snapedPrice < MB){
           console.log(`There is no machine for ${minAskPrice} krw in ${this.length} machines, so I will create`)
           const MIN_CRAVING_PERCENTAGE = global.rabbit.constants[coinType].MACHINE_SETTING.MIN_CRAVING_PERCENTAGE
           const CAPACITY_EACH_CRAVING = global.rabbit.constants[coinType].MACHINE_SETTING.CAPACITY_EACH_CRAVING
@@ -404,36 +410,7 @@ exports.Machines = Backbone.Collection.extend({
             })
           }
           console.log(`Now "buy_at" as ${snapedPrice} added. ${coinType} machines are ${this.length}`)
-        } else {
-          console.log(`Wow~ MAX_BUY_AT of ${coinType} is ${MB} And now I'm higher~ I won't create new machine ~~ ~  ~    ~`)
-          return []
-        }
       }
-
-      
-      // const MB = global.rabbit.constants[coinType].MAX_BUY_AT || Infinity
-      // if (snapedPrice < MB) {
-      if (this.where({buy_at: snapedPrice}).length == 0) {
-        console.log(`There is no machine for ${minAskPrice} krw in ${this.length} machines, so I will create`)
-        const MIN_CRAVING_PERCENTAGE = global.rabbit.constants[coinType].MACHINE_SETTING.MIN_CRAVING_PERCENTAGE
-        const CAPACITY_EACH_CRAVING = global.rabbit.constants[coinType].MACHINE_SETTING.CAPACITY_EACH_CRAVING
-
-        for (let i = 1; i <= 10; i++) {
-          /// Create new machine! ///
-          this.add({
-            coinType: coinType,
-            capacity: CAPACITY_EACH_CRAVING[i - 1],
-            buy_at: snapedPrice,
-            craving_percentage: MIN_CRAVING_PERCENTAGE * i
-            // craving_krw: Math.round(snapedPrice * MIN_CRAVING_PERCENTAGE * i / 100)
-          })
-        }
-        console.log(`Now "buy_at" as ${snapedPrice} added. ${coinType} machines are ${this.length}`)
-      }
-      // } else {
-      //   console.log(`MAX_BUY_AT of ${coinType} is ${MB} And now I'm higher. I won't create new machine.`)
-      //   return []
-      // }
 
 
       ///// Mind /////
@@ -444,6 +421,7 @@ exports.Machines = Backbone.Collection.extend({
 
       this.each(m => {
         const mind = m.mind({
+          rsi: options.rsi,
           minAskPrice: minAskPrice,
           maxBidPrice: maxBidPrice
         })
@@ -460,9 +438,12 @@ exports.Machines = Backbone.Collection.extend({
           askMachineIds.push(m.id + "") // attached "" to avoid ObjectId("asoweugbalskug")
         }
       })
-      const PRECISION = global.rabbit.constants[coinType].PRECISION
-      totalBid = totalBid.toFixed(PRECISION) * 1
-      totalAsk = totalAsk.toFixed(PRECISION) * 1
+      // const PRECISION = global.rabbit.constants[coinType].PRECISION
+      // totalBid = totalBid.toFixed(PRECISION) * 1
+      // totalAsk = totalAsk.toFixed(PRECISION) * 1
+      const CU = global.rabbit.constants[coinType].COIN_UNIT
+      totalBid = (Math.round(totalBid / CU) * CU).toFixed(global.rabbit.constants[coinType].COIN_PRECISON) * 1
+      totalAsk = (Math.round(totalAsk / CU) * CU).toFixed(global.rabbit.constants[coinType].COIN_PRECISON) * 1
 
       ///// Validate balance: after .mind /////
       ///// And Make a result /////
@@ -489,8 +470,8 @@ exports.Machines = Backbone.Collection.extend({
             //   coinType: coinType,
             //   bidQuantity: totalBid,
             //   askQuantity: 0,
-            //   bidPrice: bestOrderbook.ask[0].price - MIN_KRW_UNIT,  // Buy at minAskPrice
-            //   askPrice: (marketName == "KORBIT") ? bestOrderbook.bid[0].price + MIN_KRW_UNIT : bestOrderbook.bid[0].price,
+            //   bidPrice: bestOrderbook.ask[0].price - KRW_UNIT,  // Buy at minAskPrice
+            //   askPrice: (marketName == "KORBIT") ? bestOrderbook.bid[0].price + KRW_UNIT : bestOrderbook.bid[0].price,
             //   participants: bidParticipants,
             //   machineIds: bidMachineIds
             // }]
@@ -503,8 +484,8 @@ exports.Machines = Backbone.Collection.extend({
           coinType: coinType,
           bidQuantity: totalBid,
           askQuantity: totalAsk,
-          bidPrice: bestOrderbook.ask[0].price - MIN_KRW_UNIT,  // Buy at minAskPrice
-          askPrice: (marketName == "KORBIT") ? bestOrderbook.bid[0].price + MIN_KRW_UNIT : bestOrderbook.bid[0].price,
+          bidPrice: bestOrderbook.ask[0].price - KRW_UNIT,  // Buy at minAskPrice
+          askPrice: (marketName == "KORBIT") ? bestOrderbook.bid[0].price + KRW_UNIT : bestOrderbook.bid[0].price,
           participants: bidParticipants.concat(askParticipants),
           machineIds: bidMachineIds.concat(askMachineIds)
         }]
@@ -528,7 +509,7 @@ exports.Machines = Backbone.Collection.extend({
           coinType: coinType,
           bidQuantity: totalBid,
           askQuantity: 0,
-          bidPrice: bestOrderbook.ask[0].price - MIN_KRW_UNIT,  // Buy at minAskPrice
+          bidPrice: bestOrderbook.ask[0].price - KRW_UNIT,  // Buy at minAskPrice
           // askPrice: bestOrderbook.bid[0].price,
           participants: bidParticipants,
           machineIds: bidMachineIds
@@ -538,7 +519,7 @@ exports.Machines = Backbone.Collection.extend({
           bidQuantity: 0,
           askQuantity: totalAsk,
           // bidPrice: bestOrderbook.ask[0].price,  // Buy at minAskPrice
-          askPrice: (highBidMarket.name == "KORBIT") ? bestOrderbook.bid[0].price + MIN_KRW_UNIT : bestOrderbook.bid[0].price,
+          askPrice: (highBidMarket.name == "KORBIT") ? bestOrderbook.bid[0].price + KRW_UNIT : bestOrderbook.bid[0].price,
           participants: askParticipants,
           machineIds: askMachineIds
         }]
@@ -594,12 +575,9 @@ exports.Arbitrages = exports.Machines.extend({
     const coinType = options.coinType,
       coinone = options.coinone,
       korbit = options.korbit
-    
-    console.log(`[arbitrages.mind] ${coinType} arbitrages length ${this.length}`)
-    if (this.length > 8){
-      return []
-    }
 
+    console.log(`[arbitrages.mind] ${coinType} arbitrages length ${this.length}`)
+    
     const coinoneMaxBid = coinone.orderbook.bid[0].price,
       coinoneMinAsk = coinone.orderbook.ask[0].price,
       korbitMaxBid = korbit.orderbook.bid[0].price,
@@ -608,7 +586,8 @@ exports.Arbitrages = exports.Machines.extend({
     const korbit2coinone = coinoneMaxBid - korbitMinAsk,
       coinone2korbit = korbitMaxBid - coinoneMinAsk
 
-    const profitRate = (korbit2coinone > coinone2korbit) ? korbit2coinone : coinone2korbit
+    // const profitRate = ((korbit2coinone > coinone2korbit) ? korbit2coinone : coinone2korbit) - global.rabbit.constants[coinType].KRW_UNIT * 2
+    const profitRate = Math.max(korbit2coinone, coinone2korbit) - global.rabbit.constants[coinType].KRW_UNIT * 2
     // console.log(coinoneMaxBid, coinoneMinAsk, korbitMaxBid, korbitMinAsk)
     console.log("(korbit to coinone:", korbit2coinone, ", coinone to korbit:", coinone2korbit, ")")
 
@@ -627,18 +606,20 @@ exports.Arbitrages = exports.Machines.extend({
     const prPerPrice = (profitRate / highMarket.orderbook.ask[0].price) * 100
     const LIMIT = (() => {  // quantity
       // FOR BIGGIE PROFIT
-      const COIN_FOR_700000 = 700000 / highMarket.orderbook.ask[0].price // about 700,000 krw value coin
-      // If prPerPrice were 1%, then Deal about 700,000 krw value coin
-      return prPerPrice * COIN_FOR_700000
+      const COIN_FOR_130 = 1300000 / highMarket.orderbook.ask[0].price // about 1,300,000 krw value coin
+      // If prPerPrice were 1%, then Deal about 800,000 krw value coin
+      return prPerPrice * COIN_FOR_130
     })()
-    // const LIMIT = (profitRate > 4000) ? 2.0 : 0.5 // 2.0 or 0.5
-    quantity = (lowMarket.orderbook.ask[0].qty < highMarket.orderbook.bid[0].qty) ?
-      lowMarket.orderbook.ask[0].qty : highMarket.orderbook.bid[0].qty
-    // quantity = quantity - 0.01  // Kind of flooring
-    quantity = (quantity > LIMIT) ? LIMIT : quantity  // Limit
-    quantity = quantity.toFixed(global.rabbit.constants[coinType].PRECISION) * 1
 
-    if (profitRate < 4 || prPerPrice < 0.7 || quantity < Math.pow(0.1, global.rabbit.constants[coinType].PRECISION).toFixed(global.rabbit.constants[coinType].PRECISION) * 1){
+    quantity = Math.min(LIMIT, lowMarket.orderbook.ask[0].qty, highMarket.orderbook.bid[0].qty)
+    // quantity = quantity.toFixed(global.rabbit.constants[coinType].PRECISION) * 1
+    quantity = Math.round(quantity / global.rabbit.constants[coinType].COIN_UNIT) * global.rabbit.constants[coinType].COIN_UNIT
+    quantity = quantity.toFixed(global.rabbit.constants[coinType].COIN_PRECISON) * 1  // Round
+
+    if (profitRate < 4 || prPerPrice < 0.7 
+      // || quantity < Math.pow(0.1, global.rabbit.constants[coinType].PRECISION)
+      || quantity < global.rabbit.constants[coinType].COIN_UNIT * 10
+      || quantity * lowMarket.orderbook.ask[0].price < 10000){
       console.log("Pass arbitrage. profitRate: \u20A9", profitRate, "prPerPrice(min 0.7):", prPerPrice, "quantity:", quantity)
       return []
     }
@@ -651,14 +632,20 @@ exports.Arbitrages = exports.Machines.extend({
     //// Validate balance ////
     if ((lowMarket.balance[coinType].available + highMarket.balance[coinType].available) * lowMarket.orderbook.ask[0].price < 2000000){
       console.log(`[arbitrages.mind] Not enough ${coinType} to arbitrage yet..`)
-      return []
+      return [{},{}]
     }
     if (lowMarket.balance.KRW.available < lowMarket.orderbook.ask[0].price * quantity * 1.1) { // 0.1% headroom for fee
       console.log("[arbitrages.mind] Not enough krw at", lowMarket.name, "GIVE ME THE MONEY!!")
-      return []
+      return [{}, {}]
     }
     if (highMarket.balance[coinType].available < quantity * 1.1){ // 0.1% headroom for fee
       console.log(`[arbitrages.mind] Not enough ${coinType} at ${highMarket.name} MOVE THE COIN!`)
+      return [{}, {}]
+    }
+
+    /// If There is too many uncompleted arbitrages..
+    if (this.length > 11) {
+      console.log(`[arbitrages.mind] Too many arbitrages. length: ${this.length}`)
       return []
     }
 
@@ -673,8 +660,8 @@ exports.Arbitrages = exports.Machines.extend({
       profit_krw: quantity * profitRate,
       quantity: quantity,
       profitRate: profitRate,
-      bidPrice: lowMarket.orderbook.ask[0].price + global.rabbit.constants[coinType].MIN_KRW_UNIT,  // Buy at minAskPrice
-      askPrice: highMarket.orderbook.bid[0].price - global.rabbit.constants[coinType].MIN_KRW_UNIT  // Ask at maxBidPrice
+      bidPrice: lowMarket.orderbook.ask[0].price + global.rabbit.constants[coinType].KRW_UNIT,  // Buy at minAskPrice
+      askPrice: highMarket.orderbook.bid[0].price - global.rabbit.constants[coinType].KRW_UNIT  // Ask at maxBidPrice
     })
 
     this.push(newArbitrage)
