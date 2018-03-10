@@ -201,7 +201,7 @@ global.rabbit.constants = {
     }
   }
 }
-global.rabbit.INVESTED_KRW = 160000000
+global.rabbit.INVESTED_KRW = 120000000
 global.rabbit.BORN = new Date('July 4, 2017 13:20:00')
 
 

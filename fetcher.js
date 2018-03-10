@@ -163,33 +163,6 @@ exports.getKorbitBalance = async function(){
       }
   }
   return bals
-
-  // return {
-  //   BTC: {
-  //     available: result.btc.available * 1,
-  //     balance: result.btc.available * 1 + result.btc.trade_in_use * 1
-  //   },
-  //   BCH: {
-  //     available: result.bch.available * 1,
-  //     balance: result.bch.available * 1 + result.bch.trade_in_use * 1
-  //   },
-  //   ETH: {
-  //     available: result.eth.available * 1,
-  //     balance: result.eth.available * 1 + result.eth.trade_in_use * 1
-  //   },
-  //   ETC: {
-  //     available: result.etc.available * 1,
-  //     balance: result.etc.available * 1 + result.etc.trade_in_use * 1
-  //   },
-  //   XRP: {
-  //     available: result.xrp.available * 1,
-  //     balance: result.xrp.available * 1 + result.xrp.trade_in_use * 1
-  //   },
-  //   KRW: {
-  //     available: result.krw.available * 1,
-  //     balance: result.krw.available * 1 + result.krw.trade_in_use * 1
-  //   }
-  // }
 }
 exports.getKorbitRecentCompleteOrders = function (coinType) {
   return new Promise((resolve, reject) => {

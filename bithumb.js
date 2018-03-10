@@ -54,7 +54,7 @@ Bithumb.prototype.willDo = function(options){
                 method: "GET",
                 uri: "https://api.coinone.co.kr/orderbook/",
                 qs: {
-                    currency: coinType.toLowerCase()
+                    currency: options.coinType.toLowerCase()
                 }
             }
             break;
@@ -98,6 +98,7 @@ Bithumb.prototype.willDo = function(options){
             if (result.status == "0000"){
                 resolve(afterTreatment(options, result))
             } else{
+                console.log(result)
                 reject(result)
             }
         })
