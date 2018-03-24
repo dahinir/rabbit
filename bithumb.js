@@ -1,5 +1,15 @@
 "use strict"
 
+/* this file will be called like below
+const bithumb = require("./bithumb")
+bithumb({
+    type: "BID",
+    price: 162400,
+    qty: 0.01,
+    coinType: "ETH"
+}).then()
+*/
+
 const request = require('request'),
     crypto = require("crypto"),
     _ = require("underscore")
@@ -7,18 +17,7 @@ const request = require('request'),
 const KEYS = require('./credentials/keys.json').BITHUMB,
     ROOT_URL = 'https://api.bithumb.com'
 
-module.exports = new Bithumb(KEYS.API_KEY, KEYS.SECRET_KEY)
-
-function Bithumb(){}
-
-
-// {
-// 	type: "BID",
-// 	price: 162400,
-// 	qty: 0.01,
-// 	coinType: "ETH"
-// }
-Bithumb.prototype.willDo = function(options){
+module.exports = function (options){
     if (!_.isObject(options))
         throw new Error("[coinone.js] options needed")
 

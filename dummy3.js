@@ -21,17 +21,18 @@ const xcoinAPI = require('./bithumb_modified.js'),
 // console.log(rcOrders.length)
 re()
 async function re(){
-    // let result = await bithumbAPI.willDo({
-    //     type: "BID",
-    //     price: 20000,
+    // let result = await bithumbAPI({
+    //     type: "ASK",
+    //     price: 32000,
     //     qty: 0.1,
     //     coinType: "QTUM"
+    // }).catch(e => console.log(e))
+    // let result = await bithumbAPI({
+    //     type: "ORDERBOOK",
+    //     coinType: "QTUM"
     // })
-    let result = await bithumbAPI.willDo({
-        type: "ORDERBOOK",
-        coinType: "QTUM"
-    })
-    console.log(result)
+    // console.log(result)
+    result
 
     // const rsi = await rcOrders.getRSI({
     //     coinType: "XRP",

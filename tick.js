@@ -212,6 +212,7 @@ module.exports = async function(options){
   ///////  TIME TO ORDER //////
   for (let r of results)
     await orders.placeOrder(r)
+  //
   // idk why.. but Below code cause error..  set order on machine 
   // const placeOrderPromises = results.map(result => orders.placeOrder(result))
   // for (let o of placeOrderPromises)
