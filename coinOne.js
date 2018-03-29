@@ -1,4 +1,13 @@
 "use strict"
+/* this file will be called like below
+const coinone = require("./coinone")
+coinone({
+    type: "BID",
+    price: 162400,
+    qty: 0.01,
+    coinType: "ETH"
+}).then()
+*/
 
 const request = require('request'),
   crypto = require("crypto"),
@@ -7,12 +16,6 @@ const request = require('request'),
 const KEYS = require('./credentials/keys.json').COINONE,
 	ROOT_URL = 'https://api.coinone.co.kr/'
 
-// {
-// 	type: "BID",
-// 	price: 162400,
-// 	qty: 0.01,
-// 	coinType: "ETH"
-// }
 module.exports = function (options) {
 	if (!_.isObject(options))
 		throw new Error("[coinone.js] options needed")

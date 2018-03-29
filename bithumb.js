@@ -1,5 +1,4 @@
 "use strict"
-
 /* this file will be called like below
 const bithumb = require("./bithumb")
 bithumb({
@@ -10,117 +9,167 @@ bithumb({
 }).then()
 */
 
+// done types: ORDERBOOK, ASK, BID, UNCOMPLETED_ORDERS, CANCEL_ORDER, BALANCE
+
 const request = require('request'),
+    fetch = require("node-fetch"),
+    FormData = require('form-data'),
     crypto = require("crypto"),
     _ = require("underscore")
 
 const KEYS = require('./credentials/keys.json').BITHUMB,
     ROOT_URL = 'https://api.bithumb.com'
 
+const api = {
+    ORDERBOOK: function (options) {
+        console.log("ORDERBOOK hooray!!")
+        const endPoint = "/trade/orderbook/" + options.coinType.toUpperCase()
+        // returns a promise
+        return fetch(ROOT_URL + endPoint, { method: "GET" })
+            .then(res => res.json())
+            .then(result => {
+                if (result.status != '0000') {
+                    console.log(result)
+                    throw new Error("wtf!")
+                }
+
+                const data = result.data
+                const ob = {
+                    timestamp: data.timestamp * 1 / 1000,
+                    bid: data.bids.map(el => { return { price: el.price * 1, qty: el.quantity * 1 } }),
+                    ask: data.asks.map(el => { return { price: el.price * 1, qty: el.quantity * 1 } })
+                }
+                return ob
+            })
+    },
+    // ASK or BID
+    ASK: function (options) {
+        console.log("ASK/BID hooray!")
+        const endPoint = "/trade/place"
+        const params = {
+            type: options.type.toLowerCase(),
+            order_currency: options.coinType.toUpperCase(),
+            price: options.price,
+            units: options.qty || options.quantity
+        }
+        const fetchOpts = getFetchOpts(endPoint, params)
+        return fetch(ROOT_URL + endPoint, fetchOpts)
+            .then(res => res.json())
+            .then(result => {
+                if (result.status != '0000') {
+                    console.log("[bithumb.js] ASK's result: ", result)
+                    throw new Error("wtf!")
+                }
+                // only the orderId is needed
+                return { orderId: result.order_id}
+            })
+    },
+    UNCOMPLETED_ORDERS: function (options) {
+        console.log("UNCOMPLETED_ORDERS hooray!")
+        const endPoint = "/info/orders"
+        const params = {
+            currency: options.coinType.toUpperCase()
+        }
+        const fetchOpts = getFetchOpts(endPoint, params)
+        return fetch(ROOT_URL + endPoint, fetchOpts)
+            .then(res => res.json())
+            .then(result => {
+                // console.log(result)
+                if (result.message === '거래 진행중인 내역이 존재하지 않습니다.') {
+                    // Bithumb will emit '5600' err if there is no "UNCOMPLETED_ORDERS"
+                    return []   // in this case, return empty 'order id' array
+                } else if (result.status != '0000') {
+                    console.log("[bithumb.js] ASK's result: ", result)
+                    throw new Error("wtf!")
+                }
+                // returns an array of order id
+                return result.data.map(o => o.order_id)
+            })
+    },
+    CANCEL_ORDER: function (options) {
+        console.log("CANCEL_ORDER hooray!")
+        const endPoint = "/trade/cancel"
+        const params = {
+            type: options.orderType.toLowerCase(),  // "bid" or "ask"
+            order_id: options.orderId,
+            currency: options.coinType.toUpperCase()
+        }
+        const fetchOpts = getFetchOpts(endPoint, params)
+        return fetch(ROOT_URL + endPoint, fetchOpts)
+            .then(res => res.json())
+            .then(result => {
+                console.log(result)
+                if (result.status != '0000') {
+                    console.log("[bithumb.js] CANCEL_ORDER's result: ", result)
+                    throw new Error("wtf!")
+                }
+                return result   // data format doesn't matter
+            })
+    },
+    BALANCE: function (options) {
+        console.log("BALANCE hooray!")
+        const endPoint = "/info/balance"
+        const params = { currency: "ALL"}
+        const fetchOpts = getFetchOpts(endPoint, params)
+        return fetch(ROOT_URL + endPoint, fetchOpts)
+            .then(res => res.json())
+            .then(result => {
+                // console.log(result)
+                if (result.status != '0000') {
+                    console.log("[bithumb.js] ASK's result: ", result)
+                    throw new Error("wtf!")
+                }
+
+                // data format
+                const bal = {}, data = result.data
+                for (const name in data) {
+                    if (name.startsWith('available_') && data[name] * 1 > 0) {
+                        const coinType = name.slice(10).toUpperCase()
+                        if (coinType in bal === false)
+                            bal[coinType] = {}
+                        bal[coinType].available = data[name] * 1
+                    }
+                    else if (name.startsWith('total_') && data[name] * 1 > 0) {
+                        const coinType = name.slice(6).toUpperCase()
+                        if (coinType in bal === false)
+                            bal[coinType] = {}
+                        bal[coinType].balance = data[name] * 1
+                    }
+                }
+                return bal
+            })
+    }
+}
+api.BID = api.ASK
+
 module.exports = function (options){
     if (!_.isObject(options))
-        throw new Error("[coinone.js] options needed")
-
-    let params = {}
-
-    switch (options.type.toUpperCase()){
-        case "ORDERBOOK":
-            break;
-        case "ASK":
-        case "BID":
-            _.extend(params, {
-                type: options.type.toLowerCase(),
-                endPoint: "/trade/place",
-                order_currency: options.coinType.toUpperCase(),
-                price: options.price,
-                units: options.qty || options.quantity
-            })
-            break;
-        case "UNCOMPLETED_ORDERS":
-            break;
-        defalut:
-            throw new Error("[coinone.js] There is no matched type")
-    }
-    console.log("params:", params)
-
-    let requestOpts
-    const NONCE = Date.now()
-    switch (options.type.toUpperCase()) {
-        // Public APIs
-        case "INFO":
-        case "ORDERBOOK":
-            requestOpts = {
-                method: "GET",
-                uri: "https://api.coinone.co.kr/orderbook/",
-                qs: {
-                    currency: options.coinType.toLowerCase()
-                }
-            }
-            break;
-        // Private APIs
-        case "ASK":
-        case "BID":
-        case "UNCOMPLETED_ORDERS":
-            requestOpts = {
-                method: "POST",
-                uri: ROOT_URL + params.endPoint,
-                headers: {
-                    'Api-Key': KEYS.API_KEY,
-                    'Api-Sign': new Buffer(crypto
-                        .createHmac("sha512", KEYS.SECRET_KEY)
-                        .update(params.endPoint + chr(0) + http_build_query(params) + chr(0) + NONCE, KEYS.SECRET_KEY)
-                        .digest('hex')).toString('base64'),
-                    'Api-Nonce': NONCE
-                },
-                formData: params
-            }
-            break;
-    }
-
-    return new Promise((resolve, reject) => {
-        request(requestOpts, (error, response, body) => {
-            if (error){
-                console.log("bithumb error:", error)
-                reject(error)
-                return
-            }
-
-            let result
-            try {
-                // console.log(body)
-                result = JSON.parse(body)
-            } catch (e) {
-                reject(e)
-                return
-            }
-
-            if (result.status == "0000"){
-                resolve(afterTreatment(options, result))
-            } else{
-                console.log(result)
-                reject(result)
-            }
-        })
-    })
-}
-
-
-
-function afterTreatment(options, before){
-    let after = {}
-    switch (options.type.toUpperCase()) {
-        case "ASK":
-        case "BID":
-            after.orderId = before.order_id
-            break;
-        defalut:
-            throw new Error("[coinone.js] There is no matched type")
-    }
-    return after
+        throw new Error("[bithumb.js] options needed")
+    
+    return api[options.type.toUpperCase()](options)
 }
 
 
 //// HELPER FUNCTIONS /////
+function getFetchOpts(endPoint, params){
+    const form = new FormData()
+    const NONCE = Date.now()
+    for (const key in params) {
+        form.append(key, params[key])
+    }
+    return {
+        method: "POST",
+        headers: {
+            'Api-Key': KEYS.API_KEY,
+            'Api-Sign': new Buffer(crypto
+                .createHmac("sha512", KEYS.SECRET_KEY)
+                .update(endPoint + chr(0) + http_build_query(params) + chr(0) + NONCE, KEYS.SECRET_KEY)
+                .digest('hex')).toString('base64'),
+            'Api-Nonce': NONCE
+        },
+        body: form
+    }
+}
 function http_build_query(obj) {
 	var output_string = []
 	Object.keys(obj).forEach(function (val) {

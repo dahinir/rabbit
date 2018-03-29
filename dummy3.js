@@ -20,20 +20,47 @@ const xcoinAPI = require('./bithumb_modified.js'),
 // const rcOrders = new RecentCompleteOrders()
 // console.log(rcOrders.length)
 re()
+console.log("end")
 async function re(){
     // let result = await bithumbAPI({
-    //     type: "ASK",
-    //     price: 32000,
+    //     type: "BID",
+    //     price: 10100,
     //     qty: 0.1,
     //     coinType: "QTUM"
-    // }).catch(e => console.log(e))
+    // })
+    let result = await bithumbAPI({
+        type: "ORDERBOOK",
+        coinType: "ETH"
+    })
     // let result = await bithumbAPI({
-    //     type: "ORDERBOOK",
+    //     type: "BALANCE"
+    // }).catch(e => console.log(e))
+    // let result = await coinoneAPI({
+    //     type: "UNCOMPLETED_ORDERS",
+    //     coinType: "ETH"
+    // }) ​​​​​​​​​​[ '1522249876413298', '1522245862327279' ]​​​​​
+    // let result = await bithumbAPI({
+    //     type: "UNCOMPLETED_ORDERS",
     //     coinType: "QTUM"
     // })
+    /*
+    ​​​​​[ '1522249876413298',
+​​​​​  '1522245862327279' ]*/
+    // let result = await bithumbAPI({
+    //     type: "CANCEL_ORDER",
+    //     orderType: "BID",
+    //     orderId: "1522249922292683",
+    //     coinType: "QTUM"
+    // })
+    // let result = await bithumbAPI({
+    //     type: "BALANCE"
+    // })
+    console.log("after call ")
     // console.log(result)
     result
 
+    let b = await fetcher.getCoinoneOrderbook("ETH")
+    b
     // const rsi = await rcOrders.getRSI({
     //     coinType: "XRP",
     //     periodInDay: 14,
