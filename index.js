@@ -29,11 +29,11 @@ global.rabbit = {}
 // db.machines.findOne({craving_krw: 6000, status:"KRW", capacity: {$ne: 0.01}})
 global.rabbit.constants = {
   BTC: {
-    MARKET: ["COINONE", "KORBIT"],
+    MARKET: ["COINONE", "KORBIT"], //, "BITHUMB"],
     COIN_PRECISON: 4,  // How many places after the decimal separator
     COIN_UNIT: 0.0001,
     KRW_UNIT: 1000,  // Minimum unit of KRW
-    BUY_AT_UNIT: 100000, // Snap to 100000
+    BUY_AT_UNIT: 100000, // Snap to 100000 KRW. It's important. if you wanna buy less, up this number.
     MAX_BUY_AT: Infinity, // 17200000, // Previous high price usally 
     PREVIOUS_PROFIT_SUM: 0,
     PREVIOUS_PROFIT_RATE_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -49,7 +49,7 @@ global.rabbit.constants = {
     } 
   },
   BCH: {
-    MARKET: ["COINONE", "KORBIT"],
+    MARKET: ["COINONE", "KORBIT"], //, "BITHUMB"],
     COIN_PRECISON: 3,
     COIN_UNIT: 0.001,
     KRW_UNIT: 500,
@@ -84,7 +84,7 @@ global.rabbit.constants = {
   //   }
   // },
   ETH: {
-    MARKET: ["COINONE", "KORBIT"],
+    MARKET: ["COINONE", "KORBIT", "BITHUMB"],
     COIN_PRECISON: 2,
     COIN_UNIT: 0.01,
     KRW_UNIT: 100,
@@ -104,7 +104,7 @@ global.rabbit.constants = {
     }
   },
   ETC: {
-    MARKET: ["COINONE", "KORBIT"],
+    MARKET: ["COINONE", "KORBIT", "BITHUMB"],
     COIN_PRECISON: 1,
     COIN_UNIT: 0.1,
     KRW_UNIT: 10,
@@ -124,7 +124,7 @@ global.rabbit.constants = {
     }
   },
   XRP:{
-    MARKET: ["COINONE", "KORBIT"],
+    MARKET: ["COINONE", "KORBIT", "BITHUMB"],
     COIN_PRECISON: 0,
     COIN_UNIT: 1,
     KRW_UNIT: 1,
@@ -143,27 +143,8 @@ global.rabbit.constants = {
       MIN_CRAVING_PERCENTAGE: 10
     }
   },
-  QTUM: {
-    MARKET: ["COINONE"],
-    COIN_PRECISON: 1,
-    COIN_UNIT: 0.1,
-    KRW_UNIT: 10,
-    BUY_AT_UNIT: 100,
-    MAX_BUY_AT: Infinity, // 22000,
-    PREVIOUS_PROFIT_SUM: 0,
-    PREVIOUS_PROFIT_RATE_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    PREVIOUS_TRADED_COUNT_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    BORN: new Date('November 26, 2017 22:25:00'),  // 16,110 krw
-    STARTED: new Date('November 26, 2017 22:25:00'),
-    MACHINE_SETTING: {
-      // CAPACITY_EACH_CRAVING: [0.1, 0.2, 0.2, 0.3, 0.3, 0.3, 0.4, 0.5, 0.6, 0.6],
-      // MIN_CRAVING_PERCENTAGE: 2
-      CAPACITY_EACH_CRAVING: [0.1, 0.1, 0.1, 0.2, 0.2, 0.1, 0.1, 0.1, 0.1, 0.1],
-      MIN_CRAVING_PERCENTAGE: 10
-    }
-  },
   LTC: {
-    MARKET: ["COINONE"],
+    MARKET: ["COINONE", "KORBIT", "BITHUMB"],
     COIN_PRECISON: 1,
     COIN_UNIT: 0.1,
     KRW_UNIT: 50,
@@ -174,11 +155,68 @@ global.rabbit.constants = {
     PREVIOUS_TRADED_COUNT_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     BORN: new Date('November 26, 2017 22:25:00'),  // 96,400 krw
     STARTED: new Date('November 26, 2017 22:25:00'),
+    ARBITRAGE_STARTED: new Date('April 12, 2018 23:05:00'),
     MACHINE_SETTING: {
       // CAPACITY_EACH_CRAVING: [0.1, 0.1, 0.1, 0.1, 0.1, 0.2, 0.2, 0.2, 0.2, 0.2],
       // MIN_CRAVING_PERCENTAGE: 3
       CAPACITY_EACH_CRAVING: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1],
       MIN_CRAVING_PERCENTAGE: 5
+    }
+  },
+  QTUM: {
+    MARKET: ["COINONE", "BITHUMB"],
+    COIN_PRECISON: 1,
+    COIN_UNIT: 0.1,
+    KRW_UNIT: 10,
+    BUY_AT_UNIT: 100,
+    MAX_BUY_AT: Infinity, // 22000,
+    PREVIOUS_PROFIT_SUM: 0,
+    PREVIOUS_PROFIT_RATE_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    PREVIOUS_TRADED_COUNT_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    BORN: new Date('November 26, 2017 22:25:00'),  // 16,110 krw
+    STARTED: new Date('November 26, 2017 22:25:00'),
+    ARBITRAGE_STARTED: new Date('April 12, 2018 23:05:00'),
+    MACHINE_SETTING: {
+      // CAPACITY_EACH_CRAVING: [0.1, 0.2, 0.2, 0.3, 0.3, 0.3, 0.4, 0.5, 0.6, 0.6],
+      // MIN_CRAVING_PERCENTAGE: 2
+      CAPACITY_EACH_CRAVING: [0.1, 0.1, 0.1, 0.2, 0.2, 0.1, 0.1, 0.1, 0.1, 0.1],
+      MIN_CRAVING_PERCENTAGE: 10
+    }
+  },
+  EOS: {
+    MARKET: ["COINONE", "BITHUMB"],
+    COIN_PRECISON: 1,
+    COIN_UNIT: 0.1,
+    KRW_UNIT: 10,
+    BUY_AT_UNIT: 10,
+    MAX_BUY_AT: Infinity,
+    PREVIOUS_PROFIT_SUM: 0,
+    PREVIOUS_PROFIT_RATE_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    PREVIOUS_TRADED_COUNT_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    BORN: new Date('April 25, 2018 09:11:00'),  // 16,370 krw
+    STARTED: new Date('April 25, 2018 09:11:00'),
+    // ARBITRAGE_STARTED: new Date('April 25, 2018 09:11:00'),
+    MACHINE_SETTING: {
+      CAPACITY_EACH_CRAVING: [0.1, 0.1, 0.2, 0.3, 0.3, 0.2, 0.2, 0.2, 0.2, 0.2],
+      MIN_CRAVING_PERCENTAGE: 10
+    }
+  },
+  OMG: {
+    MARKET: ["COINONE", "BITHUMB"],
+    COIN_PRECISON: 1,
+    COIN_UNIT: 0.1,
+    KRW_UNIT: 10,
+    BUY_AT_UNIT: 10,
+    MAX_BUY_AT: Infinity,
+    PREVIOUS_PROFIT_SUM: 0,
+    PREVIOUS_PROFIT_RATE_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    PREVIOUS_TRADED_COUNT_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    BORN: new Date('April 26, 2018 15:11:00'),  // 21,150 krw
+    STARTED: new Date('April 26, 2018 15:11:00'),
+    // ARBITRAGE_STARTED: new Date('April 25, 2018 09:11:00'),
+    MACHINE_SETTING: {
+      CAPACITY_EACH_CRAVING: [0.1, 0.1, 0.2, 0.2, 0.3, 0.2, 0.2, 0.2, 0.2, 0.2],
+      MIN_CRAVING_PERCENTAGE: 10
     }
   },
   IOTA: {
@@ -201,7 +239,7 @@ global.rabbit.constants = {
     }
   }
 }
-global.rabbit.INVESTED_KRW = 160000000
+global.rabbit.INVESTED_KRW = 200000000
 global.rabbit.BORN = new Date('July 4, 2017 13:20:00')
 
 
@@ -322,8 +360,8 @@ machines.fetchAll({
 })
 
 
-const runningCoinType = ["BTC", "BCH", "ETH", "ETC", "XRP", "QTUM", "LTC", "IOTA"],  // It's gonna be tick order.
-// const runningCoinType = ["QTUM", "LTC", "IOTA"],  // It's gonna be tick order.
+const runningCoinType = ["BTC", "BCH", "ETH", "ETC", "XRP", "LTC", "QTUM", "EOS", "OMG", "IOTA"],  // It's gonna be tick order.
+// const runningCoinType = ["XRP"],  // It's gonna be tick order.
   MIN_TERM = 3300,  // ms ..minimum I think 2700~2900 ms
   ERROR_BUFFER = 60000  // A minute
 let count = -1
@@ -384,18 +422,24 @@ async function run() {
         const days = ((new Date() - global.rabbit.BORN) / 86400000),
           korbitBalance = global.rabbit.korbit.balance,
           coinoneBalance = global.rabbit.coinone.balance,
+          bithumbBalance = global.rabbit.bithumb.balance,
           korbit = global.rabbit.korbit,
-          coinone = global.rabbit.coinone
-        let profitSum = 0,
-          balanceSum = korbitBalance.KRW.balance + coinoneBalance.KRW.balance
+          coinone = global.rabbit.coinone,
+          bithumb = global.rabbit.bithumb
+        let profitSum = 0, balanceSum = 0
+          balanceSum += korbitBalance ? korbitBalance.KRW.balance : 0
+          balanceSum += coinoneBalance ? coinoneBalance.KRW.balance : 0
+          balanceSum += bithumbBalance ? bithumbBalance.KRW.balance : 0
 
         try{
           for (const ct of runningCoinType) {
             const KORBIT = (global.rabbit.constants[ct].MARKET.indexOf("KORBIT") >= 0) ? true : false,
-              COINONE = (global.rabbit.constants[ct].MARKET.indexOf("COINONE") >= 0) ? true : false
+              COINONE = (global.rabbit.constants[ct].MARKET.indexOf("COINONE") >= 0) ? true : false,
+              BITHUMB = (global.rabbit.constants[ct].MARKET.indexOf("BITHUMB") >= 0) ? true : false
 
             balanceSum += KORBIT ? korbitBalance[ct].balance * korbit[ct].orderbook.bid[0].price : 0
             balanceSum += COINONE ? coinoneBalance[ct].balance * coinone[ct].orderbook.bid[0].price : 0
+            balanceSum += BITHUMB ? bithumbBalance[ct].balance * bithumb[ct].orderbook.bid[0].price : 0
             const profit = global.rabbit.constants[ct].profit_krw_sum || 0
             const damage = global.rabbit.constants[ct].krw_damage || 0
             console.log(ct, "machines maid: \u20A9", new Intl.NumberFormat().format(profit), "\t\u20A9", new Intl.NumberFormat().format(-damage))
@@ -407,9 +451,10 @@ async function run() {
         
 
         profitSum += 208000000 // 68000000 // Previous profitSum
-        console.log("IN CASH: \u20A9", new Intl.NumberFormat().format(korbitBalance.KRW.balance + coinoneBalance.KRW.balance),
+        console.log("IN CASH: \u20A9", new Intl.NumberFormat().format(korbitBalance.KRW.balance + coinoneBalance.KRW.balance + bithumbBalance.KRW.balance),
           "\t( Coinone:", new Intl.NumberFormat().format(coinoneBalance.KRW.balance),
-          "  Korbit:", new Intl.NumberFormat().format(korbitBalance.KRW.balance), ")")
+          "  Korbit:", new Intl.NumberFormat().format(korbitBalance.KRW.balance),
+          "  Bithumb:", new Intl.NumberFormat().format(bithumbBalance.KRW.balance),")")
         console.log("SUMMARY: \u20A9", new Intl.NumberFormat().format(balanceSum.toFixed(0)), 
           "\tRabbit maid \u20A9", new Intl.NumberFormat().format((profitSum).toFixed(0)), "..so \u20A9", new Intl.NumberFormat().format((profitSum / days).toFixed(0)), "per day")
         console.log("\n")

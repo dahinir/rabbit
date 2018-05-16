@@ -11,7 +11,8 @@ const Backbone = require('backbone'),
     backsync = require('backsync'),
     fetcher = require('./fetcher.js'),
     coinoneAPI = require("./coinone.js"),
-    korbitAPI = require("./korbit.js")
+    korbitAPI = require("./korbit.js"),
+    bithumbAPI = require("./bithumb.js")
 
 //  { timestamp: '1512990444', price: '530100', qty: '5.8000' }
 exports.RecentCompleteOrder = Backbone.Model.extend({
@@ -108,8 +109,10 @@ exports.RecentCompleteOrders = Backbone.Collection.extend({
         }
         orderArray.push(this.last().attributes)
 
-        if (this.length > 0 && this.at(0).get("timestamp") > Date.now() / 1000 - PERIOD_IN_SEC)
+        if (this.length > 0 && this.at(0).get("timestamp") > Date.now() / 1000 - PERIOD_IN_SEC){
             console.log(`Not ready to RSI, It just been ${((Date.now() / 1000 - this.at(0).get("timestamp")) / 86400).toFixed(3)} days.`)
+            return 101  // It's impossible RSI
+        }
 
         // orderArray.forEach(o => {
         //     console.log(`orderArray: ${o.coinType} ${o.timestamp}, ${o.price}`)
@@ -215,13 +218,18 @@ exports.RecentCompleteOrders = Backbone.Collection.extend({
                 recentCompleteOrders = await fetcher.getCoinoneRecentCompleteOrders(COIN_TYPE, period)
             else if (MARKET_NAME == "KORBIT") 
                 recentCompleteOrders = await fetcher.getKorbitRecentCompleteOrders(COIN_TYPE, period)
+            else if (MARKET_NAME == "BITHUMB") 
+                recentCompleteOrders = await bithumbAPI({
+                    type: "RECENT_COMPLETE_ORDERS",
+                    coinType: COIN_TYPE
+                }) 
         }catch (e){
             console.log(e)
         }
 
-        console.log("Remote recent length:", recentCompleteOrders.length)
+        // console.log("Remote recent length:", recentCompleteOrders.length)
         this.reset()    // Empty previous collection
-        console.log("[recentCompleteOrder.refresh] this.length:", this.length, LAST_TIMESTAMP)
+        // console.log("[recentCompleteOrder.refresh] this.length:", this.length, LAST_TIMESTAMP)
         for (let o of recentCompleteOrders) {
             // console.log(o.timestamp)
             const rcOrder = new exports.RecentCompleteOrder({
@@ -237,7 +245,7 @@ exports.RecentCompleteOrders = Backbone.Collection.extend({
             
             this.push(rcOrder)
         }
-        console.log("[recentCompleteOrder.refresh] this.length:", this.length, this.last().get("timestamp"))
+        // console.log("[recentCompleteOrder.refresh] this.length:", this.length, this.last().get("timestamp"))
         
         return
     }, // End of refresh()

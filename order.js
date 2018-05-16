@@ -4,7 +4,8 @@ const Backbone = require('backbone'),
     _ = require('underscore'),
     backsync = require('backsync'),
     coinoneAPI = require("./coinone.js"),
-    korbitAPI = require("./korbit.js")
+    korbitAPI = require("./korbit.js"),
+    bithumbAPI = require("./bithumb.js")
 
 
 exports.Order = Backbone.Model.extend({
@@ -84,7 +85,6 @@ exports.Order = Backbone.Model.extend({
             coinType: this.get("coinType")
           })
         } else if (this.get("marketName") == "KORBIT"){
-          // Real cancel here
           const korbitResult = await korbitAPI({
             type: "CANCEL_ORDER",
             orderId: this.get("orderId"),
@@ -92,6 +92,13 @@ exports.Order = Backbone.Model.extend({
           })[0] // kobitAPI returns Array
           // korbitAPI won't reject even if there is an error
           // Just act like the order was canceled successfully. Most of cast It's okay or little mistake of old order shit
+        } else if (this.get("marketName") == "BITHUMB") {
+          let result = await bithumbAPI({
+            type: "CANCEL_ORDER",
+            orderType: this.get("type"),
+            orderId: this.get("orderId"),
+            coinType: this.get("coinType")
+          })
         }
       } catch (e) {
         console.log("[order.js] Fail to cancel order. I'll just ignore")
@@ -107,7 +114,7 @@ exports.Order = Backbone.Model.extend({
         console.log("[order.js] Roll backed. machine id:", machine.id)
       }
 
-      // Wait to save. and this order will removed from the orders
+      // Wait to save. This order will removed from the orders (in runtime)
       await new Promise(resolve => {
         this.save({
           status: "CANCELED",
@@ -181,6 +188,9 @@ exports.Orders = Backbone.Collection.extend({
           break
         case "KORBIT":
           marketAPI = korbitAPI
+          break
+        case "BITHUMB":
+          marketAPI = bithumbAPI
           break
         default:
           throw new Error("Trying place order without marketName")
@@ -279,20 +289,20 @@ exports.Orders = Backbone.Collection.extend({
         throw new Error("KILL_ME")
       }
     },
-    // Refresh All of this orders. no matter what marketName or coinType. All of them.
     refresh: async function (options) {
       if (this.length == 0)
         return
       const coinType = options.coinType || this.at(0).get("coinType"),
         KORBIT = (global.rabbit.constants[coinType].MARKET.indexOf("KORBIT") >= 0) ? true : false,
-        COINONE = (global.rabbit.constants[coinType].MARKET.indexOf("COINONE") >= 0) ? true : false
+        COINONE = (global.rabbit.constants[coinType].MARKET.indexOf("COINONE") >= 0) ? true : false,
+        BITHUMB = (global.rabbit.constants[coinType].MARKET.indexOf("BITHUMB") >= 0) ? true : false
       console.log("100 [order.js] Will refresh", this.length, "the local", coinType, "orders")
       
 
       // Fetch uncompleted orders from markets
       let uncompletedOrderIds
       try {
-        let coinoneUncompletedOrderIds = [], korbitUncompletedOrderIds = []
+        let coinoneUncompletedOrderIds = [], korbitUncompletedOrderIds = [], bithumbUncompletedOrderIds = []
 
         if (COINONE){
           let coinonePromise = coinoneAPI({
@@ -301,7 +311,6 @@ exports.Orders = Backbone.Collection.extend({
           })
           coinoneUncompletedOrderIds = (await coinonePromise).limitOrders.map(o => o.orderId) // string
         }
-
         if (KORBIT){
           let korbitPromise = korbitAPI({
             type: "UNCOMPLETED_ORDERS",
@@ -309,8 +318,14 @@ exports.Orders = Backbone.Collection.extend({
           })
           korbitUncompletedOrderIds = (await korbitPromise).map(o => o.id + "")  // string.. unbelievable.. so I add "" to 
         }
+        if (BITHUMB){
+          bithumbUncompletedOrderIds = await bithumbAPI({
+            type: "UNCOMPLETED_ORDERS",
+            coinType: coinType
+          })
+        }
           
-        uncompletedOrderIds = coinoneUncompletedOrderIds.concat(korbitUncompletedOrderIds)
+        uncompletedOrderIds = coinoneUncompletedOrderIds.concat(korbitUncompletedOrderIds).concat(bithumbUncompletedOrderIds)
 
         console.log("101 [order.js] remote uncompletedOrderIds:\n", uncompletedOrderIds)
       } catch (e) {

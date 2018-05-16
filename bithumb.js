@@ -9,7 +9,7 @@ bithumb({
 }).then()
 */
 
-// done types: ORDERBOOK, ASK, BID, UNCOMPLETED_ORDERS, CANCEL_ORDER, BALANCE
+// done types: INFO, ORDERBOOK, RECENT_COMPLETE_ORDERS, ASK, BID, UNCOMPLETED_ORDERS, CANCEL_ORDER, BALANCE
 
 const request = require('request'),
     fetch = require("node-fetch"),
@@ -21,8 +21,31 @@ const KEYS = require('./credentials/keys.json').BITHUMB,
     ROOT_URL = 'https://api.bithumb.com'
 
 const api = {
+    INFO: function (options) {
+        // console.log("INFO hooray!")
+        const endPoint = "/public/ticker/" + options.coinType.toUpperCase()
+        // returns a promise
+        return fetch(ROOT_URL + endPoint, { method: "GET" })
+            .then(res => res.json())
+            .then(result => {
+                if (result.status != '0000') {
+                    console.log(result)
+                    throw new Error("wtf!")
+                }
+
+                return {
+                    // bid: result.data.buy_price,
+                    // ask: result.data.sell_price,
+                    high: result.data.max_price,
+                    low: result.data.min_price,
+                    first: result.data.opening_price,
+                    last: result.data.closing_price,
+                    volume: result.data.volume_1day
+                }
+            })
+    },
     ORDERBOOK: function (options) {
-        console.log("ORDERBOOK hooray!!")
+        // console.log("ORDERBOOK hooray!!")
         const endPoint = "/trade/orderbook/" + options.coinType.toUpperCase()
         // returns a promise
         return fetch(ROOT_URL + endPoint, { method: "GET" })
@@ -42,9 +65,32 @@ const api = {
                 return ob
             })
     },
+    RECENT_COMPLETE_ORDERS: function (options){
+        // console.log("RECENT_COMPLETE_ORDERS hooray!")
+        // const endPoint = "/public/recent_transactions/" + options.coinType.toUpperCase() + "?count=100"
+        const endPoint = "/public/transaction_history/" + options.coinType.toUpperCase() + "?count=100"
+        // returns a promise
+        return fetch(ROOT_URL + endPoint, { method: "GET" })
+            .then(res => res.json())
+            .then(result => {
+                if (result.status != '0000') {
+                    console.log(result)
+                    throw new Error("wtf!")
+                }
+
+                return result.data.map(o => {
+                    return {
+                        timestamp: new Date(o.transaction_date).getTime() / 1000, // Math.round(o.timestamp/1000),
+                        price: o.price * 1,
+                        qty: o.units_traded * 1
+                    }
+                })
+                return result
+            })
+    },
     // ASK or BID
     ASK: function (options) {
-        console.log("ASK/BID hooray!")
+        // console.log("ASK/BID hooray!")
         const endPoint = "/trade/place"
         const params = {
             type: options.type.toLowerCase(),
@@ -61,13 +107,14 @@ const api = {
                     throw new Error("wtf!")
                 }
                 // only the orderId is needed
-                return { orderId: result.order_id}
+                return { orderId: result.order_id + ""}
             })
     },
     UNCOMPLETED_ORDERS: function (options) {
-        console.log("UNCOMPLETED_ORDERS hooray!")
+        // console.log("UNCOMPLETED_ORDERS hooray!")
         const endPoint = "/info/orders"
         const params = {
+            count: 1000,
             currency: options.coinType.toUpperCase()
         }
         const fetchOpts = getFetchOpts(endPoint, params)
@@ -83,11 +130,11 @@ const api = {
                     throw new Error("wtf!")
                 }
                 // returns an array of order id
-                return result.data.map(o => o.order_id)
+                return result.data.map(o => o.order_id+"")
             })
     },
     CANCEL_ORDER: function (options) {
-        console.log("CANCEL_ORDER hooray!")
+        // console.log("CANCEL_ORDER hooray!")
         const endPoint = "/trade/cancel"
         const params = {
             type: options.orderType.toLowerCase(),  // "bid" or "ask"
@@ -107,7 +154,7 @@ const api = {
             })
     },
     BALANCE: function (options) {
-        console.log("BALANCE hooray!")
+        // console.log("BALANCE hooray!")
         const endPoint = "/info/balance"
         const params = { currency: "ALL"}
         const fetchOpts = getFetchOpts(endPoint, params)
@@ -123,13 +170,13 @@ const api = {
                 // data format
                 const bal = {}, data = result.data
                 for (const name in data) {
-                    if (name.startsWith('available_') && data[name] * 1 > 0) {
+                    if (name.startsWith('available_')) {
                         const coinType = name.slice(10).toUpperCase()
+                        // bal[coinType] = bal[coinType] || {}
                         if (coinType in bal === false)
                             bal[coinType] = {}
                         bal[coinType].available = data[name] * 1
-                    }
-                    else if (name.startsWith('total_') && data[name] * 1 > 0) {
+                    }else if (name.startsWith('total_')) {
                         const coinType = name.slice(6).toUpperCase()
                         if (coinType in bal === false)
                             bal[coinType] = {}

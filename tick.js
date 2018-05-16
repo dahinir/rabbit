@@ -1,7 +1,10 @@
 "use strict"
 
 const _ = require('underscore'),
-  fetcher = require('./fetcher.js')
+  fetcher = require('./fetcher.js'),
+  coinoneAPI = require("./coinone.js"),
+  korbitAPI = require("./korbit.js"),
+  bithumbAPI = require("./bithumb.js")
 
 console.log("\n\n[tick.js] Loaded!")
 
@@ -10,7 +13,8 @@ module.exports = async function(options){
     COUNT = options.count,
     coinType = options.coinType,
     KORBIT = (global.rabbit.constants[coinType].MARKET.indexOf("KORBIT") >= 0) ? true : false,
-    COINONE = (global.rabbit.constants[coinType].MARKET.indexOf("COINONE") >= 0) ? true : false
+    COINONE = (global.rabbit.constants[coinType].MARKET.indexOf("COINONE") >= 0) ? true : false,
+    BITHUMB = (global.rabbit.constants[coinType].MARKET.indexOf("BITHUMB") >= 0) ? true : false
  
   const arbitrages = options.arbitrages,
     machines = options.machines,
@@ -29,29 +33,31 @@ module.exports = async function(options){
 
 
   /////// FETCHING //////////
-  let coinoneInfo, korbitInfo, FETCH_STARTED
-  let coinoneOrderbook, coinoneBalance, coinoneRecentCompleteOrders
-  let korbitOrderbook, korbitBalance, korbitRecentCompleteOrders
+  let FETCH_STARTED
+  let coinoneInfo, coinoneOrderbook, coinoneBalance, coinoneRecentCompleteOrders
+  let korbitInfo, korbitOrderbook, korbitBalance, korbitRecentCompleteOrders
+  let bithumbInfo, bithumbOrderbook, bithumbBalance, bithumbCompleteOrders
   let rsi
   try {
     // Act like Promise.all()
     // Less important in time domain
     const coinoneInfoPromise = COINONE ? fetcher.getCoinoneInfo(coinType) : "",
       korbitInfoPromise = KORBIT ? fetcher.getKorbitInfo(coinType) : "",
+      bithumbInfoPromise = BITHUMB ? bithumbAPI({ type: "INFO", coinType: coinType }) : "",
       coinoneBalancePromise = COINONE ? fetcher.getCoinoneBalance() : "",
-      korbitBalancePromise = KORBIT ? fetcher.getKorbitBalance() : ""
-      // coinoneRecentCompleteOrdersPromise = COINONE ? fetcher.getCoinoneRecentCompleteOrders(coinType) : "",
-      // korbitRecentCompleteOrdersPromise = KORBIT ? fetcher.getKorbitRecentCompleteOrders(coinType) : ""
+      korbitBalancePromise = KORBIT ? fetcher.getKorbitBalance() : "",
+      bithumbBalancePromise = BITHUMB ? bithumbAPI({ type: "BALANCE" }) : ""
+
     if (COINONE) coinoneInfo = await coinoneInfoPromise
     if (KORBIT) korbitInfo = await korbitInfoPromise
+    if (BITHUMB) bithumbInfo = await bithumbInfoPromise
     if (COINONE) coinoneBalance = await coinoneBalancePromise
     if (KORBIT) korbitBalance = await korbitBalancePromise
-    // if (COINONE) coinoneRecentCompleteOrders = await coinoneRecentCompleteOrdersPromise
-    // if (KORBIT) korbitRecentCompleteOrders = await korbitRecentCompleteOrdersPromise
+    if (BITHUMB) bithumbBalance = await bithumbBalancePromise
 
     rsi = await recentCompleteOrders.getRSI({
       coinType: coinType,
-      marketName: COINONE ? "COINONE" : "KORBIT",
+      marketName: COINONE ? "COINONE" : (KORBIT ? "KORBIT" : "BITHUMB"),
       periodInDay: 14,
       unitTimeInMin: 60 * 8
     })
@@ -61,9 +67,14 @@ module.exports = async function(options){
     // More important in time domain //
     FETCH_STARTED = Date.now() / 1000 // in sec
     const coinoneOrderbookPromise = COINONE ? fetcher.getCoinoneOrderbook(coinType) : "",
-      korbitOrderbookPromise = KORBIT ? fetcher.getKorbitOrderbook(coinType) : ""
+      korbitOrderbookPromise = KORBIT ? fetcher.getKorbitOrderbook(coinType) : "",
+      bithumbOrderbookPromise = BITHUMB ? bithumbAPI({
+        type: "ORDERBOOK",
+        coinType: coinType
+      }) : ""
     if (COINONE) coinoneOrderbook = await coinoneOrderbookPromise
     if (KORBIT) korbitOrderbook = await korbitOrderbookPromise
+    if (BITHUMB) bithumbOrderbook = await bithumbOrderbookPromise
 
   } catch (e) {
     // ignoreMoreRejectsFrom(coinoneInfoPromise, coinoneRecentCompleteOrdersPromise,
@@ -72,20 +83,33 @@ module.exports = async function(options){
     console.log(e)
     throw new Error("[tick.js] Fail to fetch. Let me try again.")
   }
+  /////// FETCHING END //////////
   
   
   const korbit = {
-        name: "KORBIT",
-        info: korbitInfo,
-        orderbook: korbitOrderbook,
-        balance: korbitBalance
-      }
+    name: "KORBIT",
+    info: korbitInfo,
+    orderbook: korbitOrderbook,
+    balance: korbitBalance
+  }
   const coinone = {
-        name: "COINONE",
-        info: coinoneInfo,
-        orderbook: coinoneOrderbook,
-        balance: coinoneBalance
-      }
+    name: "COINONE",
+    info: coinoneInfo,
+    orderbook: coinoneOrderbook,
+    balance: coinoneBalance
+  }
+  const bithumb = {
+    name: "BITHUMB",
+    info: bithumbInfo,
+    orderbook: bithumbOrderbook,
+    balance: bithumbBalance
+  }
+
+  // Add only need market!
+  const markets = []
+  if (KORBIT) markets.push(korbit)
+  if (COINONE) markets.push(coinone)
+  if (BITHUMB) markets.push(bithumb)
       
   // Some data needs to go global
   global.rabbit.coinone = global.rabbit.coinone || {}
@@ -114,18 +138,31 @@ module.exports = async function(options){
       orderbook: korbitOrderbook
     }
   }
+  global.rabbit.bithumb = global.rabbit.bithumb || {}
+  if (BITHUMB) {
+    global.rabbit.bithumb.balance = bithumbBalance
+    global.rabbit.bithumb[coinType] = {
+      name: "BITHUMB",
+      info: bithumbInfo,
+      orderbook: bithumbOrderbook
+    }
+  }
 
-  global.rabbit.markets = global.rabbit.markets || {}
+
+  // global.rabbit.markets = global.rabbit.markets || {}
   let totalCoin = COINONE ? coinoneBalance[coinType].balance : 0
   totalCoin += KORBIT ? korbitBalance[coinType].balance : 0
-  let lastPrice = COINONE ? coinoneInfo.last : (KORBIT ? korbitInfo.last : -1)
+  totalCoin += BITHUMB ? bithumbBalance[coinType].balance : 0
+  let lastPrice = COINONE ? coinoneInfo.last : (KORBIT ? korbitInfo.last : bithumbInfo)
   
   if (COINONE) console.log("-- In 24 hrs", coinoneInfo.volume, coinType, "traded at Coinone:", coinoneInfo.low, "~", coinoneInfo.high, ":", coinoneInfo.last, "(", ((coinoneInfo.last - coinoneInfo.low) / (coinoneInfo.high - coinoneInfo.low) * 100).toFixed(2), "% )----")
   console.log("coin:", (totalCoin).toFixed(2), coinType, "is now about \u20A9", new Intl.NumberFormat().format(((totalCoin) * lastPrice).toFixed(0)))
   if (COINONE) console.log("Coinone", coinType + ":", coinoneBalance[coinType].available.toFixed(3))
-  if (KORBIT) console.log("Korbit", coinType + ":", korbitBalance[coinType].available.toFixed(3))
+  if (KORBIT) console.log("Korbit ", coinType + ":", korbitBalance[coinType].available.toFixed(3))
+  if (BITHUMB) console.log("Bithumb", coinType + ":", bithumbBalance[coinType].available.toFixed(3))
   if (COINONE) console.log("--(coinone", coinType + ")-----max bid:", coinoneOrderbook.bid[0], "min ask:", coinoneOrderbook.ask[0])
-  if (KORBIT) console.log("--(korbit", coinType + ")------max bid:", korbitOrderbook.bid[0], "min ask:", korbitOrderbook.ask[0])
+  if (KORBIT) console.log("--(korbit ", coinType + ")-----max bid:", korbitOrderbook.bid[0], "min ask:", korbitOrderbook.ask[0])
+  if (BITHUMB) console.log("--(bithumb", coinType + ")-----max bid:", bithumbOrderbook.bid[0], "min ask:", bithumbOrderbook.ask[0])
   
 
   //// It's time sensitive ////
@@ -158,6 +195,17 @@ module.exports = async function(options){
       return
     }
   }
+  if (BITHUMB) {
+    const ORDERBOOK_OLD = NOW - bithumbOrderbook.timestamp
+    if (ORDERBOOK_OLD > 50) { // Unix timestamp in milliseconds of the last placed order.
+      console.log("Bithumb orderbook is too old:", ORDERBOOK_OLD)
+      return
+    }
+    if (ORDERBOOK_OLD < FETCHING_TIME) {
+      console.log("Bithumb orderbook has been made after fetching.. But anyways..:", ORDERBOOK_OLD)
+      // return
+    }
+  }
 
   
   //// Arbitrages ////
@@ -165,9 +213,8 @@ module.exports = async function(options){
   if (global.rabbit.constants[coinType].ARBITRAGE_STARTED && global.rabbit.constants[coinType].MARKET.length >= 2){
     results = arbitrages.mind({
       coinType: coinType,
-      korbit: korbit,
-      coinone: coinone
-    })  // It's Array
+      markets: markets
+    })  // results is Array
     // if (results.length == 2 ){
     //   results[0].tt = "ARBIT"
     //   results[1].tt = "ARBIT"
@@ -190,7 +237,7 @@ module.exports = async function(options){
       console.log("Wait.. It looks like inclined. order won't be place")
       machines.presentation({
         coinType: coinType,
-        orderbook: coinoneOrderbook
+        orderbook: COINONE ? coinoneOrderbook : (KORBIT ? korbitOrderbook : bithumbOrderbook)
       })
       return
     }
@@ -199,10 +246,9 @@ module.exports = async function(options){
     results = machines.mind({
       rsi: rsi,
       coinType: coinType,
-      // korbit: altKorbit,
-      // coinone: altCoinone
-      korbit: KORBIT ? korbit : coinone,
-      coinone: COINONE ? coinone : korbit
+      markets: markets
+      // korbit: KORBIT ? korbit : coinone,
+      // coinone: COINONE ? coinone : korbit
     })
   }
   // console.log("[tick.js]", machinesResult.participants.length, "machinesResult want to deal")
@@ -228,7 +274,7 @@ module.exports = async function(options){
   ////// Presentation /////// :will move to index.js
   machines.presentation({
     coinType: coinType,
-    orderbook: coinoneOrderbook
+    orderbook: COINONE ? coinoneOrderbook : (KORBIT ? korbitOrderbook : bithumbOrderbook)
   })
 } // End of module.exports
 

@@ -28,13 +28,11 @@ async function re(){
     //     qty: 0.1,
     //     coinType: "QTUM"
     // })
-    let result = await bithumbAPI({
-        type: "ORDERBOOK",
-        coinType: "ETH"
-    })
     // let result = await bithumbAPI({
-    //     type: "BALANCE"
-    // }).catch(e => console.log(e))
+    //     // type: "ORDERBOOK",
+    //     type: "INFO",
+    //     coinType: "BTC"
+    // })
     // let result = await coinoneAPI({
     //     type: "UNCOMPLETED_ORDERS",
     //     coinType: "ETH"
@@ -55,12 +53,16 @@ async function re(){
     // let result = await bithumbAPI({
     //     type: "BALANCE"
     // })
+    let result = await bithumbAPI({
+        type: "RECENT_COMPLETE_ORDERS",
+        coinType: "BCH"
+    })
     console.log("after call ")
     // console.log(result)
-    result
+    console.log(result)
 
-    let b = await fetcher.getCoinoneOrderbook("ETH")
-    b
+    // let b = await fetcher.getCoinoneOrderbook("ETH")
+    // b
     // const rsi = await rcOrders.getRSI({
     //     coinType: "XRP",
     //     periodInDay: 14,
