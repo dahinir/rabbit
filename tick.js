@@ -2,8 +2,6 @@
 
 const _ = require('underscore'),
   fetcher = require('./fetcher.js'),
-  coinoneAPI = require("./coinone.js"),
-  korbitAPI = require("./korbit.js"),
   bithumbAPI = require("./bithumb.js")
 
 console.log("\n\n[tick.js] Loaded!")

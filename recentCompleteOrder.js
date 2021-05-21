@@ -10,8 +10,6 @@ const Backbone = require('backbone'),
     _ = require('underscore'),
     backsync = require('backsync'),
     fetcher = require('./fetcher.js'),
-    coinoneAPI = require("./coinone.js"),
-    korbitAPI = require("./korbit.js"),
     bithumbAPI = require("./bithumb.js")
 
 //  { timestamp: '1512990444', price: '530100', qty: '5.8000' }
