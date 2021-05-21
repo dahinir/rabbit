@@ -16,22 +16,23 @@ const Backbone = require('backbone'),
 
 //  { timestamp: '1512990444', price: '530100', qty: '5.8000' }
 exports.RecentCompleteOrder = Backbone.Model.extend({
-    urlRoot: "mongodb://localhost:27017/rabbit/recentCompleteOrders", // not url. cuz of backsync
+    urlRoot: "mongodb://localhost:27017/rabbit/recentCompleteOrders", // not url. cuz it's backsync
     sync: backsync.mongodb(),
-    idAttribute: "id",   // maybe ..change to "id".. using backsync..
+    idAttribute: "id", // maybe ..change to "id".. using backsync..
     defaults: {
         // timestamp: 0,
         // price: 0,
         // qty: 0,
         // coinType: ""
     },
-    savePromise: function(){
+    savePromise: function () {
         // console.log("id",this.id)
         return new Promise(resolve => {
-            this.save(arguments,
-                {success: () => {
+            this.save(arguments, {
+                success: () => {
                     resolve()
-                }})
+                }
+            })
         })
     }
 })
@@ -49,9 +50,9 @@ exports.RecentCompleteOrders = Backbone.Collection.extend({
             MARKET_NAME = options.marketName,
             PERIOD = options.periodInDay || 14,
             UNIT_TIME = options.unitTimeInMin || 15
-        
+
         if (this.length > 0 && this.at(0).get("timestamp") > Date.now() / 1000 - options.periodInDay * 60 * 60 * 24 * PERIOD)
-            console.log(`Not ready to RSI, It just been ${((Date.now()/1000 - this.at(0).get("timestamp")) / 86400).toFixed(3)} days.`)
+            console.log(`Not ready to RSI, It just been ${((Date.now() / 1000 - this.at(0).get("timestamp")) / 86400).toFixed(3)} days.`)
 
         await this.refresh({
             coinType: COIN_TYPE,
@@ -63,7 +64,8 @@ exports.RecentCompleteOrders = Backbone.Collection.extend({
             periodInDay: PERIOD,
             unitTimeInMin: UNIT_TIME
         })
-        let ups = 0, downs = 0
+        let ups = 0,
+            downs = 0
 
         for (let i = 0; i < candles.length - 1; i++) {
             const diff = candles[i + 1].close - candles[i].close
@@ -79,13 +81,13 @@ exports.RecentCompleteOrders = Backbone.Collection.extend({
         const AU = ups / (candles.length - 1),
             AD = downs / (candles.length - 1)
 
-        return (AU / (AU + AD)) * 100   // RSI = AU / (AU + AD)
+        return (AU / (AU + AD)) * 100 // RSI = AU / (AU + AD)
     },
     getRSI: async function (options) {
         const COIN_TYPE = options.coinType || this.at(0).get("coinType"),
             MARKET_NAME = options.marketName,
             PERIOD_IN_SEC = 60 * 60 * 24 * (options.periodInDay || 14), // default 14 days
-            UNIT_TIME_IN_SEC = 60 * (options.unitTimeInMin || 60 * 24),  // defalut 24 hours
+            UNIT_TIME_IN_SEC = 60 * (options.unitTimeInMin || 60 * 24), // defalut 24 hours
             UNIT_COUNT = Math.floor(PERIOD_IN_SEC / UNIT_TIME_IN_SEC)
 
         await this.refresh({
@@ -96,41 +98,47 @@ exports.RecentCompleteOrders = Backbone.Collection.extend({
         //     coinType: COIN_TYPE
         // })
 
+        // console.debug(`[RSI] recentCompleteOrder.length ${this.length}`)
+
         const lastTimestamp = this.last().get("timestamp")
-        console.log(`last timestamp is ${lastTimestamp}`)
-        console.log(`UNIT_COUNT: ${UNIT_COUNT}, ${lastTimestamp - PERIOD_IN_SEC}, ${lastTimestamp - UNIT_TIME_IN_SEC * UNIT_COUNT}`)
-        
+        // console.log(`last timestamp is ${lastTimestamp}`)
+        // console.log(`UNIT_COUNT: ${UNIT_COUNT}, ${lastTimestamp - PERIOD_IN_SEC}, ${lastTimestamp - UNIT_TIME_IN_SEC * UNIT_COUNT}`)
+
         let orderArray = []
-        for (let t = lastTimestamp - PERIOD_IN_SEC; t < lastTimestamp; t += UNIT_TIME_IN_SEC){
-            orderArray.push(await this.fetchOne({   // .fetchOne() returns raw data
+        for (let t = lastTimestamp - PERIOD_IN_SEC; t < lastTimestamp; t += UNIT_TIME_IN_SEC) {
+            let data = await this.fetchOne({ // .fetchOne() returns raw data
                 coinType: COIN_TYPE,
                 timeInSec: t
-            }))
+            })
+            if (typeof data !== 'undefined')
+                orderArray.push(data)
         }
         orderArray.push(this.last().attributes)
 
-        if (this.length > 0 && this.at(0).get("timestamp") > Date.now() / 1000 - PERIOD_IN_SEC){
+        if (this.length > 0 && this.at(0).get("timestamp") > Date.now() / 1000 - PERIOD_IN_SEC) {
             console.log(`Not ready to RSI, It just been ${((Date.now() / 1000 - this.at(0).get("timestamp")) / 86400).toFixed(3)} days.`)
-            return 101  // It's impossible RSI
+            return 101 // It's impossible RSI
         }
 
         // orderArray.forEach(o => {
         //     console.log(`orderArray: ${o.coinType} ${o.timestamp}, ${o.price}`)
         // })
-
-        let ups = 0, downs = 0, upCount = 0, downCount = 0
-        for (let i = 0; i < orderArray.length - 1; i++){
+        let ups = 0,
+            downs = 0,
+            upCount = 0,
+            downCount = 0
+        for (let i = 0; i < orderArray.length - 1; i++) {
             const diff = orderArray[i + 1].price - orderArray[i].price
             // console.log(`diff is ${diff}`)
-            if (diff > 0){
+            if (diff > 0) {
                 ups += diff
                 upCount++
-            }else if (diff < 0){
+            } else if (diff < 0) {
                 downs += -diff
                 downCount++
             }
         }
-        
+
         if (!Number.isSafeInteger(ups) || !Number.isSafeInteger(downs))
             throw new Error("[recentCompleteOrder.getRSI] too big number!")
 
@@ -138,22 +146,23 @@ exports.RecentCompleteOrders = Backbone.Collection.extend({
             AD = downs / (orderArray.length - 1)
         // const AU = ups / upCount,
         //     AD = downs / downCount
-        
-        const RSI = (AU / (AU + AD)) * 100   // RSI = AU / (AU + AD)
+
+        const RSI = (AU / (AU + AD)) * 100 // RSI = AU / (AU + AD)
         console.log(`AU: ${AU.toFixed(2)}, AD: ${AD.toFixed(2)},  sampled: ${orderArray.length},\t${COIN_TYPE} RSI: ${RSI.toFixed()}`)
 
         return RSI
     },
-    getCandles: function(options){
+    getCandles: function (options) {
+        console.debug(`recentCompleteOrder.length ${this.length}`)
         if (this.length == 0) return []
-        const PERIOD = 60 * 60 * 24 * (options.periodInDay || 14),   // 14 days
-            UNIT_TIME = 60 * (options.unitTimeInMin || 15)  // 15 mins
-            
+        const PERIOD = 60 * 60 * 24 * (options.periodInDay || 14), // 14 days
+            UNIT_TIME = 60 * (options.unitTimeInMin || 15) // 15 mins
+
         const lastTimestamp = this.last().get("timestamp"),
             startTimestamp = lastTimestamp - PERIOD
-        // console.log("s~l:", startTimestamp, lastTimestamp)
-    
-        const candles = this.reduce((candles, o) => {   // Order sensitive.. so don't use this.models
+        // console.debug("s~l:", startTimestamp, lastTimestamp)
+
+        const candles = this.reduce((candles, o) => { // Order sensitive.. so don't use this.models
             if (o.get('timestamp') <= startTimestamp) return candles
 
             // const INDEX = Math.floor((o.get("timestamp") - startTimestamp) / UNIT_TIME)
@@ -163,14 +172,14 @@ exports.RecentCompleteOrders = Backbone.Collection.extend({
                 candles[INDEX].push(o)
             else
                 candles[INDEX] = [o]
-            
+
             return candles
         }, []).reduce((candles, c) => {
             if (!c) return candles
 
             const open = c[0].get("price"),
                 close = c[c.length - 1].get("price")
-            
+
             candles.push({
                 // count: c.length,
                 // volumn: c.reduce((sum, el) => sum + el.get("qty"), 0),
@@ -181,11 +190,11 @@ exports.RecentCompleteOrders = Backbone.Collection.extend({
             return candles
         }, [])
 
-        // console.log("candles.length:", candles.length)
-        // for(let candle of candles){
-        //     if (candle) console.log(candle)
+        // console.debug("candles.length:", candles.length)
+        // for (let candle of candles) {
+        //     if (candle) console.debug(candle)
         // }
-        
+
         return candles
     },
     refresh: async function (options) {
@@ -194,7 +203,7 @@ exports.RecentCompleteOrders = Backbone.Collection.extend({
         let period = "hour"
 
         // If this refresh is first time in runtime
-        if (this.length == 0){
+        if (this.length == 0) {
             // Fetch last one. That's enough
             await this.fetchOne({
                 coinType: COIN_TYPE,
@@ -206,30 +215,30 @@ exports.RecentCompleteOrders = Backbone.Collection.extend({
         // lastTimestamp in this collection
         const LAST_TIMESTAMP = (this.length == 0) ? 0 : this.last().get("timestamp")
 
-        console.log(`[recentCompleteOrder.refresh] Last timeStamp was ${(Date.now()/1000 - LAST_TIMESTAMP).toFixed(0)} sec ago.`)
-        if (Date.now() / 1000 - LAST_TIMESTAMP > 60 * 60) {   // lastTimestamp is older than an hour
+        console.debug(`[recentCompleteOrder.refresh] Last timeStamp was ${(Date.now() / 1000 - LAST_TIMESTAMP).toFixed(0)} sec ago.`)
+        if (Date.now() / 1000 - LAST_TIMESTAMP > 60 * 60) { // lastTimestamp is older than an hour
             period = "day"
             console.log(`It's been a long time! I need a day!`)
         }
-        
-        let recentCompleteOrders 
+
+        // fetch from remote (Now Coinone only tho)
+        let recentCompleteOrders
         try {
             if (MARKET_NAME == "COINONE")
                 recentCompleteOrders = await fetcher.getCoinoneRecentCompleteOrders(COIN_TYPE, period)
-            else if (MARKET_NAME == "KORBIT") 
+            else if (MARKET_NAME == "KORBIT")
                 recentCompleteOrders = await fetcher.getKorbitRecentCompleteOrders(COIN_TYPE, period)
-            else if (MARKET_NAME == "BITHUMB") 
+            else if (MARKET_NAME == "BITHUMB")
                 recentCompleteOrders = await bithumbAPI({
                     type: "RECENT_COMPLETE_ORDERS",
                     coinType: COIN_TYPE
-                }) 
-        }catch (e){
+                })
+        } catch (e) {
             console.log(e)
         }
 
-        // console.log("Remote recent length:", recentCompleteOrders.length)
-        this.reset()    // Empty previous collection
-        // console.log("[recentCompleteOrder.refresh] this.length:", this.length, LAST_TIMESTAMP)
+        this.reset() // Empty previous collection: ONLY USE ONCE AT A TIME! RSI, CANDLE
+        // console.debug("[recentCompleteOrder.refresh] this.length:", this.length, LAST_TIMESTAMP)
         for (let o of recentCompleteOrders) {
             // console.log(o.timestamp)
             const rcOrder = new exports.RecentCompleteOrder({
@@ -240,22 +249,22 @@ exports.RecentCompleteOrders = Backbone.Collection.extend({
             })
 
             // Save at DB only didn't exists
-            if (o.timestamp * 1 > LAST_TIMESTAMP)
+            if (o.timestamp * 1 > LAST_TIMESTAMP) {
                 await rcOrder.savePromise()
-            
+            }
             this.push(rcOrder)
         }
-        // console.log("[recentCompleteOrder.refresh] this.length:", this.length, this.last().get("timestamp"))
-        
+        // console.debug("[recentCompleteOrder.refresh] this.length:", this.length, this.last().get("timestamp"))
+
         return
     }, // End of refresh()
-    fetchFrom: async function (options){
+    fetchFrom: async function (options) {
         const AMOUNT = 100,
-            NOW = Date.now() / 1000,    // in sec not ms
+            NOW = Date.now() / 1000, // in sec not ms
             COIN_TYPE = options.coinType,
             // PERIOD = 60 * 60 * 24 * (options.periodInday || 14.1)   // 14.1 days in seconds
             PERIOD = 60 * 60 * 1.5 // 1.5 hours.. i don't have enough memory..
-            
+
         const that = this
 
         console.log("[recentCompleteOrder.fetchFrom] It may be take a long time..")
@@ -263,7 +272,9 @@ exports.RecentCompleteOrders = Backbone.Collection.extend({
             await new Promise(resolve => {
                 that.fetch({
                     data: {
-                        timestamp: { $gt: NOW - PERIOD },
+                        timestamp: {
+                            $gt: NOW - PERIOD
+                        },
                         coinType: COIN_TYPE,
                         $skip: skip,
                         $limit: AMOUNT
@@ -271,8 +282,7 @@ exports.RecentCompleteOrders = Backbone.Collection.extend({
                     success: rcOrders => {
                         loaded = loaded.concat(rcOrders.models);
                         // console.log("chunk:", loaded.length, rcOrders.length, rcOrders.models.length);
-                        if (rcOrders.length == AMOUNT) {
-                        } else {
+                        if (rcOrders.length == AMOUNT) { } else {
                             rcOrders.reset(loaded)
                             isRemain = false
                         }
@@ -287,25 +297,29 @@ exports.RecentCompleteOrders = Backbone.Collection.extend({
                 })
             })
 
-        console.log("[recentCompleteOrder.fetchFrom] Load completed. this.length:", this.length," last rcOrder was" ,Date.now()/1000 - this.last().get("timestamp"), "sec ago")
+        console.log("[recentCompleteOrder.fetchFrom] Load completed. this.length:", this.length, " last rcOrder was", Date.now() / 1000 - this.last().get("timestamp"), "sec ago")
         return
     },
     fetchOne: async function (options) {
         const AMOUNT = 100,
-            NOW = Date.now() / 1000,    // in sec not ms
+            NOW = Date.now() / 1000, // in sec not ms
             COIN_TYPE = options.coinType,
-            TIME_IN_SEC = options.timeInSec || Date.now()/1000
-            // PERIOD = 60 * 60 * 24 * (options.periodInday || 14.1)   // 14.1 days in seconds
-            // PERIOD = 60 * 60 * 1.5 // 1.5 hours.. i don't have enough memory..
+            TIME_IN_SEC = options.timeInSec || Date.now() / 1000
+        // PERIOD = 60 * 60 * 24 * (options.periodInday || 14.1)   // 14.1 days in seconds
+        // PERIOD = 60 * 60 * 1.5 // 1.5 hours.. i don't have enough memory..
 
         const result = await new Promise(resolve => {
             // Backbone Collection.fetch() will reset the collection
             this.fetch({
-                remove: false,  // so .fetch() will `add` not `reset`
+                remove: false, // so .fetch() will `add` not `reset`
                 data: {
                     coinType: COIN_TYPE,
-                    timestamp: { $lt: TIME_IN_SEC },
-                    $sort: { timestamp: -1 },
+                    timestamp: {
+                        $lt: TIME_IN_SEC
+                    },
+                    $sort: {
+                        timestamp: -1
+                    },
                     $limit: 1
                 },
                 success: (rcOrders, res) => {
@@ -320,10 +334,10 @@ exports.RecentCompleteOrders = Backbone.Collection.extend({
             })
         })
         // console.log("[recentCompleteOrder.fetchOne] Load completed. this.length:", this.length, " last rcOrder was", Date.now() / 1000 - this.last().get("timestamp"), "sec ago")
-        return result   // This returns a raw data of recentOrder. not a Backbone model
+        return result // This returns a raw data of recentOrder. not a Backbone model
     },
-    removeOlds: async function(options){
-        const PERIOD = 60 * 60 * 24 * (options.periodInday || 14.1)  // 14.1 days in seconds
+    removeOlds: async function (options) {
+        const PERIOD = 60 * 60 * 24 * (options.periodInday || 14.1) // 14.1 days in seconds
         return
     }
 })

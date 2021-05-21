@@ -21,17 +21,17 @@ const xcoinAPI = require('./bithumb_modified.js'),
 // console.log(rcOrders.length)
 re()
 console.log("end")
-async function re(){
+async function re() {
     // let result = await bithumbAPI({
-    //     type: "BID",
-    //     price: 10100,
+    //     type: "ASK",
+    //     price: 286900,
     //     qty: 0.1,
-    //     coinType: "QTUM"
+    //     coinType: "ETH"
     // })
     // let result = await bithumbAPI({
-    //     // type: "ORDERBOOK",
-    //     type: "INFO",
-    //     coinType: "BTC"
+    //     type: "ORDERBOOK",
+    //     // type: "INFO",
+    //     coinType: "ETH"
     // })
     // let result = await coinoneAPI({
     //     type: "UNCOMPLETED_ORDERS",
@@ -39,7 +39,7 @@ async function re(){
     // }) ​​​​​​​​​​[ '1522249876413298', '1522245862327279' ]​​​​​
     // let result = await bithumbAPI({
     //     type: "UNCOMPLETED_ORDERS",
-    //     coinType: "QTUM"
+    //     coinType: "ETH"
     // })
     /*
     ​​​​​[ '1522249876413298',
@@ -47,16 +47,16 @@ async function re(){
     // let result = await bithumbAPI({
     //     type: "CANCEL_ORDER",
     //     orderType: "BID",
-    //     orderId: "1522249922292683",
-    //     coinType: "QTUM"
-    // })
-    // let result = await bithumbAPI({
-    //     type: "BALANCE"
+    //     orderId: "C0102000000013406049",
+    //     coinType: "ETH"
     // })
     let result = await bithumbAPI({
-        type: "RECENT_COMPLETE_ORDERS",
-        coinType: "BCH"
+        type: "BALANCE"
     })
+    // let result = await bithumbAPI({
+    //     type: "RECENT_COMPLETE_ORDERS",
+    //     coinType: "ETH"
+    // })
     console.log("after call ")
     // console.log(result)
     console.log(result)
@@ -90,7 +90,7 @@ function isInclined(recentCompleteOrders) {
     // console.log(recentCompleteOrders)
 
     const lastTimestamp = recentCompleteOrders[0].timestamp * 1
-    const TERM = 60 * 3  // 3 mins
+    const TERM = 60 * 3 // 3 mins
 
     const candles = recentCompleteOrders.reduce((candles, o) => {
         const index = Math.floor((lastTimestamp - (o.timestamp * 1)) / TERM)
@@ -98,7 +98,7 @@ function isInclined(recentCompleteOrders) {
         if (_.isArray(candles[index]))
             candles[index].push(o)
         else
-            candles[index] = [o]  // It's new Array
+            candles[index] = [o] // It's new Array
         return candles
     }, []).map(c => {
         const lastIndex = c.length - 1

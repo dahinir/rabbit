@@ -1,0 +1,5 @@
+mongod --storageEngine wiredTiger --dbpath ~/var/mongo4.4_data/ --bind_ip localhost & 
+node index.js > ~/var/rabbit_result.log &  
+open ~/var/rabbit_result.log 
+ps | grep node
+kill -s int 61885

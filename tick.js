@@ -8,21 +8,21 @@ const _ = require('underscore'),
 
 console.log("\n\n[tick.js] Loaded!")
 
-module.exports = async function(options){
+module.exports = async function (options) {
   const TICK_STARTED = new Date(),
     COUNT = options.count,
     coinType = options.coinType,
     KORBIT = (global.rabbit.constants[coinType].MARKET.indexOf("KORBIT") >= 0) ? true : false,
     COINONE = (global.rabbit.constants[coinType].MARKET.indexOf("COINONE") >= 0) ? true : false,
     BITHUMB = (global.rabbit.constants[coinType].MARKET.indexOf("BITHUMB") >= 0) ? true : false
- 
+
   const arbitrages = options.arbitrages,
     machines = options.machines,
     orders = options.orders,
     recentCompleteOrders = options.recentCompleteOrders
 
   console.log("-- ", coinType, "Tick no.", COUNT, "with", machines.length, "machines. ",
-    TICK_STARTED.toLocaleString(), "It's been", ((new Date() - global.rabbit.constants[coinType].STARTED)/ 86400000).toFixed(1),
+    TICK_STARTED.toLocaleString(), "It's been", ((new Date() - global.rabbit.constants[coinType].STARTED) / 86400000).toFixed(1),
     "days. ", ((new Date() - global.rabbit.BORN) / 86400000).toFixed(1), "days old")
 
 
@@ -43,10 +43,15 @@ module.exports = async function(options){
     // Less important in time domain
     const coinoneInfoPromise = COINONE ? fetcher.getCoinoneInfo(coinType) : "",
       korbitInfoPromise = KORBIT ? fetcher.getKorbitInfo(coinType) : "",
-      bithumbInfoPromise = BITHUMB ? bithumbAPI({ type: "INFO", coinType: coinType }) : "",
+      bithumbInfoPromise = BITHUMB ? bithumbAPI({
+        type: "INFO",
+        coinType: coinType
+      }) : "",
       coinoneBalancePromise = COINONE ? fetcher.getCoinoneBalance() : "",
       korbitBalancePromise = KORBIT ? fetcher.getKorbitBalance() : "",
-      bithumbBalancePromise = BITHUMB ? bithumbAPI({ type: "BALANCE" }) : ""
+      bithumbBalancePromise = BITHUMB ? bithumbAPI({
+        type: "BALANCE"
+      }) : ""
 
     if (COINONE) coinoneInfo = await coinoneInfoPromise
     if (KORBIT) korbitInfo = await korbitInfoPromise
@@ -84,8 +89,8 @@ module.exports = async function(options){
     throw new Error("[tick.js] Fail to fetch. Let me try again.")
   }
   /////// FETCHING END //////////
-  
-  
+
+
   const korbit = {
     name: "KORBIT",
     info: korbitInfo,
@@ -110,15 +115,15 @@ module.exports = async function(options){
   if (KORBIT) markets.push(korbit)
   if (COINONE) markets.push(coinone)
   if (BITHUMB) markets.push(bithumb)
-      
+
   // Some data needs to go global
   global.rabbit.coinone = global.rabbit.coinone || {}
-  if (COINONE){
-    if (global.rabbit.coinone[coinType] 
-      && global.rabbit.coinone[coinType].orderbook.bid[0].price == coinoneOrderbook.bid[0].price 
-      && global.rabbit.coinone[coinType].orderbook.bid[0].qty == coinoneOrderbook.bid[0].qty
-      && global.rabbit.coinone[coinType].orderbook.ask[0].price == coinoneOrderbook.ask[0].price
-      && global.rabbit.coinone[coinType].orderbook.ask[0].qty == coinoneOrderbook.ask[0].qty){
+  if (COINONE) {
+    if (global.rabbit.coinone[coinType] &&
+      global.rabbit.coinone[coinType].orderbook.bid[0].price == coinoneOrderbook.bid[0].price &&
+      global.rabbit.coinone[coinType].orderbook.bid[0].qty == coinoneOrderbook.bid[0].qty &&
+      global.rabbit.coinone[coinType].orderbook.ask[0].price == coinoneOrderbook.ask[0].price &&
+      global.rabbit.coinone[coinType].orderbook.ask[0].qty == coinoneOrderbook.ask[0].qty) {
       console.log(`COINONE is shit. it's the same orderbook with previous orderbook. Don't believe Coinone.`)
       return
     }
@@ -130,7 +135,7 @@ module.exports = async function(options){
     }
   }
   global.rabbit.korbit = global.rabbit.korbit || {}
-  if (KORBIT){
+  if (KORBIT) {
     global.rabbit.korbit.balance = korbitBalance
     global.rabbit.korbit[coinType] = {
       name: "KORBIT",
@@ -154,7 +159,7 @@ module.exports = async function(options){
   totalCoin += KORBIT ? korbitBalance[coinType].balance : 0
   totalCoin += BITHUMB ? bithumbBalance[coinType].balance : 0
   let lastPrice = COINONE ? coinoneInfo.last : (KORBIT ? korbitInfo.last : bithumbInfo)
-  
+
   if (COINONE) console.log("-- In 24 hrs", coinoneInfo.volume, coinType, "traded at Coinone:", coinoneInfo.low, "~", coinoneInfo.high, ":", coinoneInfo.last, "(", ((coinoneInfo.last - coinoneInfo.low) / (coinoneInfo.high - coinoneInfo.low) * 100).toFixed(2), "% )----")
   console.log("coin:", (totalCoin).toFixed(2), coinType, "is now about \u20A9", new Intl.NumberFormat().format(((totalCoin) * lastPrice).toFixed(0)))
   if (COINONE) console.log("Coinone", coinType + ":", coinoneBalance[coinType].available.toFixed(3))
@@ -163,7 +168,7 @@ module.exports = async function(options){
   if (COINONE) console.log("--(coinone", coinType + ")-----max bid:", coinoneOrderbook.bid[0], "min ask:", coinoneOrderbook.ask[0])
   if (KORBIT) console.log("--(korbit ", coinType + ")-----max bid:", korbitOrderbook.bid[0], "min ask:", korbitOrderbook.ask[0])
   if (BITHUMB) console.log("--(bithumb", coinType + ")-----max bid:", bithumbOrderbook.bid[0], "min ask:", bithumbOrderbook.ask[0])
-  
+
 
   //// It's time sensitive ////
   const NOW = Date.now() / 1000 // in sec
@@ -179,9 +184,10 @@ module.exports = async function(options){
       console.log("Coinone orderbook is too old:", ORDERBOOK_OLD)
       return
     }
-    if (ORDERBOOK_OLD < FETCHING_TIME) {
-      console.log("Coinone orderbook has been made after fetching.. I can not belive it:", ORDERBOOK_OLD)
-      return
+    if (ORDERBOOK_OLD < FETCHING_TIME / 2) {
+      console.log("Coinone orderbook has been made after fetching.. I can not belive it:", ORDERBOOK_OLD, FETCHING_TIME)
+      console.log("Now coinone is insane, they're making future orderbook. so.. just ignore it..")
+      // return
     }
   }
   if (KORBIT) {
@@ -207,14 +213,14 @@ module.exports = async function(options){
     }
   }
 
-  
+
   //// Arbitrages ////
   let results = []
-  if (global.rabbit.constants[coinType].ARBITRAGE_STARTED && global.rabbit.constants[coinType].MARKET.length >= 2){
+  if (global.rabbit.constants[coinType].ARBITRAGE_STARTED && global.rabbit.constants[coinType].MARKET.length >= 2) {
     results = arbitrages.mind({
       coinType: coinType,
       markets: markets
-    })  // results is Array
+    }) // results is Array
     // if (results.length == 2 ){
     //   results[0].tt = "ARBIT"
     //   results[1].tt = "ARBIT"
@@ -222,18 +228,19 @@ module.exports = async function(options){
   }
   // results = []
 
-  if (results.length != 2){
+  if (results.length != 2) {
     console.log(`-- No arbitrages so mind machines -- `)
 
     const candles = recentCompleteOrders.getCandles({
       periodInDay: 0.05, // 1.2 hours
       unitTimeInMin: 3
     })
+    // return
     console.log("candles length:", candles.length)
     for (let i = candles.length - 5; i < candles.length; i++)
       console.log("candle:", candles[i])
 
-    if (candles[candles.length - 2].body == candles[candles.length - 1].body && candles[candles.length - 1] != "=") {
+    if (candles.length > 1 && candles[candles.length - 2].body == candles[candles.length - 1].body && candles[candles.length - 1] != "=") {
       console.log("Wait.. It looks like inclined. order won't be place")
       machines.presentation({
         coinType: coinType,
@@ -243,17 +250,14 @@ module.exports = async function(options){
     }
 
     /////// TIME TO MIND ////////
-    results = machines.mind({
-      rsi: rsi,
-      coinType: coinType,
-      markets: markets
-      // korbit: KORBIT ? korbit : coinone,
-      // coinone: COINONE ? coinone : korbit
-    })
+    // results = machines.mind({
+    //   rsi: rsi,
+    //   coinType: coinType,
+    //   markets: markets
+    // })
   }
   // console.log("[tick.js]", machinesResult.participants.length, "machinesResult want to deal")
   console.log("[tick.js] machine's results", results)
-
 
   ///////  TIME TO ORDER //////
   for (let r of results)
@@ -283,16 +287,16 @@ module.exports = async function(options){
 /////// HELPER FUNCTIONS //////
 // For error handling in a Promise.all like flow in async/await syntax
 function ignoreMoreRejectsFrom(...promises) {
-    promises.forEach(p => p && p.catch(function () {
-      // Nothing to do
-    }));
+  promises.forEach(p => p && p.catch(function () {
+    // Nothing to do
+  }));
 }
 
 function isInclined(recentCompleteOrders) {
   recentCompleteOrders = recentCompleteOrders.reverse()
 
   const lastTimestamp = recentCompleteOrders[0].timestamp * 1
-  const TERM = 60 * 3  // 3 mins
+  const TERM = 60 * 3 // 3 mins
   // console.log(recentCompleteOrders[0], recentCompleteOrders[1])
   let candles = recentCompleteOrders.reduce((candles, o) => {
     const index = Math.floor((lastTimestamp - (o.timestamp * 1)) / TERM)
@@ -300,7 +304,7 @@ function isInclined(recentCompleteOrders) {
     if (Array.isArray(candles[index]))
       candles[index].push(o)
     else
-      candles[index] = [o]  // It's new Array
+      candles[index] = [o] // It's new Array
     return candles
   }, [])
   candles = candles.map(c => {
@@ -322,7 +326,7 @@ function isInclined(recentCompleteOrders) {
     }
   })
 
-  
+
   // console.log((candles[0].body == candles[1].body) ? "wait" : "action")
   for (let i = 0; i < 5; i++)
     console.log(candles[i])
