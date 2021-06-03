@@ -1,9 +1,6 @@
 "use strict";
 
-const _ = require("underscore"),
-  pify = require("pify");
-
-const fetcher = require("./fetcher.js");
+const _ = require("underscore");
 
 const Machine = require("./machine.js").Machine,
   Machines = require("./machine.js").Machines,
@@ -129,7 +126,7 @@ global.rabbit.constants = {
     COIN_PRECISON: 1,
     COIN_UNIT: 0.1,
     KRW_UNIT: 10,
-    // MIN_COIN_ORDER: 1,  // [bithumb.js] ASK's result:  { status: '5600', message: '최소 판매수량은 1 ETC 입니다.' }
+    // MIN_COIN_ORDER: 1,  // bithumb ASK result:  { status: '5600', message: '최소 판매수량은 1 ETC 입니다.' }
     BUY_AT_UNIT: 100,
     MAX_BUY_AT: 0,  // Don't buy ETC // 42490,
     PREVIOUS_PROFIT_SUM: 0,

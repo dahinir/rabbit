@@ -54,16 +54,18 @@ module.exports = async function (options) {
     if (COINONE) coinoneInfo = await coinoneInfoPromise
     if (KORBIT) korbitInfo = await korbitInfoPromise
     if (BITHUMB) bithumbInfo = await bithumbInfoPromise
+
     if (COINONE) coinoneBalance = await coinoneBalancePromise
     if (KORBIT) korbitBalance = await korbitBalancePromise
     if (BITHUMB) bithumbBalance = await bithumbBalancePromise
 
-    rsi = await recentCompleteOrders.getRSI({
-      coinType: coinType,
-      marketName: COINONE ? "COINONE" : (KORBIT ? "KORBIT" : "BITHUMB"),
-      periodInDay: 14,
-      unitTimeInMin: 60 * 8
-    })
+    // rsi = await recentCompleteOrders.getRSI({
+    //   coinType: coinType,
+    //   marketName: COINONE ? "COINONE" : (KORBIT ? "KORBIT" : "BITHUMB"),
+    //   periodInDay: 14,
+    //   unitTimeInMin: 60 * 8
+    // })
+    rsi = 0
 
     // console.log("Fetching some info takes", ((new Date() - TICK_STARTED) / 1000).toFixed(2), "sec")
 
@@ -229,25 +231,7 @@ module.exports = async function (options) {
   if (results.length != 2) {
     console.log(`-- No arbitrages so mind machines -- `)
 
-    const candles = recentCompleteOrders.getCandles({
-      periodInDay: 0.05, // 1.2 hours
-      unitTimeInMin: 3
-    })
-    // return
-    console.log("candles length:", candles.length)
-    for (let i = candles.length - 5; i < candles.length; i++)
-      console.log("candle:", candles[i])
-
-    if (candles.length > 1 && candles[candles.length - 2].body == candles[candles.length - 1].body && candles[candles.length - 1] != "=") {
-      console.log("Wait.. It looks like inclined. order won't be place")
-      machines.presentation({
-        coinType: coinType,
-        orderbook: COINONE ? coinoneOrderbook : (KORBIT ? korbitOrderbook : bithumbOrderbook)
-      })
-      return
-    }
-
-    /////// TIME TO MIND ////////
+    /////// TIME TO MIND!! ////////
     // results = machines.mind({
     //   rsi: rsi,
     //   coinType: coinType,
@@ -282,55 +266,3 @@ module.exports = async function (options) {
 
 
 
-/////// HELPER FUNCTIONS //////
-// For error handling in a Promise.all like flow in async/await syntax
-function ignoreMoreRejectsFrom(...promises) {
-  promises.forEach(p => p && p.catch(function () {
-    // Nothing to do
-  }));
-}
-
-function isInclined(recentCompleteOrders) {
-  recentCompleteOrders = recentCompleteOrders.reverse()
-
-  const lastTimestamp = recentCompleteOrders[0].timestamp * 1
-  const TERM = 60 * 3 // 3 mins
-  // console.log(recentCompleteOrders[0], recentCompleteOrders[1])
-  let candles = recentCompleteOrders.reduce((candles, o) => {
-    const index = Math.floor((lastTimestamp - (o.timestamp * 1)) / TERM)
-
-    if (Array.isArray(candles[index]))
-      candles[index].push(o)
-    else
-      candles[index] = [o] // It's new Array
-    return candles
-  }, [])
-  candles = candles.map(c => {
-    const lastIndex = c.length - 1
-    const open = c[lastIndex].price * 1,
-      close = c[0].price * 1,
-      volume = c.reduce((sum, el) => {
-        return sum + (el.qty || 0) * 1
-      }, 0)
-
-    return {
-      v: Math.round(volume),
-      count: c.length,
-      open: open,
-      close: close,
-      // low: 0,
-      // hight: 0,
-      body: (close > open) ? "+" : "-"
-    }
-  })
-
-
-  // console.log((candles[0].body == candles[1].body) ? "wait" : "action")
-  for (let i = 0; i < 5; i++)
-    console.log(candles[i])
-  // console.log(candles.length, candles[0].length, candles[1].length, candles[2].length, candles[3].length, candles[4].length)
-  // console.log( candles[candles.length - 1])
-  if (candles[0].open == candles[0].close || _.isUndefined(candles[0]) || _.isUndefined(candles[1]))
-    return false
-  return (candles[0].body == candles[1].body) ? true : false
-}

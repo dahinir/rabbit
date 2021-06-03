@@ -19,20 +19,20 @@ exports.Order = Backbone.Model.extend({
     coinType: "", // 'BTC' or 'ETH'
     marketName: ""
   },
-  initialize: function(attributes, options) {
+  initialize: function (attributes, options) {
     if (!this.id) {
       this.set({
         id: require("mongodb").ObjectID(),
         created_at: new Date()
       });
     }
-    this.on("change:buy_at", function(e) {
+    this.on("change:buy_at", function (e) {
       console.log("fuck.. buy_at is setting at order..");
       console.log(e.attributes);
       throw new Error("KILL_ME");
     });
   },
-  completed: async function() {
+  completed: async function () {
     if (
       this.get("marketName") == "KORBIT" &&
       new Date() - this.get("placed_at") < 5200
@@ -73,7 +73,7 @@ exports.Order = Backbone.Model.extend({
     });
     console.log("[order.js] end of order.completed() ");
   },
-  cancel: async function() {
+  cancel: async function () {
     console.log(
       "[order.js] Cancel orderId:",
       this.get("orderId"),
@@ -160,11 +160,11 @@ exports.Order = Backbone.Model.extend({
 exports.Orders = Backbone.Collection.extend({
   url: "mongodb://localhost:27017/rabbit/orders",
   sync: backsync.mongodb(),
-  comparator: function(order) {
+  comparator: function (order) {
     return order.get("created_at");
   },
   model: exports.Order,
-  initialize: function(attributes, options) {
+  initialize: function (attributes, options) {
     console.log("orders init");
     this.on("change:status", o => {
       switch (o.get("status")) {
@@ -204,7 +204,7 @@ exports.Orders = Backbone.Collection.extend({
   //   this.push(newOrder)
   //   return newOrder
   // },
-  placeOrder: async function(options) {
+  placeOrder: async function (options) {
     if (!_.isObject(options))
       throw new Error("[order.placeOrder()] options needed");
 
@@ -273,7 +273,7 @@ exports.Orders = Backbone.Collection.extend({
     quantity =
       quantity.toFixed(global.rabbit.constants[coinType].COIN_PRECISON) * 1;
     if (quantity * price < 10000) {
-      // [bithumb.js] ASK's result:  { status: '5600', message: '최소 판매수량은 1 ETC 입니다.' }
+      // bithumb ASK result:  { status: '5600', message: '최소 판매수량은 1 ETC 입니다.' }
       console.log(
         `[order.js] It's too little money order. quantity is ${quantity} price is ${price} so it will be ignored.`
       );
@@ -351,7 +351,7 @@ exports.Orders = Backbone.Collection.extend({
       throw new Error("KILL_ME");
     }
   },
-  refresh: async function(options) {
+  refresh: async function (options) {
     if (this.length == 0) return;
     const coinType = options.coinType || this.at(0).get("coinType"),
       KORBIT =
@@ -459,7 +459,7 @@ exports.Orders = Backbone.Collection.extend({
     } // End of for loop
     console.log("105 [order.js] refresh loop end");
   }, // End of refresh()
-  cancel: async function(options) {
+  cancel: async function (options) {
     if (this.length == 0) return;
 
     const coinType = options.coinType || this.at(0).get("coinType"),
