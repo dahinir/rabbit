@@ -9,12 +9,12 @@ const Machine = require("./machine.js").Machine,
   Order = require("./order.js").Order,
   Orders = require("./order.js").Orders,
   RecentCompleteOrder = require("./recentCompleteOrder.js").RecentCompleteOrder,
-  RecentCompleteOrders = require("./recentCompleteOrder.js")
-    .RecentCompleteOrders;
+  RecentCompleteOrders = require("./recentCompleteOrder.js").RecentCompleteOrders,
+  marketAPIs = require("./marketAPIs.js");
 
 let killSign = false;
 process.on("SIGINT", function () {
-  console.log(": Kill sign submitted.");
+  console.log(": SIGINT(Kill sign) submitted.");
   killSign = true;
 });
 

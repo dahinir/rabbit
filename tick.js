@@ -3,6 +3,7 @@
 const _ = require('underscore'),
   fetcher = require('./fetcher.js'),
   bithumbAPI = require("./bithumb.js")
+const marketAPIs = require('./marketAPIs.js');
 
 console.log("\n\n[tick.js] Loaded!")
 
@@ -10,9 +11,11 @@ module.exports = async function (options) {
   const TICK_STARTED = new Date(),
     COUNT = options.count,
     coinType = options.coinType,
+    MARKETS = global.rabbit.constants[coinType].MARKET,  // such as ["COINONE", "KORBIT"]
     KORBIT = (global.rabbit.constants[coinType].MARKET.indexOf("KORBIT") >= 0) ? true : false,
     COINONE = (global.rabbit.constants[coinType].MARKET.indexOf("COINONE") >= 0) ? true : false,
     BITHUMB = (global.rabbit.constants[coinType].MARKET.indexOf("BITHUMB") >= 0) ? true : false
+
 
   const arbitrages = options.arbitrages,
     machines = options.machines,
@@ -39,26 +42,47 @@ module.exports = async function (options) {
   try {
     // Act like Promise.all()
     // Less important in time domain
-    const coinoneInfoPromise = COINONE ? fetcher.getCoinoneInfo(coinType) : "",
-      korbitInfoPromise = KORBIT ? fetcher.getKorbitInfo(coinType) : "",
-      bithumbInfoPromise = BITHUMB ? bithumbAPI({
-        type: "INFO",
-        coinType: coinType
-      }) : "",
-      coinoneBalancePromise = COINONE ? fetcher.getCoinoneBalance() : "",
+
+    // const coinoneInfoPromise = COINONE ? fetcher.getCoinoneInfo(coinType) : "",
+    //   korbitInfoPromise = KORBIT ? fetcher.getKorbitInfo(coinType) : "",
+    //   bithumbInfoPromise = BITHUMB ? bithumbAPI({
+    //     type: "INFO",
+    //     coinType: coinType
+    //   }) : "",
+    const coinoneBalancePromise = COINONE ? fetcher.getCoinoneBalance() : "",
       korbitBalancePromise = KORBIT ? fetcher.getKorbitBalance() : "",
       bithumbBalancePromise = BITHUMB ? bithumbAPI({
         type: "BALANCE"
       }) : ""
 
-    if (COINONE) coinoneInfo = await coinoneInfoPromise
-    if (KORBIT) korbitInfo = await korbitInfoPromise
-    if (BITHUMB) bithumbInfo = await bithumbInfoPromise
+    // if (COINONE) coinoneInfo = await coinoneInfoPromise
+    // if (KORBIT) korbitInfo = await korbitInfoPromise
+    // if (BITHUMB) bithumbInfo = await bithumbInfoPromise
 
     if (COINONE) coinoneBalance = await coinoneBalancePromise
     if (KORBIT) korbitBalance = await korbitBalancePromise
     if (BITHUMB) bithumbBalance = await bithumbBalancePromise
 
+    // let value = await Promise.all([coinoneInfoPromise, korbitInfoPromise, bithumbInfoPromise])
+
+    // Fetch ticker for all markets
+    const tickerPromises = MARKETS.map(marketName => marketAPIs[marketName].fetchTicker(coinType + "/KRW"));
+    const tickerResult = await Promise.all(tickerPromises)
+    // the output is strictly ordered. `tickerResult`, `tickerPromises` and `MARKET`.
+    for (let i = 0; i < MARKETS.length; i++) {
+      if (MARKETS[i] == "COINONE")
+        coinoneInfo = tickerResult[i]
+      else if (MARKETS[i] == "KORBIT")
+        korbitInfo = tickerResult[i]
+      else if (MARKETS[i] == "BITHUMB")
+        bithumbInfo = tickerResult[i]
+    }
+
+    // Fetch balances for all markets
+    // console.log(coinoneBalance)
+    // return
+
+    // RSI
     // rsi = await recentCompleteOrders.getRSI({
     //   coinType: coinType,
     //   marketName: COINONE ? "COINONE" : (KORBIT ? "KORBIT" : "BITHUMB"),
@@ -93,19 +117,19 @@ module.exports = async function (options) {
 
   const korbit = {
     name: "KORBIT",
-    info: korbitInfo,
+    // info: korbitInfo,
     orderbook: korbitOrderbook,
     balance: korbitBalance
   }
   const coinone = {
     name: "COINONE",
-    info: coinoneInfo,
+    // info: coinoneInfo,
     orderbook: coinoneOrderbook,
     balance: coinoneBalance
   }
   const bithumb = {
     name: "BITHUMB",
-    info: bithumbInfo,
+    // info: bithumbInfo,
     orderbook: bithumbOrderbook,
     balance: bithumbBalance
   }
@@ -130,7 +154,7 @@ module.exports = async function (options) {
     global.rabbit.coinone.balance = coinoneBalance
     global.rabbit.coinone[coinType] = {
       name: "COINONE",
-      info: coinoneInfo,
+      // info: coinoneInfo,
       orderbook: coinoneOrderbook
     }
   }
@@ -139,7 +163,7 @@ module.exports = async function (options) {
     global.rabbit.korbit.balance = korbitBalance
     global.rabbit.korbit[coinType] = {
       name: "KORBIT",
-      info: korbitInfo,
+      // info: korbitInfo,
       orderbook: korbitOrderbook
     }
   }
@@ -148,11 +172,10 @@ module.exports = async function (options) {
     global.rabbit.bithumb.balance = bithumbBalance
     global.rabbit.bithumb[coinType] = {
       name: "BITHUMB",
-      info: bithumbInfo,
+      // info: bithumbInfo,
       orderbook: bithumbOrderbook
     }
   }
-
 
   // global.rabbit.markets = global.rabbit.markets || {}
   let totalCoin = COINONE ? coinoneBalance[coinType].balance : 0
@@ -257,7 +280,7 @@ module.exports = async function (options) {
     lastPrice: lastPrice
   })
 
-  ////// Presentation /////// :will move to index.js
+  ////// Presentation /////// 
   machines.presentation({
     coinType: coinType,
     orderbook: COINONE ? coinoneOrderbook : (KORBIT ? korbitOrderbook : bithumbOrderbook)
