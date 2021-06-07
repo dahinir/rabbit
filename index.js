@@ -446,7 +446,7 @@ async function run() {
       arbitrages: getArbitrages(coinType),
       machines: getMachines(coinType),
       orders: getOrders(coinType),
-      recentCompleteOrders: getRecentCompleteOrders(coinType),
+      // recentCompleteOrders: getRecentCompleteOrders(coinType),
       coinType: coinType,
       count: count
     });
@@ -508,13 +508,13 @@ async function run() {
                   : false;
 
             balanceSum += KORBIT
-              ? korbitBalance[ct].total * korbit[ct].orderbook.bid[0].price
+              ? korbitBalance[ct].total * korbit[ct].orderbook.bids[0][0]
               : 0;
             balanceSum += COINONE
-              ? coinoneBalance[ct].total * coinone[ct].orderbook.bid[0].price
+              ? coinoneBalance[ct].total * coinone[ct].orderbook.bids[0][0]
               : 0;
             balanceSum += BITHUMB
-              ? bithumbBalance[ct].total * bithumb[ct].orderbook.bid[0].price
+              ? bithumbBalance[ct].total * bithumb[ct].orderbook.bids[0][0]
               : 0;
             const profit = global.rabbit.constants[ct].profit_krw_sum || 0;
             const damage = global.rabbit.constants[ct].krw_damage || 0;
