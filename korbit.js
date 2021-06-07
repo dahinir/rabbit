@@ -89,7 +89,19 @@ module.exports = function (options) {
     // currency_pair = options.coinType.toLowerCase() + "_krw"
     let opts
 
-    if (options.type == "BID") {
+    if (options.type == "TICKER") {
+      opts = {
+        method: "GET",
+        // headers: headers,
+        url: ROOT_URL + "v1/ticker/detailed?currency_pair=" + options.coinType.toLowerCase() + "_krw"
+      }
+    } else if (options.type == "ORDERBOOK") {
+      opts = {
+        method: "GET",
+        // headers: headers,
+        url: ROOT_URL + "v1/orderbook?currency_pair=" + options.coinType.toLowerCase() + "_krw"
+      }
+    } else if (options.type == "BID") {
       opts = {
         method: "POST",
         headers: headers,
@@ -188,7 +200,9 @@ module.exports = function (options) {
 
       if (result.status == "success" || // BID, ASK
         _.isArray(result) || // UNCOMPLETED_ORDERS, CANCEL_ORDER
-        _.isObject(result.krw)) { // BALANCE
+        _.isObject(result.krw) || // BALANCE
+        !_.isUndefined(result.last) || // TICKER
+        _.isArray(result.bids)) { // ORDERBOOK
         resolve(result)
       } else {
         console.log("[korbit.js] result is funny:", result)

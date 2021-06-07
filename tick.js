@@ -34,7 +34,7 @@ module.exports = async function (options) {
 
 
   /////// FETCHING //////////
-  let FETCH_STARTED
+  let FETCH_STARTED = Infinity;
   let coinoneInfo, coinoneOrderbook, coinoneBalance, coinoneRecentCompleteOrders
   let korbitInfo, korbitOrderbook, korbitBalance, korbitRecentCompleteOrders
   let bithumbInfo, bithumbOrderbook, bithumbBalance, bithumbCompleteOrders

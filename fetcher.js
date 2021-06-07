@@ -88,32 +88,33 @@ exports.getRecentTransactions = function () {
 
 
 
-exports.getKorbitInfo = function (coinType) {
-  return new Promise((resolve, reject) => {
-    request({
-      method: "GET",
-      uri: "https://api.korbit.co.kr/v1/ticker/detailed",
-      qs: {
-        currency_pair: coinType.toLowerCase() + "_krw"
-      }
-    },
-      function (error, response, body) {
-        let result
-        try {
-          result = JSON.parse(body)
-        } catch (e) {
-          // throw new Error("[fetcher.js] Maybe not a problem")
-          reject()
-          return
-        }
+// exports.getKorbitInfo = function (coinType) {
+//   return new Promise((resolve, reject) => {
+//     request({
+//       method: "GET",
+//       uri: "https://api.korbit.co.kr/v1/ticker/detailed",
+//       qs: {
+//         currency_pair: coinType.toLowerCase() + "_krw"
+//       }
+//     },
+//       function (error, response, body) {
+//         let result
+//         try {
+//           result = JSON.parse(body)
+//         } catch (e) {
+//           // throw new Error("[fetcher.js] Maybe not a problem")
+//           reject()
+//           return
+//         }
 
-        if (result.timestamp > 0)
-          resolve(result)
-        else
-          reject(result)
-      })
-  })
-}
+//         if (result.timestamp > 0)
+//           resolve(result)
+//         else
+//           reject(result)
+//       })
+//   })
+// }
+
 exports.getKorbitOrderbook = function (coinType) {
   // console.log("korbit with", (coinType=="ETH")?"eth_krw":"btc_krw")
   return new Promise((resolve, reject) => {

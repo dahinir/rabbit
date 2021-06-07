@@ -1,6 +1,7 @@
 "use strict";
 
 const ccxt = require('ccxt');
+const request = require('request');
 const KEYS = require('./credentials/keys.json');
 const fetcher = require('./fetcher.js');
 const korbitAPI = require("./korbit.js");
@@ -17,10 +18,15 @@ const coinoneWrap = Object.create(coinone);
 
 //// KORBIT does not use CCTX ////
 const korbit = {
-    fetchTicker: function (coinPair) {
+    fetchTicker: async function (coinPair) {
         // regex: do something like 'ETH/KRW' to "ETH"
-        const coinType = coinPair.split(/\//)[0];
-        return fetcher.getKorbitInfo(coinType)  // returns Promise
+        const result = await korbitAPI({
+            type: "TICKER",
+            coinType: coinPair.split(/\//)[0]
+        })
+        for (let key in result)
+            result[key] = result[key] * 1
+        return result
     },
     fetchBalance: async function () {
         const result = await korbitAPI({
@@ -35,6 +41,16 @@ const korbit = {
             }
         }
         return bals
+    },
+    fetchOrderBook: async function (coinPair) {
+        const result = await korbitAPI({
+            type: "ORDERBOOK",
+            coinType: coinPair.split(/\//)[0]
+        })
+        result.symbol = coinPair
+        result.bids = result.bids.map(([p, q, notUsed]) => [p * 1, q * 1])
+        result.asks = result.asks.map(([p, q, notUsed]) => [p * 1, q * 1])
+        return result
     }
 }
 
