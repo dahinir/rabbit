@@ -488,9 +488,9 @@ async function run() {
           bithumb = global.rabbit.bithumb;
         let profitSum = 0,
           balanceSum = 0;
-        balanceSum += korbitBalance ? korbitBalance.KRW.balance : 0;
-        balanceSum += coinoneBalance ? coinoneBalance.KRW.balance : 0;
-        balanceSum += bithumbBalance ? bithumbBalance.KRW.balance : 0;
+        balanceSum += korbitBalance ? korbitBalance.KRW.total : 0;
+        balanceSum += coinoneBalance ? coinoneBalance.KRW.total : 0;
+        balanceSum += bithumbBalance ? bithumbBalance.KRW.total : 0;
 
         try {
           for (const ct of runningCoinType) {
@@ -508,13 +508,13 @@ async function run() {
                   : false;
 
             balanceSum += KORBIT
-              ? korbitBalance[ct].balance * korbit[ct].orderbook.bid[0].price
+              ? korbitBalance[ct].total * korbit[ct].orderbook.bid[0].price
               : 0;
             balanceSum += COINONE
-              ? coinoneBalance[ct].balance * coinone[ct].orderbook.bid[0].price
+              ? coinoneBalance[ct].total * coinone[ct].orderbook.bid[0].price
               : 0;
             balanceSum += BITHUMB
-              ? bithumbBalance[ct].balance * bithumb[ct].orderbook.bid[0].price
+              ? bithumbBalance[ct].total * bithumb[ct].orderbook.bid[0].price
               : 0;
             const profit = global.rabbit.constants[ct].profit_krw_sum || 0;
             const damage = global.rabbit.constants[ct].krw_damage || 0;
@@ -535,16 +535,16 @@ async function run() {
         console.log(
           "IN CASH: \u20A9",
           new Intl.NumberFormat().format(
-            korbitBalance.KRW.balance +
-            coinoneBalance.KRW.balance +
-            bithumbBalance.KRW.balance
+            korbitBalance.KRW.total +
+            coinoneBalance.KRW.total +
+            bithumbBalance.KRW.total
           ),
           "\t( Coinone:",
-          new Intl.NumberFormat().format(coinoneBalance.KRW.balance),
+          new Intl.NumberFormat().format(coinoneBalance.KRW.total),
           "  Korbit:",
-          new Intl.NumberFormat().format(korbitBalance.KRW.balance),
+          new Intl.NumberFormat().format(korbitBalance.KRW.total),
           "  Bithumb:",
-          new Intl.NumberFormat().format(bithumbBalance.KRW.balance),
+          new Intl.NumberFormat().format(bithumbBalance.KRW.total),
           ")"
         );
         console.log(

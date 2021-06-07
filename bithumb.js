@@ -26,8 +26,8 @@ const api = {
         const endPoint = "/public/ticker/" + options.coinType.toUpperCase() + "_KRW"
         // returns a promise
         return fetch(ROOT_URL + endPoint, {
-                method: "GET"
-            })
+            method: "GET"
+        })
             .then(res => res.json())
             .then(result => {
                 if (result.status != '0000') {
@@ -51,8 +51,8 @@ const api = {
         const endPoint = "/trade/orderbook/" + options.coinType.toUpperCase() + "_KRW"
         // returns a promise
         return fetch(ROOT_URL + endPoint, {
-                method: "GET"
-            })
+            method: "GET"
+        })
             .then(res => res.json())
             .then(result => {
                 if (result.status != '0000') {
@@ -85,8 +85,8 @@ const api = {
         const endPoint = "/public/transaction_history/" + options.coinType.toUpperCase() + "_KRW" + "?count=100"
         // returns a promise
         return fetch(ROOT_URL + endPoint, {
-                method: "GET"
-            })
+            method: "GET"
+        })
             .then(res => res.json())
             .then(result => {
                 if (result.status != '0000') {
@@ -199,12 +199,12 @@ const api = {
                         // bal[coinType] = bal[coinType] || {}
                         if (coinType in bal === false)
                             bal[coinType] = {}
-                        bal[coinType].available = data[name] * 1
+                        bal[coinType].free = data[name] * 1
                     } else if (name.startsWith('total_')) {
                         const coinType = name.slice(6).toUpperCase()
                         if (coinType in bal === false)
                             bal[coinType] = {}
-                        bal[coinType].balance = data[name] * 1
+                        bal[coinType].total = data[name] * 1
                     }
                 }
                 return bal

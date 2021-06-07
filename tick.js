@@ -49,20 +49,18 @@ module.exports = async function (options) {
     //     type: "INFO",
     //     coinType: coinType
     //   }) : "",
-    const coinoneBalancePromise = COINONE ? fetcher.getCoinoneBalance() : "",
-      korbitBalancePromise = KORBIT ? fetcher.getKorbitBalance() : "",
-      bithumbBalancePromise = BITHUMB ? bithumbAPI({
-        type: "BALANCE"
-      }) : ""
+    // const coinoneBalancePromise = COINONE ? fetcher.getCoinoneBalance() : "",
+    //   korbitBalancePromise = KORBIT ? fetcher.getKorbitBalance() : "",
+    //   bithumbBalancePromise = BITHUMB ? bithumbAPI({
+    //     type: "BALANCE"
+    //   }) : ""
 
     // if (COINONE) coinoneInfo = await coinoneInfoPromise
     // if (KORBIT) korbitInfo = await korbitInfoPromise
     // if (BITHUMB) bithumbInfo = await bithumbInfoPromise
-
-    if (COINONE) coinoneBalance = await coinoneBalancePromise
-    if (KORBIT) korbitBalance = await korbitBalancePromise
-    if (BITHUMB) bithumbBalance = await bithumbBalancePromise
-
+    // if (COINONE) coinoneBalance = await coinoneBalancePromise
+    // if (KORBIT) korbitBalance = await korbitBalancePromise
+    // if (BITHUMB) bithumbBalance = await bithumbBalancePromise
     // let value = await Promise.all([coinoneInfoPromise, korbitInfoPromise, bithumbInfoPromise])
 
     // Fetch ticker for all markets
@@ -70,17 +68,22 @@ module.exports = async function (options) {
     const tickerResult = await Promise.all(tickerPromises)
     // the output is strictly ordered. `tickerResult`, `tickerPromises` and `MARKET`.
     for (let i = 0; i < MARKETS.length; i++) {
-      if (MARKETS[i] == "COINONE")
-        coinoneInfo = tickerResult[i]
-      else if (MARKETS[i] == "KORBIT")
-        korbitInfo = tickerResult[i]
-      else if (MARKETS[i] == "BITHUMB")
-        bithumbInfo = tickerResult[i]
+      if (MARKETS[i] == "COINONE") coinoneInfo = tickerResult[i]
+      else if (MARKETS[i] == "KORBIT") korbitInfo = tickerResult[i]
+      else if (MARKETS[i] == "BITHUMB") bithumbInfo = tickerResult[i]
     }
+    // console.log(korbitInfo)
+    // console.log(bithumbInfo)
 
     // Fetch balances for all markets
     // console.log(coinoneBalance)
-    // return
+    const balancePromises = MARKETS.map(marketName => marketAPIs[marketName].fetchBalance());
+    const balanceResult = await Promise.all(balancePromises);
+    for (let i = 0; i < MARKETS.length; i++) {
+      if (MARKETS[i] == "COINONE") coinoneBalance = balanceResult[i]
+      else if (MARKETS[i] == "KORBIT") korbitBalance = balanceResult[i]
+      else if (MARKETS[i] == "BITHUMB") bithumbBalance = balanceResult[i]
+    }
 
     // RSI
     // rsi = await recentCompleteOrders.getRSI({
@@ -178,16 +181,16 @@ module.exports = async function (options) {
   }
 
   // global.rabbit.markets = global.rabbit.markets || {}
-  let totalCoin = COINONE ? coinoneBalance[coinType].balance : 0
-  totalCoin += KORBIT ? korbitBalance[coinType].balance : 0
-  totalCoin += BITHUMB ? bithumbBalance[coinType].balance : 0
+  let totalCoin = COINONE ? coinoneBalance[coinType].total : 0
+  totalCoin += KORBIT ? korbitBalance[coinType].total : 0
+  totalCoin += BITHUMB ? bithumbBalance[coinType].total : 0
   let lastPrice = COINONE ? coinoneInfo.last : (KORBIT ? korbitInfo.last : bithumbInfo)
 
   if (COINONE) console.log("-- In 24 hrs", coinoneInfo.volume, coinType, "traded at Coinone:", coinoneInfo.low, "~", coinoneInfo.high, ":", coinoneInfo.last, "(", ((coinoneInfo.last - coinoneInfo.low) / (coinoneInfo.high - coinoneInfo.low) * 100).toFixed(2), "% )----")
   console.log("coin:", (totalCoin).toFixed(2), coinType, "is now about \u20A9", new Intl.NumberFormat().format(((totalCoin) * lastPrice).toFixed(0)))
-  if (COINONE) console.log("Coinone", coinType + ":", coinoneBalance[coinType].available.toFixed(3))
-  if (KORBIT) console.log("Korbit ", coinType + ":", korbitBalance[coinType].available.toFixed(3))
-  if (BITHUMB) console.log("Bithumb", coinType + ":", bithumbBalance[coinType].available.toFixed(3))
+  if (COINONE) console.log("Coinone", coinType + ":", coinoneBalance[coinType].total.toFixed(3))
+  if (KORBIT) console.log("Korbit ", coinType + ":", korbitBalance[coinType].total.toFixed(3))
+  if (BITHUMB) console.log("Bithumb", coinType + ":", bithumbBalance[coinType].total.toFixed(3))
   if (COINONE) console.log("--(coinone", coinType + ")-----max bid:", coinoneOrderbook.bid[0], "min ask:", coinoneOrderbook.ask[0])
   if (KORBIT) console.log("--(korbit ", coinType + ")-----max bid:", korbitOrderbook.bid[0], "min ask:", korbitOrderbook.ask[0])
   if (BITHUMB) console.log("--(bithumb", coinType + ")-----max bid:", bithumbOrderbook.bid[0], "min ask:", bithumbOrderbook.ask[0])

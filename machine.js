@@ -379,13 +379,13 @@ exports.Machines = Backbone.Collection.extend({
 
 
     ///// Validate balance: pre .mind /////
-    const valueOfCoinSum = (highBidMarket.balance[coinType].available + lowAskMarket.balance[coinType].available) * highBidMarket.orderbook.bid[0].price
+    const valueOfCoinSum = (highBidMarket.balance[coinType].free + lowAskMarket.balance[coinType].free) * highBidMarket.orderbook.bid[0].price
     if (valueOfCoinSum > 3000000) {
       // using one market
-      if (highBidMarket.balance[coinType].available * highBidMarket.orderbook.bid[0].price < 500000) {
+      if (highBidMarket.balance[coinType].free * highBidMarket.orderbook.bid[0].price < 500000) {
         console.log(`[machines.mind()] Not enough coin at ${highBidMarket.name}.. so won't sell here`)
         highBidMarket = lowAskMarket
-      } else if (lowAskMarket.balance.KRW.available < 500000) {
+      } else if (lowAskMarket.balance.KRW.free < 500000) {
         console.log(`[machines.mind()] Not enough krw at ${lowAskMarket.name}.. so won't buy here`)
         lowAskMarket = highBidMarket
       }
@@ -473,14 +473,14 @@ exports.Machines = Backbone.Collection.extend({
     if (bestOrderbook.bid[0].price <= bestOrderbook.ask[0].price) { // internal trade recommended
       // Validate the balance
       if (totalBid > totalAsk) {
-        if ((totalBid - totalAsk) * bestOrderbook.ask[0].price < lowAskMarket.balance.KRW.available - 10000) {
+        if ((totalBid - totalAsk) * bestOrderbook.ask[0].price < lowAskMarket.balance.KRW.free - 10000) {
           console.log("[machine.js] I have money to buy coin at", lowAskMarket.name)
         } else {
           console.log("[machine.js] Not enough money at", lowAskMarket.name, "hurry up!!!!!")
           return []
         }
       } else {
-        if ((totalAsk - totalBid) * 1.1 < highBidMarket.balance[coinType].available) { // 0.1% headroom for fee
+        if ((totalAsk - totalBid) * 1.1 < highBidMarket.balance[coinType].free) { // 10% headroom for fee
           console.log("[machine.js] I have coin to ask at", highBidMarket.name)
         } else {
           console.log("[machine.js] Not enough coin at", highBidMarket.name, "hurry up!!!!!")
@@ -501,13 +501,13 @@ exports.Machines = Backbone.Collection.extend({
       }]
     } else { // Don't make internal trade in this case.
       // Validate the balances
-      if (totalBid * bestOrderbook.ask[0].price < lowAskMarket.balance.KRW.available - 10000) {
+      if (totalBid * bestOrderbook.ask[0].price < lowAskMarket.balance.KRW.free - 10000) {
         console.log("[machine.js] Enough money at", lowAskMarket.name)
       } else {
         console.log("[machine.js] Put money at", lowAskMarket.name, "hurry up!!!!!!")
         totalBid = 0, bidMachineIds = [], bidParticipants = []
       }
-      if (totalAsk * 1.1 < highBidMarket.balance[coinType].available) { // 0.1% headroom for fee
+      if (totalAsk * 1.1 < highBidMarket.balance[coinType].free) { // 10% headroom for fee..
         console.log("[machine.js] Enough", coinType, "at", highBidMarket.name)
       } else {
         console.log("[machine.js] Put", coinType, "at", highBidMarket.name, "hurry up!!!!!!")
@@ -656,15 +656,15 @@ exports.Arbitrages = exports.Machines.extend({
 
 
     //// Validate balance ////
-    if ((lowMarket.balance[coinType].available + highMarket.balance[coinType].available) * lowMarket.orderbook.ask[0].price < 2000000) {
+    if ((lowMarket.balance[coinType].free + highMarket.balance[coinType].free) * lowMarket.orderbook.ask[0].price < 2000000) {
       console.log(`[arbitrages.mind] Not enough ${coinType} to arbitrage yet..`)
       return [{}, {}]
     }
-    if (lowMarket.balance.KRW.available < lowMarket.orderbook.ask[0].price * quantity * 1.1) { // 0.1% headroom for fee
+    if (lowMarket.balance.KRW.free < lowMarket.orderbook.ask[0].price * quantity * 1.1) { // 10% headroom for fee
       console.log("[arbitrages.mind] Not enough krw at", lowMarket.name, "GIVE ME THE MONEY!!")
       return [{}, {}]
     }
-    if (highMarket.balance[coinType].available < quantity * 1.1) { // 0.1% headroom for fee
+    if (highMarket.balance[coinType].free < quantity * 1.1) { // 10% headroom for fee
       console.log(`[arbitrages.mind] Not enough ${coinType} at ${highMarket.name} MOVE THE COIN!`)
       return [{}, {}]
     }
