@@ -137,7 +137,7 @@ exports.getKorbitOrderbook = function (coinType) {
         }
 
         const result = {
-          timestamp: data.timestamp / 1000, // Math.round(data.timestamp * 1 / 1000),
+          timestamp: data.timestamp, // Math.round(data.timestamp * 1),
           // timestamp: data.timestamp * 1,
           bid: data.bids.map(([price, qty]) => { return { price: price * 1, qty: qty * 1 } }),
           ask: data.asks.map(([price, qty]) => { return { price: price * 1, qty: qty * 1 } })
@@ -179,7 +179,7 @@ exports.getKorbitRecentCompleteOrders = function (coinType) {
         try {
           result = JSON.parse(body).map(o => {
             return {
-              timestamp: o.timestamp / 1000, // Math.round(o.timestamp/1000),
+              timestamp: o.timestamp, // Math.round(o.timestamp),
               price: o.price * 1,
               qty: o.amount * 1
             }

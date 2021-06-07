@@ -349,7 +349,7 @@ exports.Machines = Backbone.Collection.extend({
     chunk(0);
   },
   mind: function (options) {
-    const startTime = new Date()
+    const startTime = Date.now()
     const coinType = options.coinType || this.at(0).get("coinType"),
       markets = options.markets,
       // korbit = options.korbit,
@@ -535,7 +535,7 @@ exports.Machines = Backbone.Collection.extend({
       }]
     }
 
-    console.log("[machine.js] machines.mind() takes", ((new Date() - startTime) / 1000).toFixed(3), "sec")
+    console.log("[machine.js] machines.mind() takes", ((Date.now() - startTime) / 1000).toFixed(3), "sec")
     return result
   }
 });

@@ -97,7 +97,7 @@ module.exports = async function (options) {
     // console.log("Fetching some info takes", ((new Date() - TICK_STARTED) / 1000).toFixed(2), "sec")
 
     // More important in time domain //
-    FETCH_STARTED = Date.now() / 1000 // in sec
+    FETCH_STARTED = Date.now() // in ms
     const coinoneOrderbookPromise = COINONE ? fetcher.getCoinoneOrderbook(coinType) : "",
       korbitOrderbookPromise = KORBIT ? fetcher.getKorbitOrderbook(coinType) : "",
       bithumbOrderbookPromise = BITHUMB ? bithumbAPI({
@@ -197,16 +197,16 @@ module.exports = async function (options) {
 
 
   //// It's time sensitive ////
-  const NOW = Date.now() / 1000 // in sec
-  const FETCHING_TIME = NOW - FETCH_STARTED // sec
-  console.log("Fetching All Orderbooks takes", FETCHING_TIME, "sec")
-  if (FETCHING_TIME > 4.2) {
+  const NOW = Date.now() // in ms
+  const FETCHING_TIME = NOW - FETCH_STARTED // ms
+  console.log("Fetching All Orderbooks takes", FETCHING_TIME / 1000, "sec")
+  if (FETCHING_TIME > 4.2 * 1000) {
     console.log("Fetched too late. Don't buy when the market is busy. pass this tic. fetchingTime:", FETCHING_TIME)
     return
   }
   if (COINONE) {
     const ORDERBOOK_OLD = NOW - coinoneOrderbook.timestamp
-    if (ORDERBOOK_OLD > 7.1) { // sec
+    if (ORDERBOOK_OLD > 7.1 * 1000) { // sec
       console.log("Coinone orderbook is too old:", ORDERBOOK_OLD)
       return
     }
@@ -218,7 +218,7 @@ module.exports = async function (options) {
   }
   if (KORBIT) {
     const ORDERBOOK_OLD = NOW - korbitOrderbook.timestamp
-    if (ORDERBOOK_OLD > 60) { // Unix timestamp in milliseconds of the last placed order.
+    if (ORDERBOOK_OLD > 60 * 1000) { // Unix timestamp in milliseconds of the last placed order.
       console.log("Korbit orderbook is too old:", ORDERBOOK_OLD)
       return
     }
@@ -229,7 +229,7 @@ module.exports = async function (options) {
   }
   if (BITHUMB) {
     const ORDERBOOK_OLD = NOW - bithumbOrderbook.timestamp
-    if (ORDERBOOK_OLD > 50) { // Unix timestamp in milliseconds of the last placed order.
+    if (ORDERBOOK_OLD > 50 * 1000) { // Unix timestamp in milliseconds of the last placed order.
       console.log("Bithumb orderbook is too old:", ORDERBOOK_OLD)
       return
     }

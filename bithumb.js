@@ -62,7 +62,7 @@ const api = {
 
                 const data = result.data
                 const ob = {
-                    timestamp: data.timestamp * 1 / 1000,
+                    timestamp: data.timestamp * 1,
                     bid: data.bids.map(el => {
                         return {
                             price: el.price * 1,
@@ -96,7 +96,7 @@ const api = {
 
                 return result.data.map(o => {
                     return {
-                        timestamp: new Date(o.transaction_date).getTime() / 1000, // Math.round(o.timestamp/1000),
+                        timestamp: new Date(o.transaction_date).getTime(), // Math.round(o.timestamp/1000),
                         price: o.price * 1,
                         qty: o.units_traded * 1
                     }
