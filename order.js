@@ -214,7 +214,7 @@ exports.Orders = Backbone.Collection.extend({
         marketAPI = bithumbAPI;
         break;
       default:
-        throw new Error("[order.js]Trying place order without marketName");
+        throw new Error("[order.js] Trying place order without marketName");
     }
 
     // NEW ORDER ONLY HERE
@@ -266,9 +266,6 @@ exports.Orders = Backbone.Collection.extend({
 
     // Actual order here
     let marketResult;
-    // if (type == "BID" && options.tt != "ARBIT" && global.rabbit.bought_coin < 560) { // temporally BID is ignored
-    // marketResult = { orderId: "ignoredBID" + Date.now() }
-    // }else{
     marketResult = await marketAPI({
       type: type,
       price: price,
@@ -283,9 +280,8 @@ exports.Orders = Backbone.Collection.extend({
       quantity,
       marketResult.orderId
     );
-    // }
 
-    // Only success to place order
+    // When only success to place order
     if (marketResult.orderId) {
       newOrder.set({
         marketName: options.marketName,
