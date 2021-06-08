@@ -1,8 +1,5 @@
 "use strict"
 
-const _ = require('underscore'),
-  fetcher = require('./fetcher.js'),
-  bithumbAPI = require("./bithumb.js")
 const marketAPIs = require('./marketAPIs.js');
 
 console.log("\n\n[tick.js] Loaded!")
@@ -296,6 +293,3 @@ module.exports = async function (options) {
     orderbook: COINONE ? coinoneOrderbook : (KORBIT ? korbitOrderbook : bithumbOrderbook)
   })
 } // End of module.exports
-
-
-

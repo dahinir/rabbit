@@ -3,10 +3,9 @@
 const ccxt = require('ccxt');
 const request = require('request');
 const KEYS = require('./credentials/keys.json');
-const fetcher = require('./fetcher.js');
 const korbitAPI = require("./korbit.js");
 
-console.log("marketAPIs.js called haha--------------------------------------------")
+console.log("marketAPIs.js called haha-------------------this should be called once..-------------------------")
 
 //// COINONE ////
 const coinone = new ccxt.coinone({
@@ -74,6 +73,11 @@ upbitWrap.fetchTicker = async function (opt) {
     result.marketName = "UPBIT"
     return result
 }
+
+console.log("[marketAPIs.js] loadMarkets().....")
+await coinone.loadMarkets();
+await korbit.loadMarkets();
+await bithumb.loadMarkets();
 
 module.exports = {
     "COINONE": coinoneWrap,

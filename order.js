@@ -6,6 +6,7 @@ const Backbone = require("backbone"),
   coinoneAPI = require("./coinone.js"),
   korbitAPI = require("./korbit.js"),
   bithumbAPI = require("./bithumb.js");
+const ccxt = require('ccxt');
 
 exports.Order = Backbone.Model.extend({
   urlRoot: "mongodb://localhost:27017/rabbit/orders", // not url. cuz of backsync
@@ -35,7 +36,7 @@ exports.Order = Backbone.Model.extend({
   completed: async function () {
     if (
       this.get("marketName") == "KORBIT" &&
-      new Date() - this.get("placed_at") < 5200
+      new Date() - this.get("placed_at") < 5200 // ms
     ) {
       console.log(
         "[order.js] Younger than 5200ms old Korbit order. so just ignore this complete()"
@@ -74,16 +75,11 @@ exports.Order = Backbone.Model.extend({
     console.log("[order.js] end of order.completed() ");
   },
   cancel: async function () {
-    console.log(
-      "[order.js] Cancel orderId:",
-      this.get("orderId"),
-      "at",
-      this.get("marketName"),
+    console.log(`[order.js] Cancel orderId: ${this.get("orderId")} at ${this.get("marketName")}`,
       this.get("price"),
       this.get("quantity"),
       this.get("type"),
-      this.get("coinType")
-    );
+      this.get("coinType"))
 
     try {
       if (this.get("marketName") == "COINONE") {
@@ -189,21 +185,6 @@ exports.Orders = Backbone.Collection.extend({
       }
     });
   },
-  // createOrder: function(options){
-  //   console.log("createOrder")
-  //   const newOrder = new exports.Order();
-  //   // newOrder.on("change:status", o => {
-  //     // console.log("event!", o.get("status"))
-  //     // console.log(arguments)
-  //     // if (o.get("status"))
-  //     //   this.remove(o)
-  //     // else {
-  //     //   console.log("wwwwww")
-  //     // }
-  //   // })
-  //   this.push(newOrder)
-  //   return newOrder
-  // },
   placeOrder: async function (options) {
     if (!_.isObject(options))
       throw new Error("[order.placeOrder()] options needed");
