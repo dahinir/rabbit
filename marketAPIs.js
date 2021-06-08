@@ -74,10 +74,9 @@ upbitWrap.fetchTicker = async function (opt) {
     return result
 }
 
-console.log("[marketAPIs.js] loadMarkets().....")
-await coinone.loadMarkets();
-await korbit.loadMarkets();
-await bithumb.loadMarkets();
+// await coinone.loadMarkets();
+// await korbit.loadMarkets();
+// await bithumb.loadMarkets();
 
 module.exports = {
     "COINONE": coinoneWrap,
