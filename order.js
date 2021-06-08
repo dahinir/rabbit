@@ -214,7 +214,7 @@ exports.Orders = Backbone.Collection.extend({
         marketAPI = bithumbAPI;
         break;
       default:
-        throw new Error("Trying place order without marketName");
+        throw new Error("[order.js]Trying place order without marketName");
     }
 
     // NEW ORDER ONLY HERE

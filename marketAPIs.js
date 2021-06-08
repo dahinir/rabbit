@@ -17,6 +17,9 @@ const coinoneWrap = Object.create(coinone);
 
 //// KORBIT does not use CCTX ////
 const korbit = {
+    loadMarkets: async function () {
+        // do nothing
+    },
     fetchTicker: async function (coinPair) {
         // regex: do something like 'ETH/KRW' to "ETH"
         const result = await korbitAPI({
