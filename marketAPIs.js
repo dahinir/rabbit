@@ -53,6 +53,38 @@ const korbit = {
         result.bids = result.bids.map(([p, q, notUsed]) => [p * 1, q * 1])
         result.asks = result.asks.map(([p, q, notUsed]) => [p * 1, q * 1])
         return result
+    },
+    createOrder: async function (coinPair, orderType, side, amount, price) {
+        const result = await korbitAPI({
+            type: (side == "buy") ? "BID" : "ASK",
+            price: price,
+            qty: amount,
+            coinType: coinPair.split(/\//)[0]
+        })
+        return {
+            id: result.orderId.toString()
+        }
+    },
+    fetchOpenOrders: async function (coinPair) {
+        const results = await korbitAPI({
+            type: "UNCOMPLETED_ORDERS",
+            coinType: coinPair.split(/\//)[0]
+        })
+        // console.log(results)
+        const modified = results.map(result => {
+            return {
+                id: result.id.toString(),
+                timestamp: +result.timestamp,
+                symbol: coinPair,
+                // type: "limit",
+                side: (result.type == "bid") ? "buy" : "sell",
+                price: +result.price.value,
+                amount: +result.total.value,
+                remaining: +result.open.value
+            }
+        })
+        // console.log(modified)
+        return modified
     }
 }
 

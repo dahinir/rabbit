@@ -6,7 +6,7 @@ const Backbone = require("backbone"),
   coinoneAPI = require("./coinone.js"),
   korbitAPI = require("./korbit.js"),
   bithumbAPI = require("./bithumb.js");
-const ccxt = require('ccxt');
+const marketAPIs = require('./marketAPIs.js');
 
 exports.Order = Backbone.Model.extend({
   urlRoot: "mongodb://localhost:27017/rabbit/orders", // not url. cuz of backsync
@@ -45,7 +45,7 @@ exports.Order = Backbone.Model.extend({
     }
 
     const that = this;
-    for (let machine of this.participants) {
+    for (let machine of this.participants || []) {
       // console.log("machine id:", machine.id)
       await machine.accomplish(this);
     }
@@ -202,21 +202,6 @@ exports.Orders = Backbone.Collection.extend({
       return;
     }
 
-    let marketAPI;
-    switch (options.marketName) {
-      case "COINONE":
-        marketAPI = coinoneAPI;
-        break;
-      case "KORBIT":
-        marketAPI = korbitAPI;
-        break;
-      case "BITHUMB":
-        marketAPI = bithumbAPI;
-        break;
-      default:
-        throw new Error("[order.js] Trying place order without marketName");
-    }
-
     // NEW ORDER ONLY HERE
     const newOrder = new exports.Order({
       machineIds: options.machineIds,
@@ -265,27 +250,35 @@ exports.Orders = Backbone.Collection.extend({
       console.log("Whoa! internalTradeQuantity:", internalTradeQuantity);
 
     // Actual order here
-    let marketResult;
-    marketResult = await marketAPI({
-      type: type,
-      price: price,
-      qty: quantity,
-      coinType: coinType
-    });
+    let marketResult
+    try {
+      marketResult = await marketAPIs[options.marketName].createOrder(
+        coinType + "/KRW", // like 'ETC/KRW', 
+        'limit',  // 'limit' or 'market'. but don't use 'market'
+        (type == "BID") ? "buy" : "sell", // "buy" or "sell"
+        quantity,
+        price);
+    } catch (e) {
+      console.log("[order.js] error while order to market")
+      console.log("options was", options)
+      throw e
+    }
+
+    // console.log(marketResult);
     console.log(
       "[order.js] The order is placed",
       options.marketName,
       type,
       price,
       quantity,
-      marketResult.orderId
+      marketResult.id
     );
 
     // When only success to place order
-    if (marketResult.orderId) {
+    if (marketResult.id) {
       newOrder.set({
         marketName: options.marketName,
-        orderId: marketResult.orderId,
+        orderId: marketResult.id,
         type: type,
         price: price,
         quantity: quantity,
@@ -330,65 +323,64 @@ exports.Orders = Backbone.Collection.extend({
   },
   refresh: async function (options) {
     if (this.length == 0) return;
-    const coinType = options.coinType || this.at(0).get("coinType"),
-      KORBIT =
-        global.rabbit.constants[coinType].MARKET.indexOf("KORBIT") >= 0
-          ? true
-          : false,
-      COINONE =
-        global.rabbit.constants[coinType].MARKET.indexOf("COINONE") >= 0
-          ? true
-          : false,
-      BITHUMB =
-        global.rabbit.constants[coinType].MARKET.indexOf("BITHUMB") >= 0
-          ? true
-          : false;
-    console.log(
-      "100 [order.js] Will refresh",
-      this.length,
-      "the local",
-      coinType,
-      "orders"
-    );
+    const coinType = options.coinType || this.at(0).get("coinType");
+    const MARKETS = global.rabbit.constants[coinType].MARKET;
+    // const KORBIT =
+    //   global.rabbit.constants[coinType].MARKET.indexOf("KORBIT") >= 0
+    //     ? true
+    //     : false,
+    // COINONE =
+    //   global.rabbit.constants[coinType].MARKET.indexOf("COINONE") >= 0
+    //     ? true
+    //     : false,
+    // BITHUMB =
+    //   global.rabbit.constants[coinType].MARKET.indexOf("BITHUMB") >= 0
+    //     ? true
+    //     : false;
+    console.log("100 [order.js] Will refresh", this.length, "the local", coinType, "orders");
 
     // Fetch uncompleted orders from markets
-    let uncompletedOrderIds;
+    // let uncompletedOrderIds;
+    let remoteOpenOrderIds = [];
     try {
-      let coinoneUncompletedOrderIds = [],
-        korbitUncompletedOrderIds = [],
-        bithumbUncompletedOrderIds = [];
+      // let coinoneUncompletedOrderIds = [],
+      //   korbitUncompletedOrderIds = [],
+      //   bithumbUncompletedOrderIds = [];
 
-      if (COINONE) {
-        let coinonePromise = coinoneAPI({
-          type: "UNCOMPLETED_ORDERS",
-          coinType: coinType
-        });
-        coinoneUncompletedOrderIds = (await coinonePromise).limitOrders.map(
-          o => o.orderId
-        ); // string
-      }
-      if (KORBIT) {
-        let korbitPromise = korbitAPI({
-          type: "UNCOMPLETED_ORDERS",
-          coinType: coinType
-        });
-        korbitUncompletedOrderIds = (await korbitPromise).map(o => o.id + ""); // string.. unbelievable.. so I add "" to
-      }
-      if (BITHUMB) {
-        bithumbUncompletedOrderIds = await bithumbAPI({
-          type: "UNCOMPLETED_ORDERS",
-          coinType: coinType
-        });
-      }
+      // if (COINONE) {
+      //   let coinonePromise = coinoneAPI({
+      //     type: "UNCOMPLETED_ORDERS",
+      //     coinType: coinType
+      //   });
+      //   coinoneUncompletedOrderIds = (await coinonePromise).limitOrders.map(
+      //     o => o.orderId
+      //   ); // string
+      // }
+      // if (KORBIT) {
+      //   let korbitPromise = korbitAPI({
+      //     type: "UNCOMPLETED_ORDERS",
+      //     coinType: coinType
+      //   });
+      //   korbitUncompletedOrderIds = (await korbitPromise).map(o => o.id + ""); // string.. unbelievable.. so I add "" to
+      // }
+      // if (BITHUMB) {
+      //   bithumbUncompletedOrderIds = await bithumbAPI({
+      //     type: "UNCOMPLETED_ORDERS",
+      //     coinType: coinType
+      //   });
+      // }
 
-      uncompletedOrderIds = coinoneUncompletedOrderIds
-        .concat(korbitUncompletedOrderIds)
-        .concat(bithumbUncompletedOrderIds);
+      // uncompletedOrderIds = coinoneUncompletedOrderIds
+      //   .concat(korbitUncompletedOrderIds)
+      //   .concat(bithumbUncompletedOrderIds);
 
-      console.log(
-        "101 [order.js] remote uncompletedOrderIds:\n",
-        uncompletedOrderIds
-      );
+
+      // fetchOpenOrders from all MARKETS
+      let results = await Promise.all(MARKETS.map(marketName => marketAPIs[marketName].fetchOpenOrders(coinType + "/KRW")))
+      // and push the openOrder id to `remoteOpenOrderIds`
+      results.forEach(re => re.forEach(r => remoteOpenOrderIds.push(r.id)))
+
+      console.log("101 [order.js] remoteOpenOrderIds:\n", remoteOpenOrderIds);
     } catch (e) {
       console.log(
         "101 [order.js] One or two of uncompleted orders fetch is failed. Skip this refresh."
@@ -401,7 +393,8 @@ exports.Orders = Backbone.Collection.extend({
       coinType: coinType
     })) {
       // DO NOT USE `this.models` that would be changed by remove event
-      if (_.contains(uncompletedOrderIds, order.get("orderId") + "")) {
+      // if (_.contains(remoteOpenOrderIds, order.get("orderId").toString())) {
+      if (remoteOpenOrderIds.includes(order.get("orderId").toString())) {
         // It's uncompleted order. Don't do anything.
         console.log(
           "104 [order.js] Uncompleted:",
