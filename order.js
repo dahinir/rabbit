@@ -2,7 +2,7 @@
 
 const Backbone = require("backbone"),
   _ = require("underscore"),
-  backsync = require("backsync"),
+  backsync = require("backsync");
 const marketAPIs = require('./marketAPIs.js');
 
 exports.Order = Backbone.Model.extend({
