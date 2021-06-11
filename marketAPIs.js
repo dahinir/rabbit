@@ -128,6 +128,22 @@ bithumbWrap.cancelOrder = async function (orderId, coinPair) {
         side: result.side   // 'buy' or 'sell'
     })
 }
+bithumbWrap.fetchOpenOrders = async function (coinPair) {
+    try {
+        const result = await bithumb.fetchOpenOrders(coinPair)
+    } catch (e) {
+        // 빗썸은 openOrder가 없을때 리턴값으로 
+        // { status: '5600', message: '거래 진행중인 내역이 존재하지 않습니다.' }
+        // 를 주고 cctx가 에러를 던진다. 이것에 대한 수정을 pull request 날렸고 적용되기 전까지..
+        // https://github.com/ccxt/ccxt/pull/9353/commits/7d8554d2a4bdda07b482f6d18dab3a056ca0d0f9
+        const result = JSON.parse(e.message.replace("bithumb {", "{"))
+        if (result.status === '5600' || result.message === '거래 진행중인 내역이 존재하지 않습니다')
+            return []   // success
+        else
+            throw e
+    }
+    return result
+}
 
 //// UPBIT ////
 const upbit = new ccxt.upbit({
