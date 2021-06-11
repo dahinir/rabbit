@@ -134,8 +134,10 @@ bithumbWrap.fetchOpenOrders = async function (coinPair) {
     } catch (e) {
         // 빗썸은 openOrder가 없을때 리턴값으로 
         // { status: '5600', message: '거래 진행중인 내역이 존재하지 않습니다.' }
-        // 를 주고 cctx가 에러를 던진다. 이것에 대한 수정을 pull request 날렸고 적용되기 전까지..
-        // https://github.com/ccxt/ccxt/pull/9353/commits/7d8554d2a4bdda07b482f6d18dab3a056ca0d0f9
+        // 를 주고 cctx가 에러를 던진다. 이것에 대한 수정을 pull request 날렸고 적용되었지만..
+        // 빗썸이 에러코드를 바보처럼 만들어서 5600 에러코드가 너무 많은 것을 커버하고 있다
+        // https://apidocs.bithumb.com/docs/err_code
+        // 그래서 그냥 이렇게 래핑해서 쓰는게 나을듯.
         const result = JSON.parse(e.message.replace("bithumb {", "{"))
         if (result.status === '5600' || result.message === '거래 진행중인 내역이 존재하지 않습니다')
             return []   // success
