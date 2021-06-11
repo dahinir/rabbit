@@ -1,4 +1,9 @@
 "use strict"
+////////////////////////////////////////
+//// DON'T USE THIS MODULE    	////////
+////////////////////////////////////////
+
+
 // Need to set timestamp as index!!
 // db.recentCompleteOrders.createIndex({timestamp:1})  
 

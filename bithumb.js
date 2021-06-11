@@ -1,4 +1,8 @@
 "use strict"
+////////////////////////////////////////
+//// DON'T USE THIS MODULE    	////////
+////////////////////////////////////////
+
 /* this file will be called like below
 const bithumb = require("./bithumb")
 bithumb({

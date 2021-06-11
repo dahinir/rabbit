@@ -14,6 +14,17 @@ const coinone = new ccxt.coinone({
     secret: KEYS.COINONE.SECRET_KEY
 });
 const coinoneWrap = Object.create(coinone);
+coinoneWrap.cancelOrder = async function (orderId, coinPair) {
+    // Coinone requires qty of the order
+    const result = await coinone.fetchOrder(orderId, coinPair)
+    // console.log(result, result.side == 'sell' ? 1 : 0)
+
+    return await coinone.cancelOrder(orderId, coinPair, {
+        price: result.price,
+        qty: result.remaining,
+        is_ask: result.side == 'sell' ? 1 : 0
+    })
+}
 
 //// KORBIT does not use CCTX ////
 const korbit = {
@@ -85,6 +96,18 @@ const korbit = {
         })
         // console.log(modified)
         return modified
+    },
+    cancelOrder: async function (orderId, coinPair) {
+        const result = (await korbitAPI({
+            type: "CANCEL_ORDER",
+            orderId: orderId,
+            coinType: coinPair.split(/\//)[0]
+        }))[0]; // kobitAPI returns Array
+
+        if (result.status == "success")
+            return result
+        else
+            throw new Error("fail to cancel at Korbit. result was:" + JSON.stringify(result))
     }
 }
 
@@ -94,6 +117,17 @@ const bithumb = new ccxt.bithumb({
     apiKey: KEYS.BITHUMB.API_KEY,
     secret: KEYS.BITHUMB.SECRET_KEY
 });
+
+const bithumbWrap = Object.create(bithumb);
+bithumbWrap.cancelOrder = async function (orderId, coinPair) {
+    const result = await bithumb.fetchOrder(orderId, coinPair)
+    if (result.status == "canceled")
+        return { msg: "already canceled" }
+
+    return await bithumb.cancelOrder(orderId, coinPair, {
+        side: result.side   // 'buy' or 'sell'
+    })
+}
 
 //// UPBIT ////
 const upbit = new ccxt.upbit({
@@ -116,6 +150,6 @@ upbitWrap.fetchTicker = async function (opt) {
 module.exports = {
     "COINONE": coinoneWrap,
     "KORBIT": korbit,
-    "BITHUMB": bithumb,
+    "BITHUMB": bithumbWrap,
     "UPBIT": upbitWrap
 }

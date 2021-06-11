@@ -423,6 +423,9 @@ async function run() {
   const startTime = new Date();
   const coinType = runningCoinType[count % runningCoinType.length];
 
+  for (let marketName in marketAPIs)
+    await marketAPIs[marketName].loadMarkets()
+
   try {
     // Korbit is an idiot //
     await require("./korbit.js")({

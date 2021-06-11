@@ -144,7 +144,7 @@ module.exports = function (options) {
         url: ROOT_URL + "v1/user/orders/cancel",
         form: {
           currency_pair: options.coinType.toLowerCase() + "_krw",
-          id: options.orderId,
+          id: +options.orderId,
           nonce: Date.now()
         }
       }
