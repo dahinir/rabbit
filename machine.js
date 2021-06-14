@@ -71,7 +71,7 @@ exports.Machine = Backbone.Model.extend({
             console.log(`[machine.mind] ${coinType} RSI is ${options.rsi} so I won't buy`)
           }
         } else {
-          console.log(`[machine.mind]Wow~ MAX_BUY_AT of ${coinType} is ${MB} And now I'm higher~ I won't buy ~~ ~  ~    ~`)
+          console.log(`[machine.mind]Wow~ MAX_BUY_AT of ${coinType} is ${MB} And now I'm higher~ I won't buy ~~~`)
         }
       }
     } else if (this.get("status") == "COIN") {
@@ -396,9 +396,7 @@ exports.Machines = Backbone.Collection.extend({
       const BU = global.rabbit.constants[coinType].BUY_AT_UNIT || 1
       return Math.round(Math.ceil(minAskPrice / BU) * BU)
     })()
-    if (this.where({
-      buy_at: snapedPrice
-    }).length == 0) {
+    if (this.where({ buy_at: snapedPrice }).length == 0) {
       console.log(`There is no machine for ${minAskPrice} krw in ${this.length} machines, so I will create`)
       const MIN_CRAVING_PERCENTAGE = global.rabbit.constants[coinType].MACHINE_SETTING.MIN_CRAVING_PERCENTAGE
       const CAPACITY_EACH_CRAVING = global.rabbit.constants[coinType].MACHINE_SETTING.CAPACITY_EACH_CRAVING
@@ -571,9 +569,6 @@ exports.Arbitrages = exports.Machines.extend({
     const coinType = options.coinType,
       markets = options.markets
 
-    // if (coinType == "ETC")
-    //   return []
-
     console.log(`[arbitrages.mind] ${coinType}  arbitrages length ${this.length} !!`)
 
     let lowMarket, highMarket, quantity = 0
@@ -585,17 +580,17 @@ exports.Arbitrages = exports.Machines.extend({
     })
 
     const profitRate = (highMarket.orderbook.bids[0][0] - lowMarket.orderbook.asks[0][0]) - global.rabbit.constants[coinType].KRW_UNIT * 2
-      - highMarket.orderbook.bids[0][0] * 0.0025
-      - lowMarket.orderbook.asks[0][0] * 0.0025; // 0.25% fee
+      - highMarket.orderbook.bids[0][0] * 0.004
+      - lowMarket.orderbook.asks[0][0] * 0.004; // 0.4% fee
     console.log(`lowMarket: ${lowMarket.name}:${lowMarket.orderbook.asks[0][0]}, highMarket: ${highMarket.name}:${highMarket.orderbook.bids[0][0]}`)
 
     //// Decide quantity ////
     const prPerPrice = (profitRate / highMarket.orderbook.asks[0][0]) * 100
     const LIMIT = (() => { // quantity
       // FOR BIGGIE PROFIT
-      const COIN_FOR_130 = 1300000 / highMarket.orderbook.asks[0][0] // about 1,300,000 krw value coin
+      const COIN_FOR_150 = 1500000 / highMarket.orderbook.asks[0][0] // about 1,500,000 krw value coin
       // If prPerPrice were 1%, then Deal about 800,000 krw value coin
-      return prPerPrice * COIN_FOR_130
+      return prPerPrice * COIN_FOR_150
     })()
 
     quantity = Math.min(LIMIT, lowMarket.orderbook.asks[0][1], highMarket.orderbook.bids[0][1])
@@ -603,9 +598,8 @@ exports.Arbitrages = exports.Machines.extend({
     quantity = Math.round(quantity / global.rabbit.constants[coinType].COIN_UNIT) * global.rabbit.constants[coinType].COIN_UNIT
     quantity = quantity.toFixed(global.rabbit.constants[coinType].COIN_PRECISON) * 1 // Round
 
-    if (profitRate < 4 || prPerPrice < 0.9
-      // || quantity < Math.pow(0.1, global.rabbit.constants[coinType].PRECISION)
-      ||
+    if (profitRate < 4 || prPerPrice < 0.9 ||
+      // quantity < Math.pow(0.1, global.rabbit.constants[coinType].PRECISION) ||
       quantity < global.rabbit.constants[coinType].COIN_UNIT * 10 ||
       quantity * lowMarket.orderbook.asks[0][0] < 10000) {
       console.log("Pass arbitrage. profitRate: \u20A9", profitRate, "prPerPrice(min 0.9):", prPerPrice, "quantity:", quantity)
@@ -637,9 +631,8 @@ exports.Arbitrages = exports.Machines.extend({
       return []
     }
 
-
     //// New arbitrage only here ////
-    console.log("Well. It looks like real money. Make new arbitrage!")
+    console.log("[arbitrages.mind] Well. It looks like real money. Make new arbitrage!")
     const newArbitrage = new exports.Arbitrage({
       coinType: coinType,
       lowMarketName: lowMarket.name,

@@ -19,6 +19,8 @@ process.on("SIGINT", function () {
 });
 
 global.rabbit = {};
+for (let marketName in marketAPIs)
+  global.rabbit[marketName.toLowerCase()] = {}
 
 ///// MOVE TO .JSON /////
 // db.machines.updateMany({coinType:"ETH", craving_percentage: 4, status:"KRW"}, {$set:{capacity: 0.18}})
@@ -102,7 +104,7 @@ global.rabbit.constants = {
   //   }
   // },
   ETH: {
-    MARKET: ["COINONE", "KORBIT", "BITHUMB"],
+    MARKET: ["COINONE", "KORBIT", "BITHUMB", "UPBIT"],
     COIN_PRECISON: 2,
     COIN_UNIT: 0.01,
     KRW_UNIT: 100,
@@ -122,7 +124,7 @@ global.rabbit.constants = {
     }
   },
   ETC: {
-    MARKET: ["COINONE", "KORBIT", "BITHUMB"],
+    MARKET: ["COINONE", "KORBIT", "BITHUMB", "UPBIT"],
     COIN_PRECISON: 1,
     COIN_UNIT: 0.1,
     KRW_UNIT: 10,
@@ -423,8 +425,9 @@ async function run() {
   const startTime = new Date();
   const coinType = runningCoinType[count % runningCoinType.length];
 
-  for (let marketName in marketAPIs)
-    await marketAPIs[marketName].loadMarkets()
+  if (count == 0)
+    for (let marketName in marketAPIs)
+      await marketAPIs[marketName].loadMarkets()
 
   try {
     // Korbit is an idiot //
@@ -454,7 +457,7 @@ async function run() {
       count: count
     });
   } catch (e) {
-    console.log("[index.js] Tick've got error!");
+    console.log("[index.js] Tick throws error!");
     // e.message ? console.log(e.message): console.log(e)
     console.log(e);
 

@@ -297,7 +297,7 @@ exports.Orders = Backbone.Collection.extend({
       console.log(
         "101 [order.js] One or two of uncompleted orders fetch is failed. Skip this refresh."
       );
-      throw new Error(e);
+      throw e;
     }
 
     // Check new completed order in Market

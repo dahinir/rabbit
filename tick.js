@@ -9,9 +9,6 @@ module.exports = async function (options) {
     COUNT = options.count,
     coinType = options.coinType,
     MARKETS = global.rabbit.constants[coinType].MARKET,  // such as ["COINONE", "KORBIT"]
-    KORBIT = (global.rabbit.constants[coinType].MARKET.indexOf("KORBIT") >= 0) ? true : false,
-    COINONE = (global.rabbit.constants[coinType].MARKET.indexOf("COINONE") >= 0) ? true : false,
-    BITHUMB = (global.rabbit.constants[coinType].MARKET.indexOf("BITHUMB") >= 0) ? true : false
 
 
   const arbitrages = options.arbitrages,
@@ -32,54 +29,24 @@ module.exports = async function (options) {
 
   /////// FETCHING //////////
   let FETCH_STARTED = Infinity;
-  let coinoneInfo, coinoneOrderbook, coinoneBalance, coinoneRecentCompleteOrders
-  let korbitInfo, korbitOrderbook, korbitBalance, korbitRecentCompleteOrders
-  let bithumbInfo, bithumbOrderbook, bithumbBalance, bithumbCompleteOrders
+  const ticker = {}, balance = {}, orderbook = {}
   let rsi
   try {
-    // Act like Promise.all()
     // Less important in time domain
-
-    // const coinoneInfoPromise = COINONE ? fetcher.getCoinoneInfo(coinType) : "",
-    //   korbitInfoPromise = KORBIT ? fetcher.getKorbitInfo(coinType) : "",
-    //   bithumbInfoPromise = BITHUMB ? bithumbAPI({
-    //     type: "INFO",
-    //     coinType: coinType
-    //   }) : "",
-    // const coinoneBalancePromise = COINONE ? fetcher.getCoinoneBalance() : "",
-    //   korbitBalancePromise = KORBIT ? fetcher.getKorbitBalance() : "",
-    //   bithumbBalancePromise = BITHUMB ? bithumbAPI({
-    //     type: "BALANCE"
-    //   }) : ""
-
-    // if (COINONE) coinoneInfo = await coinoneInfoPromise
-    // if (KORBIT) korbitInfo = await korbitInfoPromise
-    // if (BITHUMB) bithumbInfo = await bithumbInfoPromise
-    // if (COINONE) coinoneBalance = await coinoneBalancePromise
-    // if (KORBIT) korbitBalance = await korbitBalancePromise
-    // if (BITHUMB) bithumbBalance = await bithumbBalancePromise
-    // let value = await Promise.all([coinoneInfoPromise, korbitInfoPromise, bithumbInfoPromise])
 
     // Fetch ticker for all markets
     const tickerPromises = MARKETS.map(marketName => marketAPIs[marketName].fetchTicker(coinType + "/KRW"));
     const tickerResult = await Promise.all(tickerPromises)
     // the output is strictly ordered. `tickerResult`, `tickerPromises` and `MARKET`.
     for (let i = 0; i < MARKETS.length; i++) {
-      if (MARKETS[i] == "COINONE") coinoneInfo = tickerResult[i]
-      else if (MARKETS[i] == "KORBIT") korbitInfo = tickerResult[i]
-      else if (MARKETS[i] == "BITHUMB") bithumbInfo = tickerResult[i]
+      ticker[MARKETS[i]] = tickerResult[i]
     }
-    // console.log(korbitInfo)
-    // console.log(bithumbInfo)
 
     // Fetch balances for all markets
-    // console.log(coinoneBalance)
     const balancePromises = MARKETS.map(marketName => marketAPIs[marketName].fetchBalance());
     const balanceResult = await Promise.all(balancePromises);
     for (let i = 0; i < MARKETS.length; i++) {
-      if (MARKETS[i] == "COINONE") coinoneBalance = balanceResult[i]
-      else if (MARKETS[i] == "KORBIT") korbitBalance = balanceResult[i]
-      else if (MARKETS[i] == "BITHUMB") bithumbBalance = balanceResult[i]
+      balance[MARKETS[i]] = balanceResult[i]
     }
 
     // RSI
@@ -91,25 +58,12 @@ module.exports = async function (options) {
     // })
     rsi = 0
 
-    // console.log("Fetching some info takes", ((new Date() - TICK_STARTED) / 1000).toFixed(2), "sec")
-
     // More important in time domain //
     FETCH_STARTED = Date.now() // in ms
-    // const coinoneOrderbookPromise = COINONE ? fetcher.getCoinoneOrderbook(coinType) : "",
-    //   korbitOrderbookPromise = KORBIT ? fetcher.getKorbitOrderbook(coinType) : "",
-    //   bithumbOrderbookPromise = BITHUMB ? bithumbAPI({
-    //     type: "ORDERBOOK",
-    //     coinType: coinType
-    //   }) : ""
-    // if (COINONE) coinoneOrderbook = await coinoneOrderbookPromise
-    // if (KORBIT) korbitOrderbook = await korbitOrderbookPromise
-    // if (BITHUMB) bithumbOrderbook = await bithumbOrderbookPromise
     const orderbookPromises = MARKETS.map(marketName => marketAPIs[marketName].fetchOrderBook(coinType + "/KRW"))
     const orderbookResult = await Promise.all(orderbookPromises)
     for (let i = 0; i < MARKETS.length; i++) {
-      if (MARKETS[i] == "COINONE") coinoneOrderbook = orderbookResult[i]
-      else if (MARKETS[i] == "KORBIT") korbitOrderbook = orderbookResult[i]
-      else if (MARKETS[i] == "BITHUMB") bithumbOrderbook = orderbookResult[i]
+      orderbook[MARKETS[i]] = orderbookResult[i]
     }
 
   } catch (e) {
@@ -122,82 +76,51 @@ module.exports = async function (options) {
   /////// FETCHING END //////////
 
 
-  const korbit = {
-    name: "KORBIT",
-    // info: korbitInfo,
-    orderbook: korbitOrderbook,
-    balance: korbitBalance
-  }
-  const coinone = {
-    name: "COINONE",
-    // info: coinoneInfo,
-    orderbook: coinoneOrderbook,
-    balance: coinoneBalance
-  }
-  const bithumb = {
-    name: "BITHUMB",
-    // info: bithumbInfo,
-    orderbook: bithumbOrderbook,
-    balance: bithumbBalance
+  const markets = []
+  for (let i = 0; i < MARKETS.length; i++) {
+    markets.push({
+      name: MARKETS[i],
+      orderbook: orderbook[MARKETS[i]],
+      balance: balance[MARKETS[i]]
+    })
   }
 
-  // Add only need market!
-  const markets = []
-  if (KORBIT) markets.push(korbit)
-  if (COINONE) markets.push(coinone)
-  if (BITHUMB) markets.push(bithumb)
+  // Just for shitty Coinone
+  if (global.rabbit.constants[coinType].MARKET.indexOf("COINONE") >= 0 &&
+    global.rabbit.coinone[coinType] &&
+    global.rabbit.coinone[coinType].orderbook.bids[0][0] == orderbook["COINONE"].bids[0][0] &&
+    global.rabbit.coinone[coinType].orderbook.bids[0][1] == orderbook["COINONE"].bids[0][1] &&
+    global.rabbit.coinone[coinType].orderbook.asks[0][0] == orderbook["COINONE"].asks[0][0] &&
+    global.rabbit.coinone[coinType].orderbook.asks[0][1] == orderbook["COINONE"].asks[0][1]) {
+    console.log(global.rabbit.coinone[coinType].orderbook.bids[0][0])
+    console.log(`** COINONE is shit. it's the same orderbook with previous orderbook. Don't believe Coinone.`)
+    return
+  }
 
   // Some data needs to go global
-  global.rabbit.coinone = global.rabbit.coinone || {}
-  if (COINONE) {
-    if (global.rabbit.coinone[coinType] &&
-      global.rabbit.coinone[coinType].orderbook.bids[0][0] == coinoneOrderbook.bids[0][0] &&
-      global.rabbit.coinone[coinType].orderbook.bids[0][1] == coinoneOrderbook.bids[0][1] &&
-      global.rabbit.coinone[coinType].orderbook.asks[0][0] == coinoneOrderbook.asks[0][0] &&
-      global.rabbit.coinone[coinType].orderbook.asks[0][1] == coinoneOrderbook.asks[0][1]) {
-      console.log(`COINONE is shit. it's the same orderbook with previous orderbook. Don't believe Coinone.`)
-      return
-    }
-    global.rabbit.coinone.balance = coinoneBalance
-    global.rabbit.coinone[coinType] = {
-      name: "COINONE",
-      // info: coinoneInfo,
-      orderbook: coinoneOrderbook
-    }
-  }
-  global.rabbit.korbit = global.rabbit.korbit || {}
-  if (KORBIT) {
-    global.rabbit.korbit.balance = korbitBalance
-    global.rabbit.korbit[coinType] = {
-      name: "KORBIT",
-      // info: korbitInfo,
-      orderbook: korbitOrderbook
-    }
-  }
-  global.rabbit.bithumb = global.rabbit.bithumb || {}
-  if (BITHUMB) {
-    global.rabbit.bithumb.balance = bithumbBalance
-    global.rabbit.bithumb[coinType] = {
-      name: "BITHUMB",
-      // info: bithumbInfo,
-      orderbook: bithumbOrderbook
+  for (let i = 0; i < MARKETS.length; i++) {
+    // something like this `global.rabbit.coinone.balance`
+    global.rabbit[MARKETS[i].toLowerCase()].balance = balance[MARKETS[i]]
+    global.rabbit[MARKETS[i].toLowerCase()][coinType] = {
+      name: MARKETS[i],
+      orderbook: orderbook[MARKETS[i]]
     }
   }
 
-  // global.rabbit.markets = global.rabbit.markets || {}
-  let totalCoin = COINONE ? coinoneBalance[coinType].total : 0
-  totalCoin += KORBIT ? korbitBalance[coinType].total : 0
-  totalCoin += BITHUMB ? bithumbBalance[coinType].total : 0
-  let lastPrice = COINONE ? coinoneInfo.last : (KORBIT ? korbitInfo.last : bithumbInfo)
+  let totalCoin = 0
+  for (let marketName in balance) {
+    totalCoin += balance[marketName][coinType].total
+  }
+  const lastPrice = ticker[MARKETS[0]].last
 
-  if (COINONE) console.log("-- In 24 hrs", coinoneInfo.volume, coinType, "traded at Coinone:", coinoneInfo.low, "~", coinoneInfo.high, ":", coinoneInfo.last, "(", ((coinoneInfo.last - coinoneInfo.low) / (coinoneInfo.high - coinoneInfo.low) * 100).toFixed(2), "% )----")
+  // print some info
+  console.log("-- In 24 hrs", ticker[MARKETS[0]].baseVolume, coinType, "traded at Coinone:", ticker[MARKETS[0]].low, "~", ticker[MARKETS[0]].high, ":", ticker[MARKETS[0]].last, "(", ((ticker[MARKETS[0]].last - ticker[MARKETS[0]].low) / (ticker[MARKETS[0]].high - ticker[MARKETS[0]].low) * 100).toFixed(2), "% )----")
   console.log("coin:", (totalCoin).toFixed(2), coinType, "is now about \u20A9", new Intl.NumberFormat().format(((totalCoin) * lastPrice).toFixed(0)))
-  if (COINONE) console.log("Coinone", coinType + ":", coinoneBalance[coinType].total.toFixed(3))
-  if (KORBIT) console.log("Korbit ", coinType + ":", korbitBalance[coinType].total.toFixed(3))
-  if (BITHUMB) console.log("Bithumb", coinType + ":", bithumbBalance[coinType].total.toFixed(3))
-  if (COINONE) console.log("--(coinone", coinType + ")-----max bid:", coinoneOrderbook.bids[0][0], "min ask:", coinoneOrderbook.asks[0][0])
-  if (KORBIT) console.log("--(korbit ", coinType + ")-----max bid:", korbitOrderbook.bids[0][0], "min ask:", korbitOrderbook.asks[0][0])
-  if (BITHUMB) console.log("--(bithumb", coinType + ")-----max bid:", bithumbOrderbook.bids[0][0], "min ask:", bithumbOrderbook.asks[0][0])
+  for (let i = 0; i < MARKETS.length; i++)
+    console.log(MARKETS[i], coinType, ":", balance[MARKETS[i]][coinType] ? balance[MARKETS[i]][coinType].total : 0)
+  for (let i = 0; i < MARKETS.length; i++)
+    console.log("--(", MARKETS[i], "\t", coinType + ")-----highest bid:", orderbook[MARKETS[i]].bids[0][0], "lowest ask:", orderbook[MARKETS[i]].asks[0][0])
+
 
 
   //// It's time sensitive ////
@@ -208,39 +131,10 @@ module.exports = async function (options) {
     console.log("Fetched too late. Don't buy when the market is busy. pass this tic. fetchingTime:", FETCHING_TIME)
     return
   }
-  if (COINONE) {
-    const ORDERBOOK_OLD = NOW - coinoneOrderbook.timestamp
-    if (ORDERBOOK_OLD > 7.1 * 1000) { // sec
-      console.log("Coinone orderbook is too old:", ORDERBOOK_OLD)
-      return
-    }
-    if (ORDERBOOK_OLD < FETCHING_TIME / 2) {
-      console.log("Coinone orderbook has been made after fetching.. I can not belive it:", ORDERBOOK_OLD, FETCHING_TIME)
-      console.log("Now coinone is insane, they're making future orderbook. so.. just ignore it..")
-      // return
-    }
-  }
-  if (KORBIT) {
-    const ORDERBOOK_OLD = NOW - korbitOrderbook.timestamp
-    if (ORDERBOOK_OLD > 60 * 1000) { // Unix timestamp in milliseconds of the last placed order.
-      console.log("Korbit orderbook is too old:", ORDERBOOK_OLD)
-      return
-    }
-    if (ORDERBOOK_OLD < FETCHING_TIME) {
-      console.log("Korbit orderbook has been made after fetching.. I can not belive it:", ORDERBOOK_OLD)
-      return
-    }
-  }
-  if (BITHUMB) {
-    const ORDERBOOK_OLD = NOW - bithumbOrderbook.timestamp
-    if (ORDERBOOK_OLD > 50 * 1000) { // Unix timestamp in milliseconds of the last placed order.
-      console.log("Bithumb orderbook is too old:", ORDERBOOK_OLD)
-      return
-    }
-    if (ORDERBOOK_OLD < FETCHING_TIME) {
-      console.log("Bithumb orderbook has been made after fetching.. But anyways..:", ORDERBOOK_OLD)
-      // return
-    }
+
+  for (let i = 0; i < MARKETS.length; i++) {
+    const orderbook_age = NOW - orderbook[MARKETS[i]].timestamp
+    console.log(MARKETS[i], "orderbook age is", orderbook_age / 1000, "sec")
   }
 
 
@@ -274,11 +168,6 @@ module.exports = async function (options) {
   ///////  TIME TO ORDER //////
   for (let r of results)
     await orders.placeOrder(r)
-  //
-  // idk why.. but Below code cause error..  set order on machine 
-  // const placeOrderPromises = results.map(result => orders.placeOrder(result))
-  // for (let o of placeOrderPromises)
-  //   await o
 
 
   ////// Time to Cancel a useless order ////
@@ -287,9 +176,10 @@ module.exports = async function (options) {
     lastPrice: lastPrice
   })
 
+
   ////// Presentation /////// 
   machines.presentation({
     coinType: coinType,
-    orderbook: COINONE ? coinoneOrderbook : (KORBIT ? korbitOrderbook : bithumbOrderbook)
+    orderbook: orderbook[MARKETS[0]]
   })
 } // End of module.exports

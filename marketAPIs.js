@@ -161,6 +161,20 @@ upbitWrap.fetchTicker = async function (opt) {
     result.marketName = "UPBIT"
     return result
 }
+upbitWrap.fetchBalance = async function () {
+    const result = await upbit.fetchBalance()
+    // Upbit omits 0 value coins in balance
+    for (let coinName in global.rabbit.constants) {
+        if (!result[coinName])
+            result[coinName] = {
+                free: 0,
+                used: 0,
+                total: 0
+            }
+    }
+    return result
+}
+
 
 // await coinone.loadMarkets();
 // await korbit.loadMarkets();
