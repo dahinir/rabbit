@@ -8,8 +8,7 @@ module.exports = async function (options) {
   const TICK_STARTED = new Date(),
     COUNT = options.count,
     coinType = options.coinType,
-    MARKETS = global.rabbit.constants[coinType].MARKET,  // such as ["COINONE", "KORBIT"]
-
+    MARKETS = global.rabbit.constants[coinType].MARKET  // such as ["COINONE", "KORBIT"]
 
   const arbitrages = options.arbitrages,
     machines = options.machines,
@@ -19,7 +18,6 @@ module.exports = async function (options) {
   console.log("-- ", coinType, "Tick no.", COUNT, "with", machines.length, "machines. ",
     TICK_STARTED.toLocaleString(), "It's been", ((new Date() - global.rabbit.constants[coinType].STARTED) / 86400000).toFixed(1),
     "days. ", ((new Date() - global.rabbit.BORN) / 86400000).toFixed(1), "days old")
-
 
   //// Check previous orders out ////
   await orders.refresh({
