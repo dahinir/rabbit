@@ -1,9 +1,6 @@
 "use strict";
 
-const _ = require("underscore"),
-  pify = require("pify");
-
-const fetcher = require("./fetcher.js");
+const _ = require("underscore");
 
 const Machine = require("./machine.js").Machine,
   Machines = require("./machine.js").Machines,
@@ -12,16 +9,18 @@ const Machine = require("./machine.js").Machine,
   Order = require("./order.js").Order,
   Orders = require("./order.js").Orders,
   RecentCompleteOrder = require("./recentCompleteOrder.js").RecentCompleteOrder,
-  RecentCompleteOrders = require("./recentCompleteOrder.js")
-    .RecentCompleteOrders;
+  RecentCompleteOrders = require("./recentCompleteOrder.js").RecentCompleteOrders,
+  marketAPIs = require("./marketAPIs.js");
 
 let killSign = false;
 process.on("SIGINT", function () {
-  console.log(": Kill sign submitted.");
+  console.log(": SIGINT(Kill sign) submitted.");
   killSign = true;
 });
 
 global.rabbit = {};
+for (let marketName in marketAPIs)
+  global.rabbit[marketName.toLowerCase()] = {}
 
 ///// MOVE TO .JSON /////
 // db.machines.updateMany({coinType:"ETH", craving_percentage: 4, status:"KRW"}, {$set:{capacity: 0.18}})
@@ -105,7 +104,7 @@ global.rabbit.constants = {
   //   }
   // },
   ETH: {
-    MARKET: ["COINONE", "KORBIT", "BITHUMB"],
+    MARKET: ["COINONE", "KORBIT", "BITHUMB", "UPBIT"],
     COIN_PRECISON: 2,
     COIN_UNIT: 0.01,
     KRW_UNIT: 100,
@@ -125,11 +124,11 @@ global.rabbit.constants = {
     }
   },
   ETC: {
-    MARKET: ["COINONE", "KORBIT", "BITHUMB"],
+    MARKET: ["COINONE", "KORBIT", "BITHUMB", "UPBIT"],
     COIN_PRECISON: 1,
     COIN_UNIT: 0.1,
     KRW_UNIT: 10,
-    // MIN_COIN_ORDER: 1,  // [bithumb.js] ASK's result:  { status: '5600', message: '최소 판매수량은 1 ETC 입니다.' }
+    // MIN_COIN_ORDER: 1,  // bithumb ASK result:  { status: '5600', message: '최소 판매수량은 1 ETC 입니다.' }
     BUY_AT_UNIT: 100,
     MAX_BUY_AT: 0,  // Don't buy ETC // 42490,
     PREVIOUS_PROFIT_SUM: 0,
@@ -426,6 +425,10 @@ async function run() {
   const startTime = new Date();
   const coinType = runningCoinType[count % runningCoinType.length];
 
+  if (count == 0)
+    for (let marketName in marketAPIs)
+      await marketAPIs[marketName].loadMarkets()
+
   try {
     // Korbit is an idiot //
     await require("./korbit.js")({
@@ -449,12 +452,12 @@ async function run() {
       arbitrages: getArbitrages(coinType),
       machines: getMachines(coinType),
       orders: getOrders(coinType),
-      recentCompleteOrders: getRecentCompleteOrders(coinType),
+      // recentCompleteOrders: getRecentCompleteOrders(coinType),
       coinType: coinType,
       count: count
     });
   } catch (e) {
-    console.log("[index.js] Tick've got error!");
+    console.log("[index.js] Tick throws error!");
     // e.message ? console.log(e.message): console.log(e)
     console.log(e);
 
@@ -491,9 +494,9 @@ async function run() {
           bithumb = global.rabbit.bithumb;
         let profitSum = 0,
           balanceSum = 0;
-        balanceSum += korbitBalance ? korbitBalance.KRW.balance : 0;
-        balanceSum += coinoneBalance ? coinoneBalance.KRW.balance : 0;
-        balanceSum += bithumbBalance ? bithumbBalance.KRW.balance : 0;
+        balanceSum += korbitBalance ? korbitBalance.KRW.total : 0;
+        balanceSum += coinoneBalance ? coinoneBalance.KRW.total : 0;
+        balanceSum += bithumbBalance ? bithumbBalance.KRW.total : 0;
 
         try {
           for (const ct of runningCoinType) {
@@ -511,13 +514,13 @@ async function run() {
                   : false;
 
             balanceSum += KORBIT
-              ? korbitBalance[ct].balance * korbit[ct].orderbook.bid[0].price
+              ? korbitBalance[ct].total * korbit[ct].orderbook.bids[0][0]
               : 0;
             balanceSum += COINONE
-              ? coinoneBalance[ct].balance * coinone[ct].orderbook.bid[0].price
+              ? coinoneBalance[ct].total * coinone[ct].orderbook.bids[0][0]
               : 0;
             balanceSum += BITHUMB
-              ? bithumbBalance[ct].balance * bithumb[ct].orderbook.bid[0].price
+              ? bithumbBalance[ct].total * bithumb[ct].orderbook.bids[0][0]
               : 0;
             const profit = global.rabbit.constants[ct].profit_krw_sum || 0;
             const damage = global.rabbit.constants[ct].krw_damage || 0;
@@ -538,16 +541,16 @@ async function run() {
         console.log(
           "IN CASH: \u20A9",
           new Intl.NumberFormat().format(
-            korbitBalance.KRW.balance +
-            coinoneBalance.KRW.balance +
-            bithumbBalance.KRW.balance
+            korbitBalance.KRW.total +
+            coinoneBalance.KRW.total +
+            bithumbBalance.KRW.total
           ),
           "\t( Coinone:",
-          new Intl.NumberFormat().format(coinoneBalance.KRW.balance),
+          new Intl.NumberFormat().format(coinoneBalance.KRW.total),
           "  Korbit:",
-          new Intl.NumberFormat().format(korbitBalance.KRW.balance),
+          new Intl.NumberFormat().format(korbitBalance.KRW.total),
           "  Bithumb:",
-          new Intl.NumberFormat().format(bithumbBalance.KRW.balance),
+          new Intl.NumberFormat().format(bithumbBalance.KRW.total),
           ")"
         );
         console.log(

@@ -2,10 +2,8 @@
 
 const Backbone = require("backbone"),
   _ = require("underscore"),
-  backsync = require("backsync"),
-  coinoneAPI = require("./coinone.js"),
-  korbitAPI = require("./korbit.js"),
-  bithumbAPI = require("./bithumb.js");
+  backsync = require("backsync");
+const marketAPIs = require('./marketAPIs.js');
 
 exports.Order = Backbone.Model.extend({
   urlRoot: "mongodb://localhost:27017/rabbit/orders", // not url. cuz of backsync
@@ -19,32 +17,31 @@ exports.Order = Backbone.Model.extend({
     coinType: "", // 'BTC' or 'ETH'
     marketName: ""
   },
-  initialize: function(attributes, options) {
+  initialize: function (attributes, options) {
     if (!this.id) {
       this.set({
         id: require("mongodb").ObjectID(),
         created_at: new Date()
       });
     }
-    this.on("change:buy_at", function(e) {
+    this.on("change:buy_at", function (e) {
       console.log("fuck.. buy_at is setting at order..");
       console.log(e.attributes);
       throw new Error("KILL_ME");
     });
+    this.participants = []
   },
-  completed: async function() {
+  completed: async function () {
     if (
       this.get("marketName") == "KORBIT" &&
-      new Date() - this.get("placed_at") < 5200
+      new Date() - this.get("placed_at") < 5200 // ms
     ) {
-      console.log(
-        "[order.js] Younger than 5200ms old Korbit order. so just ignore this complete()"
-      );
+      console.log("[order.js] Younger than 5200ms old Korbit order. so just ignore this complete()");
       return;
     }
 
     const that = this;
-    for (let machine of this.participants) {
+    for (let machine of this.participants || []) {
       // console.log("machine id:", machine.id)
       await machine.accomplish(this);
     }
@@ -73,61 +70,18 @@ exports.Order = Backbone.Model.extend({
     });
     console.log("[order.js] end of order.completed() ");
   },
-  cancel: async function() {
-    console.log(
-      "[order.js] Cancel orderId:",
-      this.get("orderId"),
-      "at",
-      this.get("marketName"),
+  cancel: async function () {
+    console.log(`[order.js] Cancel orderId: ${this.get("orderId")} at ${this.get("marketName")}`,
       this.get("price"),
       this.get("quantity"),
       this.get("type"),
-      this.get("coinType")
-    );
+      this.get("coinType"))
 
     try {
-      if (this.get("marketName") == "COINONE") {
-        // Get order info first
-        const remainQuantity =
-          (await coinoneAPI({
-            type: "ORDER_INFO",
-            orderId: this.get("orderId"),
-            coinType: this.get("coinType")
-          })).info.remainQty * 1;
-        console.log(
-          "[order.js] useless order's remain quantity:",
-          remainQuantity,
-          "and It will be canceled"
-        );
-
-        // Real cancel here
-        await coinoneAPI({
-          type: "CANCEL_ORDER",
-          orderId: this.get("orderId"),
-          isAsk: this.get("type") == "ASK" ? 1 : 0,
-          qty: remainQuantity,
-          price: this.get("price"),
-          coinType: this.get("coinType")
-        });
-      } else if (this.get("marketName") == "KORBIT") {
-        const korbitResult = await korbitAPI({
-          type: "CANCEL_ORDER",
-          orderId: this.get("orderId"),
-          coinType: this.get("coinType")
-        })[0]; // kobitAPI returns Array
-        // korbitAPI won't reject even if there is an error
-        // Just act like the order was canceled successfully. Most of cast It's okay or little mistake of old order shit
-      } else if (this.get("marketName") == "BITHUMB") {
-        let result = await bithumbAPI({
-          type: "CANCEL_ORDER",
-          orderType: this.get("type"),
-          orderId: this.get("orderId"),
-          coinType: this.get("coinType")
-        });
-      }
+      await marketAPIs[this.get("marketName")].cancelOrder(this.get("orderId"), this.get("coinType") + "/KRW")
     } catch (e) {
       console.log("[order.js] Fail to cancel order. I'll just ignore");
-      require("fs").appendFileSync("./error.json", JSON.stringify(e));
+      require("fs").appendFileSync("./error.json", new Date().toString() + ":\n" + JSON.stringify(e));
       // Don't return here. continue this canceling.
       // No..Coinone will return 104 not exist order when it busy. so don't continue this canceling
       return;
@@ -160,11 +114,11 @@ exports.Order = Backbone.Model.extend({
 exports.Orders = Backbone.Collection.extend({
   url: "mongodb://localhost:27017/rabbit/orders",
   sync: backsync.mongodb(),
-  comparator: function(order) {
+  comparator: function (order) {
     return order.get("created_at");
   },
   model: exports.Order,
-  initialize: function(attributes, options) {
+  initialize: function (attributes, options) {
     console.log("orders init");
     this.on("change:status", o => {
       switch (o.get("status")) {
@@ -189,22 +143,7 @@ exports.Orders = Backbone.Collection.extend({
       }
     });
   },
-  // createOrder: function(options){
-  //   console.log("createOrder")
-  //   const newOrder = new exports.Order();
-  //   // newOrder.on("change:status", o => {
-  //     // console.log("event!", o.get("status"))
-  //     // console.log(arguments)
-  //     // if (o.get("status"))
-  //     //   this.remove(o)
-  //     // else {
-  //     //   console.log("wwwwww")
-  //     // }
-  //   // })
-  //   this.push(newOrder)
-  //   return newOrder
-  // },
-  placeOrder: async function(options) {
+  placeOrder: async function (options) {
     if (!_.isObject(options))
       throw new Error("[order.placeOrder()] options needed");
 
@@ -219,21 +158,6 @@ exports.Orders = Backbone.Collection.extend({
     if (bidQuantity == 0 && askQuantity == 0) {
       console.log("[order.js] It's zero quantity order. won't place order");
       return;
-    }
-
-    let marketAPI;
-    switch (options.marketName) {
-      case "COINONE":
-        marketAPI = coinoneAPI;
-        break;
-      case "KORBIT":
-        marketAPI = korbitAPI;
-        break;
-      case "BITHUMB":
-        marketAPI = bithumbAPI;
-        break;
-      default:
-        throw new Error("Trying place order without marketName");
     }
 
     // NEW ORDER ONLY HERE
@@ -273,10 +197,8 @@ exports.Orders = Backbone.Collection.extend({
     quantity =
       quantity.toFixed(global.rabbit.constants[coinType].COIN_PRECISON) * 1;
     if (quantity * price < 10000) {
-      // [bithumb.js] ASK's result:  { status: '5600', message: '최소 판매수량은 1 ETC 입니다.' }
-      console.log(
-        `[order.js] It's too little money order. quantity is ${quantity} price is ${price} so it will be ignored.`
-      );
+      // bithumb ASK result:  { status: '5600', message: '최소 판매수량은 1 ETC 입니다.' }
+      console.log(`[order.js] It's too little money order. quantity is ${quantity} price is ${price} so it will be ignored.`);
       return;
     }
 
@@ -284,31 +206,35 @@ exports.Orders = Backbone.Collection.extend({
       console.log("Whoa! internalTradeQuantity:", internalTradeQuantity);
 
     // Actual order here
-    let marketResult;
-    // if (type == "BID" && options.tt != "ARBIT" && global.rabbit.bought_coin < 560) { // temporally BID is ignored
-    // marketResult = { orderId: "ignoredBID" + Date.now() }
-    // }else{
-    marketResult = await marketAPI({
-      type: type,
-      price: price,
-      qty: quantity,
-      coinType: coinType
-    });
+    let marketResult
+    try {
+      marketResult = await marketAPIs[options.marketName].createOrder(
+        coinType + "/KRW", // like 'ETC/KRW', 
+        'limit',  // 'limit' or 'market'. but don't use 'market'
+        (type == "BID") ? "buy" : "sell", // "buy" or "sell"
+        quantity,
+        price);
+    } catch (e) {
+      console.log("[order.js] error while order to market")
+      console.log("options was", options)
+      throw e
+    }
+
+    // console.log(marketResult);
     console.log(
       "[order.js] The order is placed",
       options.marketName,
       type,
       price,
       quantity,
-      marketResult.orderId
+      marketResult.id
     );
-    // }
 
-    // Only success to place order
-    if (marketResult.orderId) {
+    // When only success to place order
+    if (marketResult.id) {
       newOrder.set({
         marketName: options.marketName,
-        orderId: marketResult.orderId,
+        orderId: marketResult.id,
         type: type,
         price: price,
         quantity: quantity,
@@ -351,80 +277,34 @@ exports.Orders = Backbone.Collection.extend({
       throw new Error("KILL_ME");
     }
   },
-  refresh: async function(options) {
+  refresh: async function (options) {
     if (this.length == 0) return;
-    const coinType = options.coinType || this.at(0).get("coinType"),
-      KORBIT =
-        global.rabbit.constants[coinType].MARKET.indexOf("KORBIT") >= 0
-          ? true
-          : false,
-      COINONE =
-        global.rabbit.constants[coinType].MARKET.indexOf("COINONE") >= 0
-          ? true
-          : false,
-      BITHUMB =
-        global.rabbit.constants[coinType].MARKET.indexOf("BITHUMB") >= 0
-          ? true
-          : false;
-    console.log(
-      "100 [order.js] Will refresh",
-      this.length,
-      "the local",
-      coinType,
-      "orders"
-    );
+    const coinType = options.coinType || this.at(0).get("coinType");
+    const MARKETS = global.rabbit.constants[coinType].MARKET;
+
+    console.log("100 [order.js] Will refresh", this.length, "the local", coinType, "orders");
 
     // Fetch uncompleted orders from markets
-    let uncompletedOrderIds;
+    let remoteOpenOrderIds = [];
     try {
-      let coinoneUncompletedOrderIds = [],
-        korbitUncompletedOrderIds = [],
-        bithumbUncompletedOrderIds = [];
+      // fetchOpenOrders from all MARKETS
+      let results = await Promise.all(MARKETS.map(marketName => marketAPIs[marketName].fetchOpenOrders(coinType + "/KRW")))
+      // and push the openOrder id to `remoteOpenOrderIds`
+      results.forEach(re => re.forEach(r => remoteOpenOrderIds.push(r.id)))
 
-      if (COINONE) {
-        let coinonePromise = coinoneAPI({
-          type: "UNCOMPLETED_ORDERS",
-          coinType: coinType
-        });
-        coinoneUncompletedOrderIds = (await coinonePromise).limitOrders.map(
-          o => o.orderId
-        ); // string
-      }
-      if (KORBIT) {
-        let korbitPromise = korbitAPI({
-          type: "UNCOMPLETED_ORDERS",
-          coinType: coinType
-        });
-        korbitUncompletedOrderIds = (await korbitPromise).map(o => o.id + ""); // string.. unbelievable.. so I add "" to
-      }
-      if (BITHUMB) {
-        bithumbUncompletedOrderIds = await bithumbAPI({
-          type: "UNCOMPLETED_ORDERS",
-          coinType: coinType
-        });
-      }
-
-      uncompletedOrderIds = coinoneUncompletedOrderIds
-        .concat(korbitUncompletedOrderIds)
-        .concat(bithumbUncompletedOrderIds);
-
-      console.log(
-        "101 [order.js] remote uncompletedOrderIds:\n",
-        uncompletedOrderIds
-      );
+      console.log("101 [order.js] remoteOpenOrderIds:\n", remoteOpenOrderIds);
     } catch (e) {
       console.log(
         "101 [order.js] One or two of uncompleted orders fetch is failed. Skip this refresh."
       );
-      throw new Error(e);
+      throw e;
     }
 
-    // Check new completed order in Korbit and Coinone
-    for (let order of this.where({
-      coinType: coinType
-    })) {
+    // Check new completed order in Market
+    for (let order of this.where({ coinType: coinType })) {
       // DO NOT USE `this.models` that would be changed by remove event
-      if (_.contains(uncompletedOrderIds, order.get("orderId") + "")) {
+      // if (_.contains(remoteOpenOrderIds, order.get("orderId").toString())) {
+      if (remoteOpenOrderIds.includes(order.get("orderId").toString())) {
         // It's uncompleted order. Don't do anything.
         console.log(
           "104 [order.js] Uncompleted:",
@@ -459,35 +339,23 @@ exports.Orders = Backbone.Collection.extend({
     } // End of for loop
     console.log("105 [order.js] refresh loop end");
   }, // End of refresh()
-  cancel: async function(options) {
+  cancel: async function (options) {
     if (this.length == 0) return;
 
     const coinType = options.coinType || this.at(0).get("coinType"),
       lastPrice = options.lastPrice;
+    const MARKETS = global.rabbit.constants[coinType].MARKET;
 
-    // Array.filter() return [] if there is no order. not undefined
-    const coinoneOrders = this.models
-      .filter(order => order.get("coinType") == coinType)
-      .filter(order => order.get("marketName") == "COINONE");
-    const korbitOrders = this.models
-      .filter(order => order.get("coinType") == coinType)
-      .filter(order => order.get("marketName") == "KORBIT");
+    // Array.filter() returns `[]` if there is no order. not `undefined`
+    const ordersWithCoinType = this.models.filter(order => order.get("coinType") == coinType);
+    const ordersByMarket = MARKETS.map(marketName => ordersWithCoinType.filter(order => order.get("marketName") == marketName))
+    // console.log(ordersByMarket.length)
 
-    for (let orders of [coinoneOrders, korbitOrders]) {
+    for (let orders of ordersByMarket) {
       // console.log("[order.js] orders.length", orders.length)
       if (orders.length > 7) {
-        console.log(
-          "[order.js] Time to cancel order.",
-          coinType,
-          "lastPrice:",
-          lastPrice
-        );
-        console.log(
-          "[order.js] Mo than 5",
-          coinType,
-          "orders at",
-          orders[0].get("marketName")
-        );
+        console.log("[order.js] Time to cancel order.", coinType, "lastPrice:", lastPrice);
+        console.log("[order.js] Mo than 5", coinType, "orders at", orders[0].get("marketName"));
         // The most far from current price
         const uselessOrder = _.sortBy(
           orders,

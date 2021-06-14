@@ -71,7 +71,7 @@ exports.Machine = Backbone.Model.extend({
             console.log(`[machine.mind] ${coinType} RSI is ${options.rsi} so I won't buy`)
           }
         } else {
-          console.log(`[machine.mind]Wow~ MAX_BUY_AT of ${coinType} is ${MB} And now I'm higher~ I won't buy ~~ ~  ~    ~`)
+          console.log(`[machine.mind]Wow~ MAX_BUY_AT of ${coinType} is ${MB} And now I'm higher~ I won't buy ~~~`)
         }
       }
     } else if (this.get("status") == "COIN") {
@@ -262,7 +262,7 @@ exports.Machines = Backbone.Collection.extend({
     console.log("machines init")
   },
   presentation: function (options) {
-    const maxBidPrice = options.orderbook.bid[0].price,
+    const maxBidPrice = options.orderbook.bids[0][0],
       coinType = options.coinType || this.at(0).get("coinType"),
       PREVIOUS_PROFIT_SUM = global.rabbit.constants[coinType].PREVIOUS_PROFIT_SUM || 0,
       BORN = global.rabbit.constants[coinType].BORN,
@@ -349,57 +349,44 @@ exports.Machines = Backbone.Collection.extend({
     chunk(0);
   },
   mind: function (options) {
-    const startTime = new Date()
+    const startTime = Date.now()
     const coinType = options.coinType || this.at(0).get("coinType"),
       markets = options.markets,
       // korbit = options.korbit,
       // coinone = options.coinone,
       KRW_UNIT = global.rabbit.constants[coinType].KRW_UNIT
 
-    // Legacy code below
-    // let highBidMarket, lowAskMarket
-    // if (coinone.orderbook.bid[0].price > korbit.orderbook.bid[0].price){
-    //   highBidMarket = coinone
-    // }else {
-    //   highBidMarket = korbit
-    // }
-    // if (coinone.orderbook.ask[0].price < korbit.orderbook.ask[0].price){
-    //   lowAskMarket = coinone
-    // }else {
-    //   lowAskMarket = korbit
-    // }
-
     let lowAskMarket, highBidMarket
     markets.map(m => {
-      if (_.isUndefined(lowAskMarket) || m.orderbook.ask[0].price < lowAskMarket.orderbook.ask[0].price)
+      if (_.isUndefined(lowAskMarket) || m.orderbook.asks[0][0] < lowAskMarket.orderbook.asks[0][0])
         lowAskMarket = m
-      if (_.isUndefined(highBidMarket) || m.orderbook.bid[0].price > highBidMarket.orderbook.bid[0].price)
+      if (_.isUndefined(highBidMarket) || m.orderbook.bids[0][0] > highBidMarket.orderbook.bids[0][0])
         highBidMarket = m
     })
 
 
     ///// Validate balance: pre .mind /////
-    const valueOfCoinSum = (highBidMarket.balance[coinType].available + lowAskMarket.balance[coinType].available) * highBidMarket.orderbook.bid[0].price
+    const valueOfCoinSum = (highBidMarket.balance[coinType].free + lowAskMarket.balance[coinType].free) * highBidMarket.orderbook.bids[0][0]
     if (valueOfCoinSum > 3000000) {
       // using one market
-      if (highBidMarket.balance[coinType].available * highBidMarket.orderbook.bid[0].price < 500000) {
+      if (highBidMarket.balance[coinType].free * highBidMarket.orderbook.bids[0][0] < 500000) {
         console.log(`[machines.mind()] Not enough coin at ${highBidMarket.name}.. so won't sell here`)
         highBidMarket = lowAskMarket
-      } else if (lowAskMarket.balance.KRW.available < 500000) {
+      } else if (lowAskMarket.balance.KRW.free < 500000) {
         console.log(`[machines.mind()] Not enough krw at ${lowAskMarket.name}.. so won't buy here`)
         lowAskMarket = highBidMarket
       }
     }
 
     const bestOrderbook = {
-      bid: highBidMarket.orderbook.bid,
-      ask: lowAskMarket.orderbook.ask
+      bids: highBidMarket.orderbook.bids,
+      asks: lowAskMarket.orderbook.asks
     }
     console.log("[machines.mind()] Low ask market:", lowAskMarket.name, "\tHigh bid market:", highBidMarket.name)
 
     // Make decision which orderbook to use
-    const minAskPrice = bestOrderbook.ask[0].price,
-      maxBidPrice = bestOrderbook.bid[0].price
+    const minAskPrice = bestOrderbook.asks[0][0],
+      maxBidPrice = bestOrderbook.bids[0][0]
     console.log("[machines.mind()] maxBid:", maxBidPrice, " minAsk:", minAskPrice)
 
 
@@ -409,9 +396,7 @@ exports.Machines = Backbone.Collection.extend({
       const BU = global.rabbit.constants[coinType].BUY_AT_UNIT || 1
       return Math.round(Math.ceil(minAskPrice / BU) * BU)
     })()
-    if (this.where({
-      buy_at: snapedPrice
-    }).length == 0) {
+    if (this.where({ buy_at: snapedPrice }).length == 0) {
       console.log(`There is no machine for ${minAskPrice} krw in ${this.length} machines, so I will create`)
       const MIN_CRAVING_PERCENTAGE = global.rabbit.constants[coinType].MACHINE_SETTING.MIN_CRAVING_PERCENTAGE
       const CAPACITY_EACH_CRAVING = global.rabbit.constants[coinType].MACHINE_SETTING.CAPACITY_EACH_CRAVING
@@ -470,17 +455,17 @@ exports.Machines = Backbone.Collection.extend({
     let result // will return this result
     if (totalAsk == 0 && totalBid == 0)
       return []
-    if (bestOrderbook.bid[0].price <= bestOrderbook.ask[0].price) { // internal trade recommended
+    if (bestOrderbook.bids[0][0] <= bestOrderbook.asks[0][0]) { // internal trade recommended
       // Validate the balance
       if (totalBid > totalAsk) {
-        if ((totalBid - totalAsk) * bestOrderbook.ask[0].price < lowAskMarket.balance.KRW.available - 10000) {
+        if ((totalBid - totalAsk) * bestOrderbook.asks[0][0] < lowAskMarket.balance.KRW.free - 10000) {
           console.log("[machine.js] I have money to buy coin at", lowAskMarket.name)
         } else {
           console.log("[machine.js] Not enough money at", lowAskMarket.name, "hurry up!!!!!")
           return []
         }
       } else {
-        if ((totalAsk - totalBid) * 1.1 < highBidMarket.balance[coinType].available) { // 0.1% headroom for fee
+        if ((totalAsk - totalBid) * 1.1 < highBidMarket.balance[coinType].free) { // 10% headroom for fee
           console.log("[machine.js] I have coin to ask at", highBidMarket.name)
         } else {
           console.log("[machine.js] Not enough coin at", highBidMarket.name, "hurry up!!!!!")
@@ -494,20 +479,20 @@ exports.Machines = Backbone.Collection.extend({
         coinType: coinType,
         bidQuantity: totalBid,
         askQuantity: totalAsk,
-        bidPrice: (marketName == "BITHUMB") ? bestOrderbook.ask[0].price : bestOrderbook.ask[0].price - KRW_UNIT, // Buy at minAskPrice
-        askPrice: (marketName == "KORBIT") ? bestOrderbook.bid[0].price + KRW_UNIT : bestOrderbook.bid[0].price,
+        bidPrice: (marketName == "BITHUMB") ? bestOrderbook.asks[0][0] : bestOrderbook.asks[0][0] - KRW_UNIT, // Buy at minAskPrice
+        askPrice: (marketName == "KORBIT") ? bestOrderbook.bids[0][0] + KRW_UNIT : bestOrderbook.bids[0][0],
         participants: bidParticipants.concat(askParticipants),
         machineIds: bidMachineIds.concat(askMachineIds)
       }]
     } else { // Don't make internal trade in this case.
       // Validate the balances
-      if (totalBid * bestOrderbook.ask[0].price < lowAskMarket.balance.KRW.available - 10000) {
+      if (totalBid * bestOrderbook.asks[0][0] < lowAskMarket.balance.KRW.free - 10000) {
         console.log("[machine.js] Enough money at", lowAskMarket.name)
       } else {
         console.log("[machine.js] Put money at", lowAskMarket.name, "hurry up!!!!!!")
         totalBid = 0, bidMachineIds = [], bidParticipants = []
       }
-      if (totalAsk * 1.1 < highBidMarket.balance[coinType].available) { // 0.1% headroom for fee
+      if (totalAsk * 1.1 < highBidMarket.balance[coinType].free) { // 10% headroom for fee..
         console.log("[machine.js] Enough", coinType, "at", highBidMarket.name)
       } else {
         console.log("[machine.js] Put", coinType, "at", highBidMarket.name, "hurry up!!!!!!")
@@ -519,8 +504,7 @@ exports.Machines = Backbone.Collection.extend({
         coinType: coinType,
         bidQuantity: totalBid,
         askQuantity: 0,
-        bidPrice: (lowAskMarket.name == "BITHUMB") ? bestOrderbook.ask[0].price : bestOrderbook.ask[0].price - KRW_UNIT, // Buy at minAskPrice
-        // askPrice: bestOrderbook.bid[0].price,
+        bidPrice: (lowAskMarket.name == "BITHUMB") ? bestOrderbook.asks[0][0] : bestOrderbook.asks[0][0] - KRW_UNIT, // Buy at minAskPrice
         participants: bidParticipants,
         machineIds: bidMachineIds
       }, {
@@ -528,14 +512,13 @@ exports.Machines = Backbone.Collection.extend({
         coinType: coinType,
         bidQuantity: 0,
         askQuantity: totalAsk,
-        // bidPrice: bestOrderbook.ask[0].price,  // Buy at minAskPrice
-        askPrice: (highBidMarket.name == "KORBIT") ? bestOrderbook.bid[0].price + KRW_UNIT : bestOrderbook.bid[0].price,
+        askPrice: (highBidMarket.name == "KORBIT") ? bestOrderbook.bids[0][0] + KRW_UNIT : bestOrderbook.bids[0][0],
         participants: askParticipants,
         machineIds: askMachineIds
       }]
     }
 
-    console.log("[machine.js] machines.mind() takes", ((new Date() - startTime) / 1000).toFixed(3), "sec")
+    console.log("[machine.js] machines.mind() takes", ((Date.now() - startTime) / 1000).toFixed(3), "sec")
     return result
   }
 });
@@ -586,85 +569,58 @@ exports.Arbitrages = exports.Machines.extend({
     const coinType = options.coinType,
       markets = options.markets
 
-    // if (coinType == "ETC")
-    //   return []
-
     console.log(`[arbitrages.mind] ${coinType}  arbitrages length ${this.length} !!`)
 
     let lowMarket, highMarket, quantity = 0
     markets.forEach(m => {
-      if (_.isUndefined(lowMarket) || m.orderbook.ask[0].price < lowMarket.orderbook.ask[0].price)
+      if (_.isUndefined(lowMarket) || m.orderbook.asks[0][0] < lowMarket.orderbook.asks[0][0])
         lowMarket = m
-      if (_.isUndefined(highMarket) || m.orderbook.bid[0].price > highMarket.orderbook.bid[0].price)
+      if (_.isUndefined(highMarket) || m.orderbook.bids[0][0] > highMarket.orderbook.bids[0][0])
         highMarket = m
     })
 
-    const profitRate = (highMarket.orderbook.bid[0].price - lowMarket.orderbook.ask[0].price) - global.rabbit.constants[coinType].KRW_UNIT * 2
-      - highMarket.orderbook.bid[0].price * 0.0025
-      - lowMarket.orderbook.ask[0].price * 0.0025; // 0.25% fee
-    console.log(`lowMarket: ${lowMarket.name}:${lowMarket.orderbook.ask[0].price}, highMarket: ${highMarket.name}:${highMarket.orderbook.bid[0].price}`)
-
-    // legacy below
-    // const coinoneMaxBid = coinone.orderbook.bid[0].price,
-    //   coinoneMinAsk = coinone.orderbook.ask[0].price,
-    //   korbitMaxBid = korbit.orderbook.bid[0].price,
-    //   korbitMinAsk = korbit.orderbook.ask[0].price
-
-    // const korbit2coinone = coinoneMaxBid - korbitMinAsk,
-    //   coinone2korbit = korbitMaxBid - coinoneMinAsk
-
-    // const profitRate = Math.max(korbit2coinone, coinone2korbit) - global.rabbit.constants[coinType].KRW_UNIT * 2
-    // console.log("(korbit to coinone:", korbit2coinone, ", coinone to korbit:", coinone2korbit, ")")
-
-    // let lowMarket, highMarket, quantity = 0
-    // if (korbit2coinone > coinone2korbit){
-    //   lowMarket = korbit
-    //   highMarket = coinone
-    // } else if (korbit2coinone < coinone2korbit) {
-    //   lowMarket = coinone
-    //   highMarket = korbit
-    // } else if (korbit2coinone == coinone2korbit) {  // It happens
-    //   return []
-    // }
+    const profitRate = (highMarket.orderbook.bids[0][0] - lowMarket.orderbook.asks[0][0]) - global.rabbit.constants[coinType].KRW_UNIT * 2
+      - highMarket.orderbook.bids[0][0] * 0.004
+      - lowMarket.orderbook.asks[0][0] * 0.004; // 0.4% fee
+    console.log(`lowMarket: ${lowMarket.name}:${lowMarket.orderbook.asks[0][0]}, highMarket: ${highMarket.name}:${highMarket.orderbook.bids[0][0]}`)
 
     //// Decide quantity ////
-    const prPerPrice = (profitRate / highMarket.orderbook.ask[0].price) * 100
+    const prPerPrice = (profitRate / highMarket.orderbook.asks[0][0]) * 100
     const LIMIT = (() => { // quantity
       // FOR BIGGIE PROFIT
-      const COIN_FOR_130 = 1300000 / highMarket.orderbook.ask[0].price // about 1,300,000 krw value coin
+      const COIN_FOR_150 = 1500000 / highMarket.orderbook.asks[0][0] // about 1,500,000 krw value coin
       // If prPerPrice were 1%, then Deal about 800,000 krw value coin
-      return prPerPrice * COIN_FOR_130
+      return prPerPrice * COIN_FOR_150
     })()
 
-    quantity = Math.min(LIMIT, lowMarket.orderbook.ask[0].qty, highMarket.orderbook.bid[0].qty)
+    quantity = Math.min(LIMIT, lowMarket.orderbook.asks[0][1], highMarket.orderbook.bids[0][1])
     // quantity = quantity.toFixed(global.rabbit.constants[coinType].PRECISION) * 1
     quantity = Math.round(quantity / global.rabbit.constants[coinType].COIN_UNIT) * global.rabbit.constants[coinType].COIN_UNIT
     quantity = quantity.toFixed(global.rabbit.constants[coinType].COIN_PRECISON) * 1 // Round
 
-    if (profitRate < 4 || prPerPrice < 0.9
-      // || quantity < Math.pow(0.1, global.rabbit.constants[coinType].PRECISION)
-      ||
+    if (profitRate < 4 || prPerPrice < 0.9 ||
+      // quantity < Math.pow(0.1, global.rabbit.constants[coinType].PRECISION) ||
       quantity < global.rabbit.constants[coinType].COIN_UNIT * 10 ||
-      quantity * lowMarket.orderbook.ask[0].price < 10000) {
+      quantity * lowMarket.orderbook.asks[0][0] < 10000) {
       console.log("Pass arbitrage. profitRate: \u20A9", profitRate, "prPerPrice(min 0.9):", prPerPrice, "quantity:", quantity)
       return []
     }
 
     console.log(" 💴  IT'S GOLDEN TIME 💴 ", coinType, "quantity:", quantity, "profitRate:", profitRate, "prPerPrice(%):", prPerPrice)
-    console.log(lowMarket.name, ":buy at", lowMarket.orderbook.ask[0].price)
-    console.log(highMarket.name, ":ask at", highMarket.orderbook.bid[0].price)
+    console.log(lowMarket.name, ":buy at", lowMarket.orderbook.asks[0][0])
+    console.log(highMarket.name, ":ask at", highMarket.orderbook.bids[0][0])
 
 
     //// Validate balance ////
-    if ((lowMarket.balance[coinType].available + highMarket.balance[coinType].available) * lowMarket.orderbook.ask[0].price < 2000000) {
+    if ((lowMarket.balance[coinType].free + highMarket.balance[coinType].free) * lowMarket.orderbook.asks[0][0] < 2000000) {
       console.log(`[arbitrages.mind] Not enough ${coinType} to arbitrage yet..`)
       return [{}, {}]
     }
-    if (lowMarket.balance.KRW.available < lowMarket.orderbook.ask[0].price * quantity * 1.1) { // 0.1% headroom for fee
+    if (lowMarket.balance.KRW.free < lowMarket.orderbook.asks[0][0] * quantity * 1.1) { // 10% headroom for fee
       console.log("[arbitrages.mind] Not enough krw at", lowMarket.name, "GIVE ME THE MONEY!!")
       return [{}, {}]
     }
-    if (highMarket.balance[coinType].available < quantity * 1.1) { // 0.1% headroom for fee
+    if (highMarket.balance[coinType].free < quantity * 1.1) { // 10% headroom for fee
       console.log(`[arbitrages.mind] Not enough ${coinType} at ${highMarket.name} MOVE THE COIN!`)
       return [{}, {}]
     }
@@ -675,9 +631,8 @@ exports.Arbitrages = exports.Machines.extend({
       return []
     }
 
-
     //// New arbitrage only here ////
-    console.log("Well. It looks like real money. Make new arbitrage!")
+    console.log("[arbitrages.mind] Well. It looks like real money. Make new arbitrage!")
     const newArbitrage = new exports.Arbitrage({
       coinType: coinType,
       lowMarketName: lowMarket.name,
@@ -686,8 +641,8 @@ exports.Arbitrages = exports.Machines.extend({
       profit_krw: quantity * profitRate,
       quantity: quantity,
       profitRate: profitRate,
-      bidPrice: lowMarket.orderbook.ask[0].price, // + global.rabbit.constants[coinType].KRW_UNIT,  // Buy at minAskPrice
-      askPrice: highMarket.orderbook.bid[0].price // - global.rabbit.constants[coinType].KRW_UNIT  // Ask at maxBidPrice
+      bidPrice: lowMarket.orderbook.asks[0][0], // + global.rabbit.constants[coinType].KRW_UNIT,  // Buy at minAskPrice
+      askPrice: highMarket.orderbook.bids[0][0] // - global.rabbit.constants[coinType].KRW_UNIT  // Ask at maxBidPrice
     })
     this.push(newArbitrage)
 

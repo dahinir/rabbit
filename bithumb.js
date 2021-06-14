@@ -1,4 +1,8 @@
 "use strict"
+////////////////////////////////////////
+//// DON'T USE THIS MODULE    	////////
+////////////////////////////////////////
+
 /* this file will be called like below
 const bithumb = require("./bithumb")
 bithumb({
@@ -26,8 +30,8 @@ const api = {
         const endPoint = "/public/ticker/" + options.coinType.toUpperCase() + "_KRW"
         // returns a promise
         return fetch(ROOT_URL + endPoint, {
-                method: "GET"
-            })
+            method: "GET"
+        })
             .then(res => res.json())
             .then(result => {
                 if (result.status != '0000') {
@@ -51,8 +55,8 @@ const api = {
         const endPoint = "/trade/orderbook/" + options.coinType.toUpperCase() + "_KRW"
         // returns a promise
         return fetch(ROOT_URL + endPoint, {
-                method: "GET"
-            })
+            method: "GET"
+        })
             .then(res => res.json())
             .then(result => {
                 if (result.status != '0000') {
@@ -62,7 +66,7 @@ const api = {
 
                 const data = result.data
                 const ob = {
-                    timestamp: data.timestamp * 1 / 1000,
+                    timestamp: data.timestamp * 1,
                     bid: data.bids.map(el => {
                         return {
                             price: el.price * 1,
@@ -85,8 +89,8 @@ const api = {
         const endPoint = "/public/transaction_history/" + options.coinType.toUpperCase() + "_KRW" + "?count=100"
         // returns a promise
         return fetch(ROOT_URL + endPoint, {
-                method: "GET"
-            })
+            method: "GET"
+        })
             .then(res => res.json())
             .then(result => {
                 if (result.status != '0000') {
@@ -96,7 +100,7 @@ const api = {
 
                 return result.data.map(o => {
                     return {
-                        timestamp: new Date(o.transaction_date).getTime() / 1000, // Math.round(o.timestamp/1000),
+                        timestamp: new Date(o.transaction_date).getTime(), // Math.round(o.timestamp/1000),
                         price: o.price * 1,
                         qty: o.units_traded * 1
                     }
@@ -199,12 +203,12 @@ const api = {
                         // bal[coinType] = bal[coinType] || {}
                         if (coinType in bal === false)
                             bal[coinType] = {}
-                        bal[coinType].available = data[name] * 1
+                        bal[coinType].free = data[name] * 1
                     } else if (name.startsWith('total_')) {
                         const coinType = name.slice(6).toUpperCase()
                         if (coinType in bal === false)
                             bal[coinType] = {}
-                        bal[coinType].balance = data[name] * 1
+                        bal[coinType].total = data[name] * 1
                     }
                 }
                 return bal

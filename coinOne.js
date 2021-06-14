@@ -1,11 +1,16 @@
 "use strict"
+////////////////////////////////////////
+//// DON'T USE THIS MODULE    	////////
+////////////////////////////////////////
+
+
 /* this file will be called like below
 const coinone = require("./coinone")
 coinone({
-    type: "BID",
-    price: 162400,
-    qty: 0.01,
-    coinType: "ETH"
+	type: "BID",
+	price: 162400,
+	qty: 0.01,
+	coinType: "ETH"
 }).then()
 */
 
@@ -91,6 +96,7 @@ module.exports = function (options) {
 				result = JSON.parse(body)
 			} catch (e) {
 				console.log("[coinone.js] parse error.. maybe not my problem..")
+				console.log(body)
 				reject(e)
 				return
 			}
