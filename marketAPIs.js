@@ -129,8 +129,9 @@ bithumbWrap.cancelOrder = async function (orderId, coinPair) {
     })
 }
 bithumbWrap.fetchOpenOrders = async function (coinPair) {
+    let result
     try {
-        const result = await bithumb.fetchOpenOrders(coinPair)
+        result = await bithumb.fetchOpenOrders(coinPair)
     } catch (e) {
         // 빗썸은 openOrder가 없을때 리턴값으로 
         // { status: '5600', message: '거래 진행중인 내역이 존재하지 않습니다.' }
@@ -138,8 +139,8 @@ bithumbWrap.fetchOpenOrders = async function (coinPair) {
         // 빗썸이 에러코드를 바보처럼 만들어서 5600 에러코드가 너무 많은 것을 커버하고 있다
         // https://apidocs.bithumb.com/docs/err_code
         // 그래서 그냥 이렇게 래핑해서 쓰는게 나을듯.
-        const result = JSON.parse(e.message.replace("bithumb {", "{"))
-        if (result.status === '5600' || result.message === '거래 진행중인 내역이 존재하지 않습니다')
+        const err = JSON.parse(e.message.replace("bithumb {", "{"))
+        if (err.status === '5600' || err.message === '거래 진행중인 내역이 존재하지 않습니다')
             return []   // success
         else
             throw e
