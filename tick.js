@@ -90,7 +90,6 @@ module.exports = async function (options) {
     global.rabbit.coinone[coinType].orderbook.bids[0][1] == orderbook["COINONE"].bids[0][1] &&
     global.rabbit.coinone[coinType].orderbook.asks[0][0] == orderbook["COINONE"].asks[0][0] &&
     global.rabbit.coinone[coinType].orderbook.asks[0][1] == orderbook["COINONE"].asks[0][1]) {
-    console.log(global.rabbit.coinone[coinType].orderbook.bids[0][0])
     console.log(`** COINONE is shit. it's the same orderbook with previous orderbook. Don't believe Coinone.`)
     return
   }
