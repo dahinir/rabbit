@@ -1,14 +1,5 @@
 "use strict"
-const xcoinAPI = require('./bithumb_modified.js'),
-    coinoneAPI = require("./coinone.js"),
-    korbitAPI = require("./korbit.js"),
-    fetcher = require('./fetcher.js'),
-    Order = require('./order.js').Order,
-    Orders = require('./order.js').Orders,
-    Machine = require('./machine.js').Machine,
-    Machines = require('./machine.js').Machines,
-    Arbitrage = require('./machine.js').Arbitrage,
-    Arbitrages = require('./machine.js').Arbitrages,
+const Arbitrages = require('./machine.js').Arbitrages,
     _ = require('underscore'),
     fs = require('fs'),
     moment = require('moment'),
@@ -30,9 +21,9 @@ arbitrages.fetchAll({
         }, 0)
         console.log(new Intl.NumberFormat().format(sum.toFixed(0)))
 
-        console.log(new Intl.NumberFormat().format((sum / ((new Date() - ARBITRAGE_STARTED) / 86400000)).toFixed(0)), "per day" )
+        console.log(new Intl.NumberFormat().format((sum / ((new Date() - ARBITRAGE_STARTED) / 86400000)).toFixed(0)), "per day")
     },
-    error: function(e){
+    error: function (e) {
         console.log("error", e)
     }
 })

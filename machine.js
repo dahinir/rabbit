@@ -579,7 +579,8 @@ exports.Arbitrages = exports.Machines.extend({
         highMarket = m
     })
 
-    const profitRate = (highMarket.orderbook.bids[0][0] - lowMarket.orderbook.asks[0][0]) - global.rabbit.constants[coinType].KRW_UNIT * 2
+    const profitRate = (highMarket.orderbook.bids[0][0] - lowMarket.orderbook.asks[0][0])
+      - global.rabbit.constants[coinType].KRW_UNIT * 2
       - highMarket.orderbook.bids[0][0] * 0.004
       - lowMarket.orderbook.asks[0][0] * 0.004; // 0.4% fee
     console.log(`lowMarket: ${lowMarket.name}:${lowMarket.orderbook.asks[0][0]}, highMarket: ${highMarket.name}:${highMarket.orderbook.bids[0][0]}`)

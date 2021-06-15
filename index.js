@@ -254,6 +254,24 @@ global.rabbit.constants = {
       CAPACITY_EACH_CRAVING: [1, 1, 1, 1, 1, 1, 1, 2, 2, 2],
       MIN_CRAVING_PERCENTAGE: 5
     }
+  },
+  TRX: {
+    MARKET: ["COINONE", "KORBIT", "BITHUMB", "UPBIT"],
+    COIN_PRECISON: 2,
+    COIN_UNIT: 1,
+    KRW_UNIT: 0.01,
+    BUY_AT_UNIT: 1,
+    MAX_BUY_AT: 500, // Infinity,
+    PREVIOUS_PROFIT_SUM: 0,
+    PREVIOUS_PROFIT_RATE_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    PREVIOUS_TRADED_COUNT_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    BORN: new Date("Jun 15, 2021 13:22:00"), // 82.5 krw
+    STARTED: new Date("Jun 15, 2021 13:22:00"),
+    ARBITRAGE_STARTED: new Date("Jun 15, 2021 13:22:00"),
+    MACHINE_SETTING: {
+      CAPACITY_EACH_CRAVING: [0.1, 0.1, 0.3, 0.4, 0.3, 0.2, 0.1, 0.1, 0.1, 0.9],
+      MIN_CRAVING_PERCENTAGE: 10
+    }
   }
 };
 global.rabbit.INVESTED_KRW = 30000000;
@@ -411,7 +429,7 @@ machines.fetchAll({
 });
 
 // const runningCoinType = ["BTC", "BCH", "ETH", "ETC", "XRP", "LTC", "QTUM", "EOS", "OMG", "IOTA"],
-const runningCoinType = ["ETH", "ETC"] // It's gonna be tick order.
+const runningCoinType = ["ETH", "ETC", "TRX"] // It's gonna be tick order.
 const runningMarketNames = Object.keys(marketAPIs)
 const MIN_TERM = 3300, // ms ..minimum I think 2700~2900 ms
   ERROR_BUFFER = 60000; // A minute
@@ -496,9 +514,9 @@ async function run() {
         }
         profitSum += 208000000; // 68000000 // Previous profitSum
         const krwSum = runningMarketNames.reduce((acc, marketName) => acc + global.rabbit[marketName.toLowerCase()].balance.KRW.total, 0)
-        process.stdout.write("IN CASH: \u20A9" + Intl.NumberFormat().format(Math.round(krwSum)) + " ")
+        process.stdout.write("IN CASH: \u20A9 " + Intl.NumberFormat().format(Math.round(krwSum)) + "  ")
         for (const marketName of runningMarketNames)
-          process.stdout.write(marketName + ": \u20A9" + Intl.NumberFormat().format(Math.round(global.rabbit[marketName.toLowerCase()].balance.KRW.total)) + "  ")
+          process.stdout.write(marketName + ":\u20A9" + Intl.NumberFormat().format(Math.round(global.rabbit[marketName.toLowerCase()].balance.KRW.total)) + "  ")
 
         console.log("\nSUMMARY: \u20A9", new Intl.NumberFormat().format((balanceSum + krwSum).toFixed(0)),
           "\tRabbit maid \u20A9", new Intl.NumberFormat().format(profitSum.toFixed(0)),

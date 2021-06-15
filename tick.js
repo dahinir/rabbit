@@ -132,7 +132,7 @@ module.exports = async function (options) {
 
   for (let i = 0; i < MARKETS.length; i++) {
     const orderbook_age = NOW - orderbook[MARKETS[i]].timestamp
-    console.log(MARKETS[i], "orderbook age is", orderbook_age / 1000, "sec")
+    // console.log(MARKETS[i], "orderbook age is", orderbook_age / 1000, "sec")
   }
 
 
