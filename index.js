@@ -2,13 +2,9 @@
 
 const _ = require("underscore");
 
-const Machine = require("./machine.js").Machine,
-  Machines = require("./machine.js").Machines,
-  Arbitrage = require("./machine.js").Arbitrage,
+const Machines = require("./machine.js").Machines,
   Arbitrages = require("./machine.js").Arbitrages,
-  Order = require("./order.js").Order,
   Orders = require("./order.js").Orders,
-  RecentCompleteOrder = require("./recentCompleteOrder.js").RecentCompleteOrder,
   RecentCompleteOrders = require("./recentCompleteOrder.js").RecentCompleteOrders,
   marketAPIs = require("./marketAPIs.js");
 
@@ -414,9 +410,10 @@ machines.fetchAll({
   }
 });
 
-// const runningCoinType = ["BTC", "BCH", "ETH", "ETC", "XRP", "LTC", "QTUM", "EOS", "OMG", "IOTA"],  // It's gonna be tick order.
-const runningCoinType = ["ETH", "ETC"], // It's gonna be tick order.
-  MIN_TERM = 3300, // ms ..minimum I think 2700~2900 ms
+// const runningCoinType = ["BTC", "BCH", "ETH", "ETC", "XRP", "LTC", "QTUM", "EOS", "OMG", "IOTA"],
+const runningCoinType = ["ETH", "ETC"] // It's gonna be tick order.
+const runningMarketNames = Object.keys(marketAPIs)
+const MIN_TERM = 3300, // ms ..minimum I think 2700~2900 ms
   ERROR_BUFFER = 60000; // A minute
 let count = -1;
 
@@ -426,7 +423,7 @@ async function run() {
   const coinType = runningCoinType[count % runningCoinType.length];
 
   if (count == 0)
-    for (let marketName in marketAPIs)
+    for (let marketName of runningMarketNames)
       await marketAPIs[marketName].loadMarkets()
 
   try {
@@ -477,91 +474,35 @@ async function run() {
       );
 
       // PRESENTATION //
-      // if (false){
       if (coinType == runningCoinType[runningCoinType.length - 1]) {
-        console.log(
-          "--PRESENTATION of \u20A9",
-          new Intl.NumberFormat().format(global.rabbit.INVESTED_KRW),
-          "--"
-        );
+        console.log("--PRESENTATION of \u20A9", new Intl.NumberFormat().format(global.rabbit.INVESTED_KRW), "--");
 
-        const days = (new Date() - global.rabbit.BORN) / 86400000,
-          korbitBalance = global.rabbit.korbit.balance,
-          coinoneBalance = global.rabbit.coinone.balance,
-          bithumbBalance = global.rabbit.bithumb.balance,
-          korbit = global.rabbit.korbit,
-          coinone = global.rabbit.coinone,
-          bithumb = global.rabbit.bithumb;
-        let profitSum = 0,
-          balanceSum = 0;
-        balanceSum += korbitBalance ? korbitBalance.KRW.total : 0;
-        balanceSum += coinoneBalance ? coinoneBalance.KRW.total : 0;
-        balanceSum += bithumbBalance ? bithumbBalance.KRW.total : 0;
+        const days = (new Date() - global.rabbit.BORN) / 86400000
+        let profitSum = 0, balanceSum = 0;
 
         try {
-          for (const ct of runningCoinType) {
-            const KORBIT =
-              global.rabbit.constants[ct].MARKET.indexOf("KORBIT") >= 0
-                ? true
-                : false,
-              COINONE =
-                global.rabbit.constants[ct].MARKET.indexOf("COINONE") >= 0
-                  ? true
-                  : false,
-              BITHUMB =
-                global.rabbit.constants[ct].MARKET.indexOf("BITHUMB") >= 0
-                  ? true
-                  : false;
-
-            balanceSum += KORBIT
-              ? korbitBalance[ct].total * korbit[ct].orderbook.bids[0][0]
-              : 0;
-            balanceSum += COINONE
-              ? coinoneBalance[ct].total * coinone[ct].orderbook.bids[0][0]
-              : 0;
-            balanceSum += BITHUMB
-              ? bithumbBalance[ct].total * bithumb[ct].orderbook.bids[0][0]
-              : 0;
-            const profit = global.rabbit.constants[ct].profit_krw_sum || 0;
-            const damage = global.rabbit.constants[ct].krw_damage || 0;
-            console.log(
-              ct,
-              "machines maid: \u20A9",
-              new Intl.NumberFormat().format(profit),
-              "\t\u20A9",
-              new Intl.NumberFormat().format(-damage)
-            );
+          for (const coinType of runningCoinType) {
+            for (let marketName of runningMarketNames) {
+              marketName = marketName.toLowerCase()
+              balanceSum += global.rabbit[marketName].balance[coinType].total * global.rabbit[marketName][coinType].orderbook.bids[0][0]
+            }
+            const profit = global.rabbit.constants[coinType].profit_krw_sum || 0;
+            const damage = global.rabbit.constants[coinType].krw_damage || 0;
+            console.log(coinType, "machines maid: \u20A9", new Intl.NumberFormat().format(profit), "\t\u20A9", new Intl.NumberFormat().format(-damage));
             profitSum += profit;
           }
         } catch (e) {
-          console.log("[index.js] Not enough info");
+          console.log("[index.js] Not enough info", e);
         }
-
         profitSum += 208000000; // 68000000 // Previous profitSum
-        console.log(
-          "IN CASH: \u20A9",
-          new Intl.NumberFormat().format(
-            korbitBalance.KRW.total +
-            coinoneBalance.KRW.total +
-            bithumbBalance.KRW.total
-          ),
-          "\t( Coinone:",
-          new Intl.NumberFormat().format(coinoneBalance.KRW.total),
-          "  Korbit:",
-          new Intl.NumberFormat().format(korbitBalance.KRW.total),
-          "  Bithumb:",
-          new Intl.NumberFormat().format(bithumbBalance.KRW.total),
-          ")"
-        );
-        console.log(
-          "SUMMARY: \u20A9",
-          new Intl.NumberFormat().format(balanceSum.toFixed(0)),
-          "\tRabbit maid \u20A9",
-          new Intl.NumberFormat().format(profitSum.toFixed(0)),
-          "..so \u20A9",
-          new Intl.NumberFormat().format((profitSum / days).toFixed(0)),
-          "per day"
-        );
+        const krwSum = runningMarketNames.reduce((acc, marketName) => acc + global.rabbit[marketName.toLowerCase()].balance.KRW.total, 0)
+        process.stdout.write("IN CASH: \u20A9" + Intl.NumberFormat().format(Math.round(krwSum)) + " ")
+        for (const marketName of runningMarketNames)
+          process.stdout.write(marketName + ": \u20A9" + Intl.NumberFormat().format(Math.round(global.rabbit[marketName.toLowerCase()].balance.KRW.total)) + "  ")
+
+        console.log("\nSUMMARY: \u20A9", new Intl.NumberFormat().format((balanceSum + krwSum).toFixed(0)),
+          "\tRabbit maid \u20A9", new Intl.NumberFormat().format(profitSum.toFixed(0)),
+          "..so \u20A9", new Intl.NumberFormat().format((profitSum / days).toFixed(0)), "per day");
         console.log("\n");
       }
 

@@ -151,9 +151,8 @@ module.exports = async function (options) {
   // results = []
 
   if (results.length != 2) {
-    console.log(`-- No arbitrages so mind machines -- `)
-
     /////// TIME TO MIND!! ////////
+    // console.log(`-- No arbitrages so mind machines -- `)
     // results = machines.mind({
     //   rsi: rsi,
     //   coinType: coinType,

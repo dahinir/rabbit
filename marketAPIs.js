@@ -45,13 +45,17 @@ const korbit = {
         const result = await korbitAPI({
             type: "BALANCE"
         })
-        const bals = {}
+        const bals = {
+            total: {}  // just for summary in index.js
+        }
         for (const name in result) {
             bals[name.toUpperCase()] = {
                 free: result[name].available * 1,
                 used: result[name].trade_in_use * 1,
                 total: result[name].available * 1 + result[name].trade_in_use * 1
             }
+            // just for summary in index.js
+            bals.total[name.toUpperCase()] = result[name].available * 1 + result[name].trade_in_use * 1
         }
         return bals
     },
