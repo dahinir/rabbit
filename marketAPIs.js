@@ -179,6 +179,13 @@ upbitWrap.fetchBalance = async function () {
     return result
 }
 
+//// GOPAX ////
+const gopax = new ccxt.gopax({
+    nonce: () => Date.now(),
+    apiKey: KEYS.GOPAX.API_KEY,
+    secret: KEYS.GOPAX.SECRET_KEY,
+});
+
 
 // await coinone.loadMarkets();
 // await korbit.loadMarkets();
@@ -188,5 +195,6 @@ module.exports = {
     "COINONE": coinoneWrap,
     "KORBIT": korbit,
     "BITHUMB": bithumbWrap,
-    "UPBIT": upbitWrap
+    "UPBIT": upbitWrap,
+    "GOPAX": gopax
 }

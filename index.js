@@ -100,7 +100,7 @@ global.rabbit.constants = {
   //   }
   // },
   ETH: {
-    MARKET: ["COINONE", "KORBIT", "BITHUMB", "UPBIT"],
+    MARKET: ["COINONE", "KORBIT", "BITHUMB", "UPBIT", "GOPAX"],
     COIN_PRECISON: 2,
     COIN_UNIT: 0.01,
     KRW_UNIT: 100,
@@ -502,7 +502,8 @@ async function run() {
           for (const coinType of runningCoinType) {
             for (let marketName of runningMarketNames) {
               marketName = marketName.toLowerCase()
-              balanceSum += global.rabbit[marketName].balance[coinType].total * global.rabbit[marketName][coinType].orderbook.bids[0][0]
+              if (global.rabbit[marketName].balance[coinType])
+                balanceSum += global.rabbit[marketName].balance[coinType].total * global.rabbit[marketName][coinType].orderbook.bids[0][0]
             }
             const profit = global.rabbit.constants[coinType].profit_krw_sum || 0;
             const damage = global.rabbit.constants[coinType].krw_damage || 0;
