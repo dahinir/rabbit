@@ -447,8 +447,8 @@ exports.Machines = Backbone.Collection.extend({
     // totalBid = totalBid.toFixed(PRECISION) * 1
     // totalAsk = totalAsk.toFixed(PRECISION) * 1
     const CU = global.rabbit.constants[coinType].COIN_UNIT
-    totalBid = (Math.round(totalBid / CU) * CU).toFixed(global.rabbit.constants[coinType].COIN_PRECISON) * 1
-    totalAsk = (Math.round(totalAsk / CU) * CU).toFixed(global.rabbit.constants[coinType].COIN_PRECISON) * 1
+    totalBid = (Math.round(totalBid / CU) * CU).toFixed(global.rabbit.constants[coinType].COIN_PRECISION) * 1
+    totalAsk = (Math.round(totalAsk / CU) * CU).toFixed(global.rabbit.constants[coinType].COIN_PRECISION) * 1
 
     ///// Validate balance: after .mind /////
     ///// And Make a result /////
@@ -597,7 +597,7 @@ exports.Arbitrages = exports.Machines.extend({
     quantity = Math.min(LIMIT, lowMarket.orderbook.asks[0][1], highMarket.orderbook.bids[0][1])
     // quantity = quantity.toFixed(global.rabbit.constants[coinType].PRECISION) * 1
     quantity = Math.round(quantity / global.rabbit.constants[coinType].COIN_UNIT) * global.rabbit.constants[coinType].COIN_UNIT
-    quantity = quantity.toFixed(global.rabbit.constants[coinType].COIN_PRECISON) * 1 // Round
+    quantity = quantity.toFixed(global.rabbit.constants[coinType].COIN_PRECISION) * 1 // Round
 
     if (profitRate < 4 || prPerPrice < 0.9 ||
       // quantity < Math.pow(0.1, global.rabbit.constants[coinType].PRECISION) ||

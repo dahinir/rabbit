@@ -195,7 +195,7 @@ exports.Orders = Backbone.Collection.extend({
       Math.round(quantity / global.rabbit.constants[coinType].COIN_UNIT) *
       global.rabbit.constants[coinType].COIN_UNIT;
     quantity =
-      quantity.toFixed(global.rabbit.constants[coinType].COIN_PRECISON) * 1;
+      quantity.toFixed(global.rabbit.constants[coinType].COIN_PRECISION) * 1;
     if (quantity * price < 10000) {
       // bithumb ASK result:  { status: '5600', message: '최소 판매수량은 1 ETC 입니다.' }
       console.log(`[order.js] It's too little money order. quantity is ${quantity} price is ${price} so it will be ignored.`);

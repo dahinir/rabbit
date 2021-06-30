@@ -24,7 +24,7 @@ for (let marketName in marketAPIs)
 global.rabbit.constants = {
   BTC: {
     MARKET: ["COINONE", "KORBIT"], //["COINONE", "KORBIT", "BITHUMB"],
-    COIN_PRECISON: 4, // How many places after the decimal separator
+    COIN_PRECISION: 4, // How many places after the decimal separator
     COIN_UNIT: 0.0001,
     KRW_UNIT: 1000, // Minimum unit of KRW
     BUY_AT_UNIT: 100000, // Snap to 100000 KRW. It's important. if you wanna buy less, up this number.
@@ -55,7 +55,7 @@ global.rabbit.constants = {
   },
   BCH: {
     MARKET: ["COINONE", "KORBIT"], //["COINONE", "KORBIT", "BITHUMB"],
-    COIN_PRECISON: 3,
+    COIN_PRECISION: 3,
     COIN_UNIT: 0.001,
     KRW_UNIT: 500,
     BUY_AT_UNIT: 10000,
@@ -84,7 +84,7 @@ global.rabbit.constants = {
   },
   // BTG: {
   //   MARKET: ["COINONE"],
-  //   COIN_PRECISON: 2,
+  //   COIN_PRECISION: 2,
   // COIN_UNIT: 0.01,
   //   KRW_UNIT: 50,  // korbit 500, coinone 50
   //   BUY_AT_UNIT: 1000,
@@ -101,7 +101,7 @@ global.rabbit.constants = {
   // },
   ETH: {
     MARKET: ["COINONE", "KORBIT", "BITHUMB", "UPBIT", "GOPAX"],
-    COIN_PRECISON: 2,
+    COIN_PRECISION: 2,
     COIN_UNIT: 0.01,
     KRW_UNIT: 100,
     BUY_AT_UNIT: 10000,
@@ -121,7 +121,7 @@ global.rabbit.constants = {
   },
   ETC: {
     MARKET: ["COINONE", "KORBIT", "BITHUMB", "UPBIT"],
-    COIN_PRECISON: 1,
+    COIN_PRECISION: 1,
     COIN_UNIT: 0.1,
     KRW_UNIT: 10,
     // MIN_COIN_ORDER: 1,  // bithumb ASK result:  { status: '5600', message: '최소 판매수량은 1 ETC 입니다.' }
@@ -142,7 +142,7 @@ global.rabbit.constants = {
   },
   XRP: {
     MARKET: ["COINONE", "KORBIT", "BITHUMB"],
-    COIN_PRECISON: 0,
+    COIN_PRECISION: 0,
     COIN_UNIT: 1,
     KRW_UNIT: 1,
     BUY_AT_UNIT: 10,
@@ -162,7 +162,7 @@ global.rabbit.constants = {
   },
   LTC: {
     MARKET: ["COINONE", "KORBIT", "BITHUMB"],
-    COIN_PRECISON: 1,
+    COIN_PRECISION: 1,
     COIN_UNIT: 0.1,
     KRW_UNIT: 50,
     BUY_AT_UNIT: 1000,
@@ -182,7 +182,7 @@ global.rabbit.constants = {
   },
   QTUM: {
     MARKET: ["COINONE", "BITHUMB"],
-    COIN_PRECISON: 1,
+    COIN_PRECISION: 1,
     COIN_UNIT: 0.1,
     KRW_UNIT: 10,
     BUY_AT_UNIT: 100,
@@ -202,7 +202,7 @@ global.rabbit.constants = {
   },
   EOS: {
     MARKET: ["COINONE", "BITHUMB"],
-    COIN_PRECISON: 1,
+    COIN_PRECISION: 1,
     COIN_UNIT: 0.1,
     KRW_UNIT: 10,
     BUY_AT_UNIT: 10,
@@ -220,7 +220,7 @@ global.rabbit.constants = {
   },
   OMG: {
     MARKET: ["COINONE", "BITHUMB"],
-    COIN_PRECISON: 1,
+    COIN_PRECISION: 1,
     COIN_UNIT: 0.1,
     KRW_UNIT: 10,
     BUY_AT_UNIT: 10,
@@ -238,7 +238,7 @@ global.rabbit.constants = {
   },
   IOTA: {
     MARKET: ["COINONE"],
-    COIN_PRECISON: 1,
+    COIN_PRECISION: 1,
     COIN_UNIT: 0.1,
     KRW_UNIT: 10,
     BUY_AT_UNIT: 10,
@@ -257,7 +257,7 @@ global.rabbit.constants = {
   },
   TRX: {
     MARKET: ["COINONE", "KORBIT", "BITHUMB", "UPBIT"],
-    COIN_PRECISON: 2,
+    COIN_PRECISION: 2,
     COIN_UNIT: 1,
     KRW_UNIT: 0.01,
     BUY_AT_UNIT: 1,
