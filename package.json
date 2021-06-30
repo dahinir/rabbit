@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "start": "node index.js > ~/var/rabbit_result.log &",
     "test": "ava"
   },
   "author": "dahinir",
