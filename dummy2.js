@@ -3,7 +3,6 @@ const Arbitrages = require('./machine.js').Arbitrages,
     _ = require('underscore'),
     fs = require('fs'),
     moment = require('moment'),
-    brain = require('brain.js'),
     ARBITRAGE_STARTED = new Date('July 26, 2017 13:20:00')
 
 const N = new Date()

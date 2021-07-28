@@ -13,9 +13,8 @@ const coinoneAPI = require("./coinone.js"),
     _ = require('underscore'),
     fs = require('fs'),
     moment = require('moment'),
-    brain = require('brain.js'),
     request = require('request')
-    
+
 // if (true) console.log(Math.pow(0.1, 3).toFixed(3)*1)
 let sum = 0
 let arrr = [0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.01, 0.01]
@@ -52,7 +51,7 @@ async function g2o(ed) {
         const FETCH_STARTED = Date.now() / 1000
         // const bb = await fetcher.getCoinoneOrderbook("XRP")
         const bb = await fetcher.getKorbitOrderbook("BTC")
-        
+
         const now = Date.now() / 1000
         console.log("now:", now)
         console.log("orderbook.timestamp:", bb.timestamp)
@@ -102,8 +101,8 @@ return
 const a = startTime.indexOf("BdB") || false
 console.log(a)
 let coinoneInfo, korbitInfo = 1251, fetchingTime = Infinity
-korbitInfo = (function(){
-    return a+14
+korbitInfo = (function () {
+    return a + 14
 })()
 const BU = 50
 // let snapedPrice = (minAskPrice / BU).toFixed(0) * BU 
@@ -114,10 +113,10 @@ async function go(ed) {
     try {
 
         marketResult = await korbitAPI({
-          type: "BID",
-          qty: 0.001,
-          coinType: "BTC",
-          price: 6000
+            type: "BID",
+            qty: 0.001,
+            coinType: "BTC",
+            price: 6000
         })
     } catch (e) {
         // console.log("catch")
@@ -134,7 +133,7 @@ go()
 // go().then(r => console.log("result:", r)).catch(e => console.log("catch",e))
 return
 
-for( let m of [1,2,4])
+for (let m of [1, 2, 4])
     console.log(m)
 console.log(m)
 return
@@ -146,7 +145,7 @@ const hey = {
 
 console.log(hey)
 {
-var aa = "added"
+    var aa = "added"
 }
 // hey[aa]="dd"
 // hey.aa = "asdf"

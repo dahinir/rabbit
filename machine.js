@@ -3,7 +3,7 @@
 const Backbone = require('backbone'),
   backsync = require('backsync'),
   _ = require('underscore')
-
+const broadcast = require("./telegramBot.js").broadcast
 
 exports.Machine = Backbone.Model.extend({
   // urlRoot: "mongodb://localhost:27017/rabbit/bithumb_btc_machines",
@@ -581,8 +581,8 @@ exports.Arbitrages = exports.Machines.extend({
 
     const profitRate = (highMarket.orderbook.bids[0][0] - lowMarket.orderbook.asks[0][0])
       - global.rabbit.constants[coinType].KRW_UNIT * 2
-      - highMarket.orderbook.bids[0][0] * 0.004
-      - lowMarket.orderbook.asks[0][0] * 0.004; // 0.4% fee
+      - highMarket.orderbook.bids[0][0] * 0.0025
+      - lowMarket.orderbook.asks[0][0] * 0.0025; // 0.25% fee
     console.log(`lowMarket: ${lowMarket.name}:${lowMarket.orderbook.asks[0][0]}, highMarket: ${highMarket.name}:${highMarket.orderbook.bids[0][0]}`)
 
     //// Decide quantity ////
@@ -599,18 +599,18 @@ exports.Arbitrages = exports.Machines.extend({
     quantity = Math.round(quantity / global.rabbit.constants[coinType].COIN_UNIT) * global.rabbit.constants[coinType].COIN_UNIT
     quantity = quantity.toFixed(global.rabbit.constants[coinType].COIN_PRECISION) * 1 // Round
 
-    if (profitRate < 4 || prPerPrice < 0.9 ||
+    if (profitRate < 4 || prPerPrice < 0.5 ||
       // quantity < Math.pow(0.1, global.rabbit.constants[coinType].PRECISION) ||
       quantity < global.rabbit.constants[coinType].COIN_UNIT * 10 ||
       quantity * lowMarket.orderbook.asks[0][0] < 10000) {
-      console.log("Pass arbitrage. profitRate: \u20A9", profitRate, "prPerPrice(min 0.9):", prPerPrice, "quantity:", quantity)
+      console.log("Pass arbitrage. profitRate: \u20A9", profitRate, "prPerPrice(min 0.5):", prPerPrice, "quantity:", quantity)
       return []
     }
 
     console.log(" 💴  IT'S GOLDEN TIME 💴 ", coinType, "quantity:", quantity, "profitRate:", profitRate, "prPerPrice(%):", prPerPrice)
+    broadcast(" 💴  IT'S GOLDEN TIME 💴 " + coinType + "quantity:" + quantity + "profitRate:" + profitRate + "prPerPrice(%):" + prPerPrice)
     console.log(lowMarket.name, ":buy at", lowMarket.orderbook.asks[0][0])
     console.log(highMarket.name, ":ask at", highMarket.orderbook.bids[0][0])
-
 
     //// Validate balance ////
     if ((lowMarket.balance[coinType].free + highMarket.balance[coinType].free) * lowMarket.orderbook.asks[0][0] < 2000000) {

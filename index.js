@@ -8,6 +8,9 @@ const Machines = require("./machine.js").Machines,
   RecentCompleteOrders = require("./recentCompleteOrder.js").RecentCompleteOrders,
   marketAPIs = require("./marketAPIs.js");
 
+const broadcast = require("./telegramBot.js").broadcast
+const bot = require("./telegramBot.js").bot
+
 let killSign = false;
 process.on("SIGINT", function () {
   console.log(": SIGINT(Kill sign) submitted.");
@@ -434,6 +437,8 @@ const runningMarketNames = Object.keys(marketAPIs)
 const MIN_TERM = 3300, // ms ..minimum I think 2700~2900 ms
   ERROR_BUFFER = 60000; // A minute
 let count = -1;
+let sumString = "";
+
 
 async function run() {
   count++;
@@ -493,6 +498,7 @@ async function run() {
 
       // PRESENTATION //
       if (coinType == runningCoinType[runningCoinType.length - 1]) {
+        sumString = "--PRESENTATION of \u20A9" + new Intl.NumberFormat().format(global.rabbit.INVESTED_KRW) + "--\n";
         console.log("--PRESENTATION of \u20A9", new Intl.NumberFormat().format(global.rabbit.INVESTED_KRW), "--");
 
         const days = (new Date() - global.rabbit.BORN) / 86400000
@@ -508,6 +514,7 @@ async function run() {
             const profit = global.rabbit.constants[coinType].profit_krw_sum || 0;
             const damage = global.rabbit.constants[coinType].krw_damage || 0;
             console.log(coinType, "machines maid: \u20A9", new Intl.NumberFormat().format(profit), "\t\u20A9", new Intl.NumberFormat().format(-damage));
+            sumString += coinType + "machines maid: \u20A9" + new Intl.NumberFormat().format(profit) + "\t\u20A9" + new Intl.NumberFormat().format(-damage) + "\n"
             profitSum += profit;
           }
         } catch (e) {
@@ -516,15 +523,21 @@ async function run() {
         profitSum += 208000000; // 68000000 // Previous profitSum
         const krwSum = runningMarketNames.reduce((acc, marketName) => acc + global.rabbit[marketName.toLowerCase()].balance.KRW.total, 0)
         process.stdout.write("IN CASH: \u20A9 " + Intl.NumberFormat().format(Math.round(krwSum)) + "  ")
-        for (const marketName of runningMarketNames)
+        sumString += "IN CASH: \u20A9 " + Intl.NumberFormat().format(Math.round(krwSum)) + "  ";
+        for (const marketName of runningMarketNames) {
           process.stdout.write(marketName + ":\u20A9" + Intl.NumberFormat().format(Math.round(global.rabbit[marketName.toLowerCase()].balance.KRW.total)) + "  ")
+          sumString += marketName + ":\u20A9" + Intl.NumberFormat().format(Math.round(global.rabbit[marketName.toLowerCase()].balance.KRW.total)) + "  "
+        }
 
         console.log("\nSUMMARY: \u20A9", new Intl.NumberFormat().format((balanceSum + krwSum).toFixed(0)),
           "\tRabbit maid \u20A9", new Intl.NumberFormat().format(profitSum.toFixed(0)),
           "..so \u20A9", new Intl.NumberFormat().format((profitSum / days).toFixed(0)), "per day");
         console.log("\n");
+        sumString += "\nSUMMARY: \u20A9" + new Intl.NumberFormat().format((balanceSum + krwSum).toFixed(0)) +
+          "\tRabbit maid \u20A9" + new Intl.NumberFormat().format(profitSum.toFixed(0)) +
+          "..so \u20A9" + new Intl.NumberFormat().format((profitSum / days).toFixed(0)) + "per day\n";
       }
-
+      global.rabbit.sumString = sumString;
       // One more time //
       setTimeout(run, BREAK_TIME);
     }

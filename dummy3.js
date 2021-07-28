@@ -15,11 +15,10 @@ const xcoinAPI = require('./bithumb_modified.js'),
     _ = require('underscore'),
     fs = require('fs'),
     moment = require('moment'),
-    brain = require('brain.js')
 
-// const rcOrders = new RecentCompleteOrders()
-// console.log(rcOrders.length)
-re()
+    // const rcOrders = new RecentCompleteOrders()
+    // console.log(rcOrders.length)
+    re()
 console.log("end")
 async function re() {
     // let result = await bithumbAPI({
@@ -42,8 +41,8 @@ async function re() {
     //     coinType: "ETH"
     // })
     /*
-    ​​​​​[ '1522249876413298',
-​​​​​  '1522245862327279' ]*/
+         [ '1522249876413298',
+       '1522245862327279' ]*/
     // let result = await bithumbAPI({
     //     type: "CANCEL_ORDER",
     //     orderType: "BID",
