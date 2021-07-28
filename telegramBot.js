@@ -35,6 +35,32 @@ bot.hears('unsubscribe me', (ctx) => {
 bot.hears('summary', (ctx) => {
     ctx.reply(global.rabbit.sumString)
 })
+bot.hears('arbitrages', (ctx) => {
+    const Arbitrages = require('./machine.js').Arbitrages,
+        ARBITRAGE_STARTED = global.rabbit.constants.ETH.ARBITRAGE_STARTED;
+
+    const N = new Date()
+    console.log(N.toLocaleString())
+    const arbitrages = new Arbitrages()
+    arbitrages.fetchAll({
+        success: () => {
+            console.log("all length", arbitrages.length)
+            const sum = arbitrages.models.reduce((sum, a) => {
+                if (a.get("status") == "COMPLETED")
+                    return sum + a.get("profit_krw")
+                // else
+                //     console.log(a.get("status"))
+                return sum
+            }, 0)
+            console.log(new Intl.NumberFormat().format(sum.toFixed(0)))
+            console.log(new Intl.NumberFormat().format((sum / ((new Date() - ARBITRAGE_STARTED) / 86400000)).toFixed(0)), "per day")
+            ctx.reply("all length: " + arbitrages.length + "\n" + new Intl.NumberFormat().format(sum.toFixed(0)))
+        },
+        error: function (e) {
+            console.log("error", e)
+        }
+    })
+})
 bot.on('sticker', (ctx) => ctx.reply('👍'))
 bot.on('text', (ctx) => {
     // Explicit usage
