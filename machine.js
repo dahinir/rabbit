@@ -498,7 +498,7 @@ exports.Machines = Backbone.Collection.extend({
         console.log("[machine.js] Put", coinType, "at", highBidMarket.name, "hurry up!!!!!!")
         totalAsk = 0, askMachineIds = [], askParticipants = []
       }
-      // Make two result to make order seprarately
+      // Make two result to make order separately
       result = [{
         marketName: lowAskMarket.name,
         coinType: coinType,
@@ -615,20 +615,24 @@ exports.Arbitrages = exports.Machines.extend({
     //// Validate balance ////
     if ((lowMarket.balance[coinType].free + highMarket.balance[coinType].free) * lowMarket.orderbook.asks[0][0] < 2000000) {
       console.log(`[arbitrages.mind] Not enough ${coinType} to arbitrage yet..`)
+      broadcast(`[arbitrages.mind] Not enough ${coinType} to arbitrage yet..`)
       return [{}, {}]
     }
     if (lowMarket.balance.KRW.free < lowMarket.orderbook.asks[0][0] * quantity * 1.1) { // 10% headroom for fee
       console.log("[arbitrages.mind] Not enough krw at", lowMarket.name, "GIVE ME THE MONEY!!")
+      broadcast("[arbitrages.mind] Not enough krw at", lowMarket.name, "GIVE ME THE MONEY!!")
       return [{}, {}]
     }
     if (highMarket.balance[coinType].free < quantity * 1.1) { // 10% headroom for fee
       console.log(`[arbitrages.mind] Not enough ${coinType} at ${highMarket.name} MOVE THE COIN!`)
+      broadcast(`[arbitrages.mind] Not enough ${coinType} at ${highMarket.name} MOVE THE COIN!`)
       return [{}, {}]
     }
 
     /// If There is too many uncompleted arbitrages..
     if (this.length > 11) {
       console.log(`[arbitrages.mind] Too many arbitrages. length: ${this.length}`)
+      broadcast(`[arbitrages.mind] Too many arbitrages. length: ${this.length}`)
       return []
     }
 
