@@ -608,7 +608,7 @@ exports.Arbitrages = exports.Machines.extend({
     }
 
     console.log(" 💴  IT'S GOLDEN TIME 💴 ", coinType, "quantity:", quantity, "profitRate:", profitRate, "prPerPrice(%):", prPerPrice)
-    broadcast(" 💴  IT'S GOLDEN TIME 💴 " + coinType + "quantity:" + quantity + "profitRate:" + profitRate + "prPerPrice(%):" + prPerPrice)
+    // broadcast(" 💴  IT'S GOLDEN TIME 💴 " + coinType + "quantity:" + quantity + "profitRate:" + profitRate + "prPerPrice(%):" + prPerPrice)
     console.log(lowMarket.name, ":buy at", lowMarket.orderbook.asks[0][0])
     console.log(highMarket.name, ":ask at", highMarket.orderbook.bids[0][0])
 
@@ -619,8 +619,8 @@ exports.Arbitrages = exports.Machines.extend({
       return [{}, {}]
     }
     if (lowMarket.balance.KRW.free < lowMarket.orderbook.asks[0][0] * quantity * 1.1) { // 10% headroom for fee
-      console.log("[arbitrages.mind] Not enough krw at", lowMarket.name, "GIVE ME THE MONEY!!")
-      broadcast("[arbitrages.mind] Not enough krw at", lowMarket.name, "GIVE ME THE MONEY!!")
+      console.log(`[arbitrages.mind] Not enough krw at ${lowMarket.name} GIVE ME THE MONEY!!`)
+      broadcast(`[arbitrages.mind] Not enough krw at ${lowMarket.name} GIVE ME THE MONEY!!`)
       return [{}, {}]
     }
     if (highMarket.balance[coinType].free < quantity * 1.1) { // 10% headroom for fee
