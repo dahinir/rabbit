@@ -57,7 +57,7 @@ global.rabbit.constants = {
     }
   },
   BCH: {
-    MARKET: ["COINONE", "KORBIT"], //["COINONE", "KORBIT", "BITHUMB"],
+    MARKET: ["COINONE", "KORBIT", "BITHUMB", "UPBIT"], //["COINONE", "KORBIT", "BITHUMB"],
     COIN_PRECISION: 3,
     COIN_UNIT: 0.001,
     KRW_UNIT: 500,
@@ -103,7 +103,7 @@ global.rabbit.constants = {
   //   }
   // },
   ETH: {
-    MARKET: ["COINONE", "KORBIT", "BITHUMB", "UPBIT", "GOPAX"],
+    MARKET: ["COINONE", "KORBIT", "BITHUMB", "UPBIT"],
     COIN_PRECISION: 2,
     COIN_UNIT: 0.01,
     KRW_UNIT: 100,
@@ -275,6 +275,12 @@ global.rabbit.constants = {
       CAPACITY_EACH_CRAVING: [0.1, 0.1, 0.3, 0.4, 0.3, 0.2, 0.1, 0.1, 0.1, 0.9],
       MIN_CRAVING_PERCENTAGE: 10
     }
+  },
+  BAT: {
+    MARKET: ["COINONE", "KORBIT", "BITHUMB", "UPBIT"],
+  },
+  TFUEL: {
+
   }
 };
 global.rabbit.INVESTED_KRW = 30000000;
@@ -433,7 +439,8 @@ machines.fetchAll({
 
 // const runningCoinType = ["BTC", "BCH", "ETH", "ETC", "XRP", "LTC", "QTUM", "EOS", "OMG", "IOTA"],
 const runningCoinType = ["ETH", "ETC", "TRX"] // It's gonna be tick order.
-const runningMarketNames = Object.keys(marketAPIs)
+// const runningMarketNames = Object.keys(marketAPIs)
+const runningMarketNames = ["COINONE", "KORBIT", "BITHUMB", "UPBIT"]
 const MIN_TERM = 3300, // ms ..minimum I think 2700~2900 ms
   ERROR_BUFFER = 60000; // A minute
 let count = -1;

@@ -615,6 +615,10 @@ exports.Arbitrages = exports.Machines.extend({
     //// Validate balance ////
     if ((lowMarket.balance[coinType].free + highMarket.balance[coinType].free) * lowMarket.orderbook.asks[0][0] < 2000000) {
       console.log(`[arbitrages.mind] Not enough ${coinType} to arbitrage yet..`)
+      console.log("sum:", (lowMarket.balance[coinType].free + highMarket.balance[coinType].free) * lowMarket.orderbook.asks[0][0])
+      console.log("low market", coinType, lowMarket.balance[coinType].free)
+      console.log("high market", coinType, highMarket.balance[coinType].free)
+      console.log("price:", lowMarket.orderbook.asks[0][0])
       broadcast(`[arbitrages.mind] Not enough ${coinType} to arbitrage yet..`)
       return [{}, {}]
     }
