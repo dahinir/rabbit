@@ -1,0 +1,26 @@
+version: "3.7"
+
+services:
+  rabbit:
+    build: .
+    command: node main.js
+    # command: "wait-port mongo:27017 && node index.js"
+    # command: node index.js
+    working_dir: /app
+    volumes:
+      - ./:/app
+    # links:
+    #  - mongo
+  mongo:
+    image: mongo:4.4.9
+    # command: mongod --storageEngine wiredTiger --dbpath /var/local/ --bind_ip localhost
+    command: mongod --storageEngine wiredTiger --dbpath /var/local/ --bind_ip_all
+    volumes:
+      - ~/var/mongo4.4_data/:/var/local/
+    # volumes:
+    #   - rabbit-mongo-data:/var/local/
+    # ports:
+    #  - 27017:27017
+
+# volumes:
+#   rabbit-mongo-data:

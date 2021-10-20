@@ -3,3 +3,8 @@ node index.js > ~/var/rabbit_result.log &
 open ~/var/rabbit_result.log 
 ps | grep node
 kill -s int 61885
+
+
+# now you using docker-compose
+docker-compose up -d
+docker-compose down --volumes
