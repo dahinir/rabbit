@@ -4,10 +4,12 @@ const Backbone = require('backbone'),
   backsync = require('backsync'),
   _ = require('underscore')
 const broadcast = require("./telegramBot.js").broadcast
+// const DB_ADDR = "mongodb://localhost:27017/"
+const DB_ADDR = "mongodb://mongo:27017/"
 
 exports.Machine = Backbone.Model.extend({
   // urlRoot: "mongodb://localhost:27017/rabbit/bithumb_btc_machines",
-  urlRoot: "mongodb://localhost:27017/rabbit/machines",
+  urlRoot: DB_ADDR + "rabbit/machines",
   sync: backsync.mongodb(),
   idAttribute: "id", // cuz of Backsync
   defaults: {
@@ -161,7 +163,7 @@ exports.Machine = Backbone.Model.extend({
 })
 
 exports.Arbitrage = exports.Machine.extend({
-  urlRoot: "mongodb://localhost:27017/rabbit/arbitrages",
+  urlRoot: DB_ADDR + "rabbit/arbitrages",
   sync: backsync.mongodb(),
   idAttribute: "id", // cuz of Backsync
   defaults: {
@@ -255,7 +257,7 @@ exports.Arbitrage = exports.Machine.extend({
 }) // End of exports.Arbitrage
 
 exports.Machines = Backbone.Collection.extend({
-  url: "mongodb://localhost:27017/rabbit/machines",
+  url: DB_ADDR + "rabbit/machines",
   sync: backsync.mongodb(),
   model: exports.Machine,
   initialize: function (attributes, options) {
@@ -524,7 +526,7 @@ exports.Machines = Backbone.Collection.extend({
 });
 
 exports.Arbitrages = exports.Machines.extend({
-  url: "mongodb://localhost:27017/rabbit/arbitrages",
+  url: DB_ADDR + "rabbit/arbitrages",
   sync: backsync.mongodb(),
   model: exports.Arbitrage,
   initialize: function (attributes, options) {

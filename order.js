@@ -4,9 +4,11 @@ const Backbone = require("backbone"),
   _ = require("underscore"),
   backsync = require("backsync");
 const marketAPIs = require('./marketAPIs.js');
+// const DB_ADDR = "mongodb://localhost:27017/"
+const DB_ADDR = "mongodb://mongo:27017/"
 
 exports.Order = Backbone.Model.extend({
-  urlRoot: "mongodb://localhost:27017/rabbit/orders", // not url. cuz of backsync
+  urlRoot: DB_ADDR + "rabbit/orders", // not url. cuz of backsync
   sync: backsync.mongodb(),
   idAttribute: "id",
   defaults: {
@@ -112,7 +114,7 @@ exports.Order = Backbone.Model.extend({
 });
 
 exports.Orders = Backbone.Collection.extend({
-  url: "mongodb://localhost:27017/rabbit/orders",
+  url: DB_ADDR + "rabbit/orders",
   sync: backsync.mongodb(),
   comparator: function (order) {
     return order.get("created_at");

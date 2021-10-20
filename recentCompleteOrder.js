@@ -16,10 +16,12 @@ const Backbone = require('backbone'),
     backsync = require('backsync'),
     fetcher = require('./fetcher.js'),
     bithumbAPI = require("./bithumb.js")
+// const DB_ADDR = "mongodb://localhost:27017/"
+const DB_ADDR = "mongodb://mongo:27017/"
 
 //  { timestamp: '1512990444', price: '530100', qty: '5.8000' }
 exports.RecentCompleteOrder = Backbone.Model.extend({
-    urlRoot: "mongodb://localhost:27017/rabbit/recentCompleteOrders", // not url. cuz it's backsync
+    urlRoot: DB_ADDR + "rabbit/recentCompleteOrders", // not url. cuz it's backsync
     sync: backsync.mongodb(),
     idAttribute: "id", // maybe ..change to "id".. using backsync..
     defaults: {
@@ -41,7 +43,7 @@ exports.RecentCompleteOrder = Backbone.Model.extend({
 })
 
 exports.RecentCompleteOrders = Backbone.Collection.extend({
-    url: "mongodb://localhost:27017/rabbit/recentCompleteOrders",
+    url: DB_ADDR + "rabbit/recentCompleteOrders",
     sync: backsync.mongodb(),
     comparator: "timestamp",
     initialize: function (attributes, options) {
