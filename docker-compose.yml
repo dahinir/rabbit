@@ -4,11 +4,13 @@ services:
   rabbit:
     build: .
     command: node main.js
+    # command: node main.js > /var/local/rabbit_result.log
     # command: "wait-port mongo:27017 && node index.js"
     # command: node index.js
     working_dir: /app
     volumes:
       - ./:/app
+      # - ~/var/rabit_result/:/var/local/
     # links:
     #  - mongo
   mongo:
