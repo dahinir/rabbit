@@ -4,13 +4,13 @@ services:
   rabbit:
     build: .
     command: node main.js
-    # command: node main.js > /var/local/rabbit_result.log
+    # command: node main.js > log/rabbit_result.log
     # command: "wait-port mongo:27017 && node index.js"
     # command: node index.js
     working_dir: /app
     volumes:
       - ./:/app
-      # - ~/var/rabit_result/:/var/local/
+      # - /usr/local/var/rabbit_result:/var/local
     # links:
     #  - mongo
   mongo:
@@ -18,7 +18,8 @@ services:
     # command: mongod --storageEngine wiredTiger --dbpath /var/local/ --bind_ip localhost
     command: mongod --storageEngine wiredTiger --dbpath /var/local/ --bind_ip_all
     volumes:
-      - ~/var/mongo4.4_data/:/var/local/
+      - ./db_data/mongo4.4_data:/var/local
+      # - /usr/local/var/mongo4.4_data:/var/local/
     # volumes:
     #   - rabbit-mongo-data:/var/local/
     # ports:

@@ -1,6 +1,6 @@
-mongod --storageEngine wiredTiger --dbpath ~/var/mongo4.4_data/ --bind_ip localhost & 
-node index.js > ~/var/rabbit_result.log &  
-open ~/var/rabbit_result.log 
+mongod --storageEngine wiredTiger --dbpath db_data/mongo4.4_data/ --bind_ip localhost & 
+node index.js > log/rabbit_result.log &  
+open log/rabbit_result.log 
 ps | grep node
 kill -s int 61885
 
@@ -8,3 +8,4 @@ kill -s int 61885
 # now you using docker-compose
 docker-compose up -d
 docker-compose down --volumes
+docker-compose logs -f rabbit

@@ -19,6 +19,8 @@ node_modules/
 node_modules*
 BithumbShit/
 dump/
+db_data/
+log/
 
 # keys
 tokens.js
