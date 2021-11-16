@@ -1,0 +1,29 @@
+{
+  "BITHUMB": {
+    "API_KEY": "3422a62a..",
+    "SECRET_KEY": "3422a62a..",
+    "API_KEY(sb)": "3422a62a..",
+    "SECRET_KEY(sb)": "3422a62a.."
+  },
+  "COINBASE": {
+    "API_KEY": "idontneed",
+    "SECRET_KEY": "thisshit"
+  },
+  "COINONE": {
+    "API_KEY": "3422a62a..",
+    "SECRET_KEY": "3422a62a.."
+  },
+  "KORBIT": {
+    "API_KEY": "3422a62a..",
+    "SECRET_KEY": "3422a62a.."
+  },
+  "UPBIT": {
+    "API_KEY": "3422a62a..",
+    "SECRET_KEY": "3422a62a.."
+  },
+  "GOPAX": {
+    "API_KEY": "3422a62a..",
+    "SECRET_KEY": "3422a62a.."
+  },
+  "TELEGRAM": "3422a62a.."
+}
