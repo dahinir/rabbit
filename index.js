@@ -26,7 +26,7 @@ for (let marketName in marketAPIs)
 // db.machines.findOne({craving_krw: 6000, status:"KRW", capacity: {$ne: 0.01}})
 global.rabbit.constants = {
   BTC: {
-    MARKET: ["COINONE", "KORBIT"], //["COINONE", "KORBIT", "BITHUMB"],
+    MARKET: ["COINONE", "KORBIT", "BITHUMB", "UPBIT"],
     COIN_PRECISION: 4, // How many places after the decimal separator
     COIN_UNIT: 0.0001,
     KRW_UNIT: 1000, // Minimum unit of KRW
