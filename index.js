@@ -452,7 +452,7 @@ machines.fetchAll({
 });
 
 // const runningCoinType = ["BTC", "BCH", "ETH", "ETC", "XRP", "LTC", "QTUM", "EOS", "OMG", "IOTA"],
-const runningCoinType = ["ETH", "ETC", "TRX", "BAT"] // It's gonna be tick order.
+const runningCoinType = ["BTC", "ETH", "ETC", "TRX", "BAT"] // It's gonna be tick order.
 // const runningMarketNames = Object.keys(marketAPIs)
 const runningMarketNames = ["COINONE", "KORBIT", "BITHUMB", "UPBIT"]
 const MIN_TERM = 3300, // ms ..minimum I think 2700~2900 ms
