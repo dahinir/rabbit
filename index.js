@@ -31,7 +31,7 @@ global.rabbit.constants = {
     COIN_UNIT: 0.0001,
     KRW_UNIT: 1000, // Minimum unit of KRW
     BUY_AT_UNIT: 100000, // Snap to 100000 KRW. It's important. if you wanna buy less, up this number.
-    MAX_BUY_AT: Infinity, // 17200000, // Previous high price usally
+    MAX_BUY_AT: Infinity, // 17200000, // Previous high price usually
     PREVIOUS_PROFIT_SUM: 0,
     PREVIOUS_PROFIT_RATE_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     PREVIOUS_TRADED_COUNT_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -282,7 +282,7 @@ global.rabbit.constants = {
     COIN_UNIT: 0.01,
     KRW_UNIT: 5,
     BUY_AT_UNIT: 100,
-    MAX_BUY_AT: 250000, // Infinity, // 611500,
+    MAX_BUY_AT: 250000, // Infinity,
     PREVIOUS_PROFIT_SUM: 0,
     PREVIOUS_PROFIT_RATE_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     PREVIOUS_TRADED_COUNT_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -295,6 +295,24 @@ global.rabbit.constants = {
     }
   },
   TFUEL: {
+  },
+  SOL: {
+    MARKET: ["COINONE", "KORBIT", "BITHUMB", "UPBIT"],
+    COIN_PRECISION: 3,
+    COIN_UNIT: 0.001,
+    KRW_UNIT: 100,
+    BUY_AT_UNIT: 10000,
+    MAX_BUY_AT: 2500000, // Infinity,
+    PREVIOUS_PROFIT_SUM: 0,
+    PREVIOUS_PROFIT_RATE_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    PREVIOUS_TRADED_COUNT_EACH_CRAVING: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    BORN: new Date("December 16, 2021 18:33:00"), // 227,000 krw
+    STARTED: new Date("December 16, 2021 18:33:00"),
+    ARBITRAGE_STARTED: new Date("December 16, 2021 18:33:00"),
+    MACHINE_SETTING: {
+      CAPACITY_EACH_CRAVING: [0.1, 0.1, 0.9, 0.4, 0.3, 0.2, 0.1, 0.1, 0.1, 0.1],
+      MIN_CRAVING_PERCENTAGE: 10
+    }
   }
 };
 global.rabbit.INVESTED_KRW = 30000000;
@@ -452,7 +470,7 @@ machines.fetchAll({
 });
 
 // const runningCoinType = ["BTC", "BCH", "ETH", "ETC", "XRP", "LTC", "QTUM", "EOS", "OMG", "IOTA"],
-const runningCoinType = ["BTC", "ETH", "ETC", "TRX", "BAT"] // It's gonna be tick order.
+const runningCoinType = ["BTC", "ETH", "ETC", "TRX", "BAT", "SOL"] // It's gonna be tick order.
 // const runningMarketNames = Object.keys(marketAPIs)
 const runningMarketNames = ["COINONE", "KORBIT", "BITHUMB", "UPBIT"]
 const MIN_TERM = 3300, // ms ..minimum I think 2700~2900 ms
