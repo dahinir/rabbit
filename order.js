@@ -181,7 +181,7 @@ exports.Orders = Backbone.Collection.extend({
       quantity = askQuantity - bidQuantity;
       internalTradeQuantity = bidQuantity * 2;
     } else if (bidQuantity == askQuantity) {
-      console.log("[order.js] Perpect internal trade! Can you believe it?");
+      console.log("[order.js] Perfect internal trade! Can you believe it?");
       // console.log(options)
       newOrder.set({
         marketName: "INTERNAL_TRADE",
