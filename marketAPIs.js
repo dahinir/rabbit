@@ -117,11 +117,11 @@ const korbit = {
 
 //// BITHUMB ////
 const bithumb = new ccxt.bithumb({
+    'timeout': 60000,
     nonce: () => Date.now(),
     apiKey: KEYS.BITHUMB.API_KEY,
     secret: KEYS.BITHUMB.SECRET_KEY
 });
-
 const bithumbWrap = Object.create(bithumb);
 bithumbWrap.cancelOrder = async function (orderId, coinPair) {
     const result = await bithumb.fetchOrder(orderId, coinPair)
